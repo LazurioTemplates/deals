@@ -12,9 +12,11 @@ page's tools while the App is open in the browser).
 
 ## Steps
 
-1. **Find the deal.** `find_deals` with words of its title, the company or
-   the owner and `status: "open"`; when more than one fits, ask which. Then
-   `get_deal` for its current details and its `revision`.
+1. **Find the deal.** `find_deals` with `status: "open"` and `search` with
+   words of its title, its description or its company; when the person names
+   the salesperson, add `owner` with their exact name as `get_settings` lists
+   it (`search` does not look at the owner). When more than one fits, ask
+   which. Then `get_deal` for its current details and its `revision`.
 2. **What closing needs**, from the person, never assumed:
    - **won:** the final value (it may differ from the deal's value; ask when
      the person did not say it) and the day it was won;
@@ -30,18 +32,24 @@ page's tools while the App is open in the browser).
    changed the deal meanwhile: read it again with `get_deal`, tell the person
    what changed and move it from `current_revision` only when it still holds.
 4. **Log it**, when the person told you how it ended: `add_activity` with
-   `type: "note"` and one sentence.
+   `deal_id` of the deal, `type: "note"`, `at` now with its offset
+   (`2026-11-25T14:30:00+01:00`) and `summary` one sentence in the person's
+   words.
 5. **Check and show the draft:** `check_data` (a won deal needs a value
    above zero; a lost one a reason) and `get_draft`. Tell the person, in their
-   language, what changed and that it waits in "Koncept a publikování" /
-   "Draft & publish".
-6. **Publish only on their word.** When the person says "Publikuj" /
-   "Publish" for this draft, `get_draft` again, and `publish_draft` with its
-   `revision`. A refusal with `draft_changed` means the draft changed since
-   they saw it: show it again and ask once more.
+   language, every record the draft holds (not only yours: a colleague's
+   change may wait in it too) and that it waits in "Koncept a publikování" /
+   "Draft & publish". Keep the draft's `revision` you showed.
+6. **Publish only what they approved.** When the person says "Publikuj" /
+   "Publish" for this draft, `publish_draft` with `expected_revision` the
+   `revision` you showed in step 5, never one read afterwards: the App
+   publishes only that very draft. A refusal with `draft_changed` means the
+   draft changed since they saw it: `get_draft`, show the person what is new
+   in it and publish only on their new word, with the new `revision`.
 
 ## Never
 
 - choose a loss reason, a value or a date for the person;
-- publish without the person's explicit instruction for this draft;
+- publish without the person's explicit instruction for this draft, or a
+  revision of the draft other than the one they saw;
 - reopen or change another deal on the way.

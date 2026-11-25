@@ -34,8 +34,10 @@ question for the person, not a step for you.
    name; otherwise `create_contact` with `company_id` and only the details the
    message states.
 5. **The deal.** `create_deal` with a short title in the customer's words,
-   the company, the contact, the owner and the value in minor units (whole
-   haléře: 120 000 Kč is `12000000`). Leave `stage_id` out for the first open
+   the company, the contact, the owner, the value in minor units (whole
+   haléře: 120 000 Kč is `12000000`) and, when the message or the person gave
+   one, the expected closing date as `expected_close` (`YYYY-MM-DD`): without
+   it the forecast counts the deal without a date. Leave `stage_id` out for the first open
    stage unless the person names another one of `get_settings`.
 6. **The message.** `add_activity` on the new deal: `type` `email` for an
    e-mail, `call` for a call note, `note` otherwise; `at` the time the message
@@ -49,6 +51,8 @@ question for the person, not a step for you.
 ## Never
 
 - publish the draft (`publish_draft`) unless the person says "Publikuj" /
-  "Publish" for this draft;
+  "Publish" for this draft, and then only with the `revision` of the draft
+  you showed them (`get_draft` in step 8); on `draft_changed` show the new
+  draft and wait for their new word;
 - invent a company, a person, a detail, a value or a date;
 - write to the company or the person: answering them is the person's step.

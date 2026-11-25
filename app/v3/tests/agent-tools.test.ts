@@ -277,8 +277,21 @@ describe("writing tools", () => {
     });
     expect(deal).toMatchObject({
       id: "D-2026-0015",
-      record: { stageId: "lead", createdAt: TODAY, contactIds: ["P-0011"] },
+      record: {
+        stageId: "lead",
+        createdAt: TODAY,
+        contactIds: ["P-0011"],
+        expectedClose: "2027-02-15",
+      },
     });
+    // The date the message gave puts the deal into its month of the forecast,
+    // not among the deals without a date (lead counts 10 %).
+    const forecast = await ok(tools, "get_forecast", {});
+    expect(forecast.noDate).toEqual({ count: 2, value: 61_000_000, weighted: 13_900_000 });
+    const february = (forecast.months as { month: string; count: number; value: number }[]).find(
+      (month) => month.month === "2027-02",
+    );
+    expect(february).toMatchObject({ count: 2, value: 92_500_000 });
     const activity = await ok(tools, "add_activity", {
       deal_id: "D-2026-0015",
       type: "call",
