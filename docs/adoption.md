@@ -30,10 +30,12 @@ Do all of this live, before showing a plan.
    prepare a request for an Owner
    (`gh api "orgs/<Org>/members?role=admin" --jq '.[].login'`): an issue in
    the Organization's root repository with the plan below, assigned to them.
-2. **The release.** Compare it with the brief:
-   `git ls-remote https://github.com/LazurioTemplates/deals refs/tags/<tag>`
-   must point to the recorded commit (for an annotated tag, its peeled `^{}`
-   line). A mismatch stops the adoption.
+2. **The release.** Compare it with the brief. Releases are annotated tags,
+   so ask for the commit the tag points to, its peeled ref:
+   `git ls-remote https://github.com/LazurioTemplates/deals 'refs/tags/<tag>^{}'`
+   must print the recorded commit (asking for `refs/tags/<tag>` alone gives
+   the tag object, not the commit). A mismatch, or no line, stops the
+   adoption.
 3. **Name collision.** The slug is `deals`. Look in the Organization's
    `modules.manifest.json` for a slot with that slug or path, and on GitHub for
    `<Org>/deals` and `<Org>/deals-data`.

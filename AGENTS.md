@@ -114,8 +114,10 @@ skill keeps:
 - `cd app/v3 && bun install --frozen-lockfile && bun run check && bun run build`.
 - `lazurio module readiness "$PWD" --json` at the repository root says
   `ready-for-live` (CI checks it too).
-- A change the person sees: check it in a browser with `bun run dev:demo`
-  (Czech) and `bun run dev:demo en` with `?lang=en` (English), at 1280 and
+- A change the person sees: check it in a browser with
+  `LAZURIO_RUNTIME_LISTENER_APP_HOST=127.0.0.1 LAZURIO_RUNTIME_LISTENER_APP_PORT=<free port> bun run dev:demo`
+  (Czech) and the same with `bun run dev:demo en` and `?lang=en` (English);
+  without the listener variables the demo exits 2. Check it at 1280 and
   390 px, light and dark. Never publish an Organization's data while testing.
 - Versions are exact (no `^` or `~`). A new version of a tool is a release of
   the stack profile (see [`docs/extending.md`](docs/extending.md)), not a

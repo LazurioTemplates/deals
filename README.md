@@ -97,9 +97,16 @@ the App runs and says that the data is not available yet.
 
 `bun run dev:demo` (or `bun run dev:demo en`) serves the fictional example in
 memory instead: nothing is read from or written to a repository, ARES is never
-asked, and every change is gone when the process ends. Outside Lazurio, add
-`?lang=en` to the address for the English interface. The Marketplace
-screenshots come from it.
+asked, and every change is gone when the process ends. It needs the same
+listener as `bun run dev`; without it the process exits 2:
+
+```bash
+LAZURIO_RUNTIME_LISTENER_APP_HOST=127.0.0.1 LAZURIO_RUNTIME_LISTENER_APP_PORT=<free port> bun run dev:demo
+LAZURIO_RUNTIME_LISTENER_APP_HOST=127.0.0.1 LAZURIO_RUNTIME_LISTENER_APP_PORT=<free port> bun run dev:demo en
+```
+
+Outside Lazurio, add `?lang=en` to the address for the English interface.
+The Marketplace screenshots come from it.
 
 | Script | Does |
 | --- | --- |

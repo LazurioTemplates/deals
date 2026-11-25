@@ -111,7 +111,9 @@ describe("module contract", () => {
     const runtime = packageJson.lazurio.runtime;
     const scripts = packageJson.scripts as Record<string, string>;
     expect(runtime.schema_version).toBe("lazurio.runtime.v1");
-    expect(runtime.module).toBe("deals");
+    // The module's slug is the Organization's (`deals`, or another agreed at
+    // adoption); it only has to match the Module manifest.
+    expect(identityProblems(JSON.parse(read("lazurio.module.json")), runtime)).toEqual([]);
     expect(runtime.title).toBe("Obchodní případy");
     expect(runtime.tags).toEqual(["deals", "pipeline", "repository-db"]);
     expect(runtime.dev_script).toBe("dev");
@@ -280,12 +282,44 @@ describe("module contract", () => {
     const manifest = JSON.parse(read("lazurio.module.json"));
     expect(manifest).toMatchObject({
       schema_version: "lazurio.module.v1",
-      id: "deals",
       tcp_port_policy: { mode: "single" },
-      port_leases: [{ id: "main", host: "127.0.0.1", port: 24940 }],
       apps: ["app/v3/package.json"],
       default_app: "app/v3/package.json",
     });
+    expect(identityProblems(manifest, packageJson.lazurio.runtime)).toEqual([]);
+  });
+
+  test("an adopted Module keeps its own slug and port lease", () => {
+    const runtime = packageJson.lazurio.runtime;
+    const adopted = (id: string, port: number) => ({
+      manifest: { id, port_leases: [{ id: "main", host: "127.0.0.1", port }] },
+      runtime: { ...runtime, module: id },
+    });
+    // Another agreed slug and another free port pass.
+    for (const { manifest, runtime: own } of [adopted("obchod", 31_207), adopted("deals", 41_000)])
+      expect(identityProblems(manifest, own)).toEqual([]);
+    // A slug the manifest and the runtime disagree on, or a lease the
+    // listener does not name, or no valid port, fail.
+    const { manifest } = adopted("obchod", 31_207);
+    expect(identityProblems(manifest, { ...runtime, module: "deals" })).not.toEqual([]);
+    expect(
+      identityProblems(
+        { ...manifest, port_leases: [{ id: "web", host: "127.0.0.1", port: 1 }] },
+        {
+          ...runtime,
+          module: "obchod",
+        },
+      ),
+    ).not.toEqual([]);
+    expect(
+      identityProblems(
+        { ...manifest, port_leases: [{ id: "main", host: "0.0.0.0", port: 0 }] },
+        {
+          ...runtime,
+          module: "obchod",
+        },
+      ),
+    ).not.toEqual([]);
   });
 
   test("every tracked path checks out on Windows", () => {
@@ -340,6 +374,13 @@ describe.skipIf(!TEMPLATE)("template contract (skipped in an adopted Module)", (
     }
   });
 
+  test("the template's own slug and port", () => {
+    const manifest = JSON.parse(read("lazurio.module.json"));
+    expect(manifest.id).toBe("deals");
+    expect(manifest.port_leases).toEqual([{ id: "main", host: "127.0.0.1", port: 24940 }]);
+    expect(packageJson.lazurio.runtime.module).toBe("deals");
+  });
+
   test("leaves the Organization's identity as placeholders", () => {
     expect(JSON.parse(read("lazurio.module.json")).company).toBe("REPLACE-WITH-ORG-NAME");
     expect(packageJson.lazurio.runtime.company).toBe("REPLACE-WITH-ORG-NAME");
@@ -352,6 +393,34 @@ describe.skipIf(!TEMPLATE)("template contract (skipped in an adopted Module)", (
     );
   });
 });
+
+/**
+ * What does not hold between the Module manifest and the App's runtime
+ * declaration, whatever slug and port the Organization chose: the slug is
+ * the same in both, a lowercase slug; one lease on 127.0.0.1 with a port
+ * Lazurio can give, and the entrypoint listener uses it.
+ */
+function identityProblems(
+  manifest: { id?: unknown; port_leases?: { id?: unknown; host?: unknown; port?: unknown }[] },
+  runtime: { module?: unknown; listeners?: { lease?: unknown }[] },
+): string[] {
+  const problems: string[] = [];
+  if (typeof manifest.id !== "string" || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(manifest.id))
+    problems.push("the manifest id is not a lowercase slug");
+  if (runtime.module !== manifest.id) problems.push("runtime.module is not the manifest id");
+  const leases = manifest.port_leases ?? [];
+  const [lease] = leases;
+  if (leases.length !== 1 || !lease) problems.push("not exactly one port lease");
+  else {
+    if (lease.host !== "127.0.0.1") problems.push("the lease is not on 127.0.0.1");
+    const port = lease.port;
+    if (typeof port !== "number" || !Number.isInteger(port) || port < 1024 || port > 65_535)
+      problems.push("the lease has no port Lazurio can give");
+    if (!(runtime.listeners ?? []).every((listener) => listener.lease === lease.id))
+      problems.push("a listener names another lease");
+  }
+  return problems;
+}
 
 /** The canvas width of a WebP file (VP8, VP8L or VP8X). */
 function webpWidth(bytes: Buffer): number {
