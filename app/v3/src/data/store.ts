@@ -51,7 +51,7 @@ export type DraftCard = DraftPanelInput;
 export type DiscardScope = { kind: "draft" } | { kind: "record"; path: string };
 
 export type StoreEvent =
-  /** Records changed outside this process (a colleague's publish came in, a discard). */
+  /** Records changed: a write or a discard of any page, a colleague's publish that came in. */
   | { type: "records-changed" }
   /** The draft or the sync state changed; reload the card. */
   | { type: "draft-changed" };
@@ -79,7 +79,9 @@ export interface DealsStore {
   getDeal(id: string): Promise<Stored<Deal> | null>;
   /**
    * Save a deal as a draft. `baseRevision` is the revision the editor opened,
-   * `null` for a new deal. A stale revision is refused with `record_changed`.
+   * `null` for a new deal. A stale revision is refused with `record_changed`,
+   * which names the revision stored now (`StoreError.currentRevision`); so is
+   * every other save.
    */
   saveDeal(value: Deal, baseRevision: Revision | null): Promise<Stored<Deal>>;
 
@@ -125,17 +127,25 @@ export class StoreError extends Error {
   readonly code: string;
   readonly text: Localized;
   readonly localizedIssues: readonly { path: string; message: Localized }[];
+  /**
+   * With `record_changed`: the revision of the record as it is stored now
+   * (`null` when it is gone), so an editor can load it again and compare.
+   * Undefined for every other refusal.
+   */
+  readonly currentRevision: Revision | null | undefined;
 
   constructor(
     code: string,
     message: string | Localized,
     issues: { path: string; message: string | Localized }[] = [],
+    options: { currentRevision?: Revision | null } = {},
   ) {
     const text = typeof message === "string" ? { cs: message, en: message } : message;
     super(text.en);
     this.name = "StoreError";
     this.code = code;
     this.text = text;
+    this.currentRevision = options.currentRevision;
     this.localizedIssues = issues.map((issue) => ({
       path: issue.path,
       message:

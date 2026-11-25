@@ -236,6 +236,17 @@ export function createRepositoryDbStore(options: RepositoryDbStoreOptions): Deal
     return result;
   }
 
+  /**
+   * Tells every open page that records changed, after a write or a discard
+   * of this copy: the host announces only the records colleagues' work
+   * brought in (`remote-pulled`), and its status event reloads only the
+   * draft card, so another page over the same writer would keep showing the
+   * lists and the overview from before.
+   */
+  const recordsChanged = () => {
+    for (const listener of watchers) listener({ type: "records-changed" });
+  };
+
   const store = createRecordStore({
     async available() {
       try {
@@ -260,7 +271,8 @@ export function createRepositoryDbStore(options: RepositoryDbStoreOptions): Deal
     write: (kind, operation) => {
       // The origin of the request, taken before the write waits in the queue.
       const by = attribution();
-      return engine(() =>
+      let wrote = false;
+      const done = engine(() =>
         host.run(kind, (db) => {
           const written: string[] = [];
           const gate = assertDataPath(mountRoot, db.config.layout.data);
@@ -272,11 +284,17 @@ export function createRepositoryDbStore(options: RepositoryDbStoreOptions): Deal
                 const path = pathOf(db, collection, id);
                 const file = assertDataPath(mountRoot, path);
                 // The gate is held: the file is the version the checks read.
-                if (recordRevision(file) !== baseRevision) {
-                  throw new StoreError("record_changed", {
-                    cs: `${path} se mezitím změnil; nic se neuložilo.`,
-                    en: `${path} changed meanwhile; nothing was saved.`,
-                  });
+                const current = recordRevision(file) ?? null;
+                if (current !== baseRevision) {
+                  throw new StoreError(
+                    "record_changed",
+                    {
+                      cs: `${path} se mezitím změnil; nic se neuložilo.`,
+                      en: `${path} changed meanwhile; nothing was saved.`,
+                    },
+                    [],
+                    { currentRevision: current },
+                  );
                 }
                 remember(file);
                 // `value` carries this write's new `revision`, `updatedAt` and `updatedBy`.
@@ -299,6 +317,7 @@ export function createRepositoryDbStore(options: RepositoryDbStoreOptions): Deal
             // still under the gate, so a later writer's hint comes after this
             // one, and a failure to record it never fails the saved write.
             if (written.length > 0) {
+              wrote = true;
               try {
                 db.recordOrigin(written, by);
               } catch {
@@ -310,6 +329,10 @@ export function createRepositoryDbStore(options: RepositoryDbStoreOptions): Deal
           return result;
         }),
       );
+      return done.then((result) => {
+        if (wrote) recordsChanged();
+        return result;
+      });
     },
     async draft(locale): Promise<DraftCard> {
       // The host computes its status in the background; before the first
@@ -372,6 +395,7 @@ export function createRepositoryDbStore(options: RepositoryDbStoreOptions): Deal
     },
     async discard(scope, expectedRevision) {
       await engine(() => host.run("discard", (db) => db.discard({ scope, expectedRevision })));
+      recordsChanged();
     },
     async pull() {
       await engine(() => host.run("pull", (db) => db.pull()));

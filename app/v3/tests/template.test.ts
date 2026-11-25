@@ -1,17 +1,18 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import packageJson from "../package.json";
 import { lockProblem, parseDesignSystemPin } from "./support/design-system-pin.ts";
 
 // The contract of the Module, checked on every pull request: the license,
 // exact versions, the built version to run from `main`, and paths that check
-// out on Windows. The part only the template keeps (its placeholder identity
-// and its own pins) runs only while the identity is the template's and is
-// skipped in an adopted Module. The documents, the skills and the
-// screenshots join this contract with the parts of the template that add
-// them.
+// out on Windows, a client that loads nothing from another origin and ARES
+// asked only by the server. The part only the template keeps (its
+// placeholder identity and its own pins) runs only while the identity is the
+// template's and is skipped in an adopted Module. The documents, the skills
+// and the screenshots join this contract with the parts of the template that
+// add them.
 const ROOT = resolve(import.meta.dir, "..", "..", "..");
 const APP = resolve(import.meta.dir, "..");
 const read = (path: string) => readFileSync(resolve(ROOT, path), "utf8");
@@ -99,6 +100,57 @@ describe("module contract", () => {
       check_script: "check:prepared",
     });
     expect(typeof scripts["check:prepared"]).toBe("string");
+  });
+
+  test("its dev and start scripts run the one server, its build the client with Vite", () => {
+    const scripts = packageJson.scripts as Record<string, string>;
+    for (const name of ["dev", "start"]) {
+      const entry = /run (\S+)$/.exec(scripts[name] ?? "")?.[1] ?? "";
+      expect({ name, entry, exists: existsSync(resolve(APP, entry)) }).toEqual({
+        name,
+        entry: "src/server/main.ts",
+        exists: true,
+      });
+    }
+    expect(scripts.build).toContain("vite");
+    const vite = read("app/v3/vite.config.ts");
+    expect(vite).toContain('root: "src/ui"');
+    expect(vite).toContain("envDir: false");
+    expect(vite).toContain('outDir: "../../dist"');
+    expect(read(".github/workflows/check.yml")).toContain("bun run build");
+  });
+
+  test("the page loads nothing from another origin and works at a phone's width", () => {
+    const html = read("app/v3/src/ui/index.html");
+    expect(html).toContain(
+      '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />',
+    );
+    expect(html).not.toMatch(/user-scalable|maximum-scale/);
+    expect(html.match(/name="theme-color"/g)).toHaveLength(2);
+    // No address of another origin in the client's sources: no web fonts,
+    // icons or scripts from a CDN. The fonts come with the design system.
+    const sources: string[] = [];
+    const walk = (directory: string) => {
+      for (const name of readdirSync(directory)) {
+        const path = resolve(directory, name);
+        if (statSync(path).isDirectory()) walk(path);
+        else sources.push(path);
+      }
+    };
+    walk(resolve(APP, "src", "ui"));
+    walk(resolve(APP, "src", "instance"));
+    for (const file of sources) {
+      const urls = readFileSync(file, "utf8").match(/(?:https?:)?\/\/[a-z0-9-]+\.[a-z0-9.-]+/gi);
+      expect({ file, urls: urls ?? [] }).toEqual({ file, urls: [] });
+    }
+  });
+
+  test("only the server asks ARES", () => {
+    const files = new Bun.Glob("src/**/*.{ts,tsx}").scanSync({ cwd: APP });
+    const asking = [...files].filter((file) =>
+      readFileSync(resolve(APP, file), "utf8").includes("ares.gov.cz"),
+    );
+    expect(asking.map((file) => file.replaceAll("\\", "/"))).toEqual(["src/server/ares.ts"]);
   });
 
   test("leases one port for its one process", () => {

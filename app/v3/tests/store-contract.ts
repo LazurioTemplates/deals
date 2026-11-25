@@ -37,6 +37,15 @@ export function storeContract(
       throw new Error("expected a refusal");
     };
 
+    const refused = async (operation: () => Promise<unknown>) => {
+      try {
+        await operation();
+      } catch (error) {
+        return error as { code?: string; currentRevision?: string | null };
+      }
+      throw new Error("expected a refusal");
+    };
+
     test("a read-only view refuses every change and changes nothing", async () => {
       const view = readOnly(store);
       const state = async () => ({
@@ -152,9 +161,9 @@ export function storeContract(
       ).toBe("record_changed");
       expect((await store.getDeal("D-2026-0002"))?.value.stageId).toBe("negotiation");
       // A new record under an existing id is refused.
-      expect(await refusal(() => store.saveDeal(newDeal("D-2026-0002"), null))).toBe(
-        "record_changed",
-      );
+      const taken = await refused(() => store.saveDeal(newDeal("D-2026-0002"), null));
+      expect(taken.code).toBe("record_changed");
+      expect(taken.currentRevision).toBe(saved.revision);
     });
 
     test("every write of every collection gives a new revision, also after A → B → A", async () => {
@@ -207,9 +216,13 @@ export function storeContract(
         for (const field of ["revision", "updatedAt", "updatedBy"]) {
           expect(Object.keys(back.value as object)).not.toContain(field);
         }
-        // An editor who opened A or B before is refused, not overwritten.
-        expect(await refusal(() => save(edit, opened.revision))).toBe("record_changed");
-        expect(await refusal(() => save(edit, b.revision))).toBe("record_changed");
+        // An editor who opened A or B before is refused, not overwritten, and
+        // learns the revision stored now.
+        for (const stale of [opened.revision, b.revision]) {
+          const error = await refused(() => save(edit, stale));
+          expect(error.code).toBe("record_changed");
+          expect(error.currentRevision).toBe(back.revision);
+        }
         expect(await read()).toBe(back.revision);
       }
     });
@@ -432,6 +445,38 @@ export function storeContract(
       await store.saveCompany(newCompany(), null);
       stop();
       expect(events).toContain("draft-changed");
+    });
+
+    test("tells every subscriber that records changed on a write and a discard", async () => {
+      // Two open pages over the same store: the one that writes and another.
+      const writer: string[] = [];
+      const other: string[] = [];
+      const stops = [
+        store.subscribe((event) => writer.push(event.type)),
+        store.subscribe((event) => other.push(event.type)),
+      ];
+      try {
+        await store.saveCompany(newCompany(), null);
+        expect(writer).toContain("records-changed");
+        expect(other).toContain("records-changed");
+        const opened = await store.getDeal("D-2026-0004");
+        if (!opened) throw new Error("D-2026-0004 missing");
+        other.length = 0;
+        await store.saveDeal({ ...opened.value, title: "Přejmenovaný případ" }, opened.revision);
+        expect(other).toContain("records-changed");
+
+        // A refused write changes no record and says none changed.
+        other.length = 0;
+        await expect(
+          store.saveDeal({ ...opened.value, title: "Zastaralé" }, opened.revision),
+        ).rejects.toMatchObject({ code: "record_changed" });
+        expect(other).not.toContain("records-changed");
+
+        await store.discard({ kind: "draft" }, (await store.draft()).revision ?? "");
+        expect(other).toContain("records-changed");
+      } finally {
+        for (const stop of stops) stop();
+      }
     });
   });
 }

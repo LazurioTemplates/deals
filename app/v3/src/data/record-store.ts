@@ -125,20 +125,22 @@ export function createRecordStore(backend: RecordBackend): DealsStore {
         const id = ids[index] as string;
         const existing = records.get(id);
         const { cs, en } = LABELS[collection];
-        if (entry.base === null && existing) {
-          throw new StoreError("record_changed", {
-            cs: `${cs} ${id} už existuje.`,
-            en: `${en} ${id} already exists.`,
+        // Every refusal names the revision stored now, so the editor can reload it.
+        const changed = (message: Localized) =>
+          new StoreError("record_changed", message, [], {
+            currentRevision: existing?.revision ?? null,
           });
+        if (entry.base === null && existing) {
+          throw changed({ cs: `${cs} ${id} už existuje.`, en: `${en} ${id} already exists.` });
         }
         if (entry.base !== null && !existing) {
-          throw new StoreError("record_changed", {
+          throw changed({
             cs: `${cs} ${id} mezitím zmizel nebo se vrátil.`,
             en: `${en} ${id} was deleted or returned meanwhile.`,
           });
         }
         if (existing && entry.base !== existing.revision) {
-          throw new StoreError("record_changed", {
+          throw changed({
             cs: `${cs} ${id} mezitím uložil někdo jiný.`,
             en: `Someone else saved ${en.toLowerCase()} ${id} meanwhile.`,
           });
