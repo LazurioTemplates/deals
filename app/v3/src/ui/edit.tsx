@@ -78,6 +78,17 @@ export function afterSave<T, F>(
   return { base: stored, form: state.form, dismissed: null };
 }
 
+/**
+ * Whether a record's fields take no input. A copy that may not write never
+ * does. A new record's form is also locked while its save waits: the save
+ * opens the new record's page, so nothing typed meanwhile would have a form
+ * to stay in. An existing record's form stays open and keeps what is typed
+ * (`afterSave`).
+ */
+export function formLocked(canWrite: boolean, busy: boolean, isNew: boolean): boolean {
+  return !canWrite || (busy && isNew);
+}
+
 /** The key of a change under the form, so keeping on editing past it hides only that one. */
 function changeKey<T>(drift: Drift, current: Stored<T> | undefined): string | null {
   if (drift === "changed") return current?.revision ?? null;

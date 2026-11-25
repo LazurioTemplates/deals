@@ -9,7 +9,7 @@ import type { AppData } from "../App.tsx";
 import { api, type Stored } from "../api.ts";
 import { CloseDealDialog, MoveDeal } from "../components/CloseDeal.tsx";
 import { ErrorNotice, Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
-import { EditNotices, isRecordChanged, useRecordForm } from "../edit.tsx";
+import { EditNotices, formLocked, isRecordChanged, useRecordForm } from "../edit.tsx";
 import { type Format, useFormat, useT } from "../i18n.tsx";
 import { href, navigate } from "../routes.ts";
 import { localDateTime, withOffset } from "../time.ts";
@@ -247,7 +247,10 @@ export function DealPage({
       {stored?.value.lossNote ? <p className="loss-note">{stored.value.lossNote}</p> : null}
       <div className="detail-grid">
         <form className="form" onSubmit={save}>
-          <fieldset className="form-fieldset" disabled={!canWrite}>
+          <fieldset
+            className="form-fieldset"
+            disabled={formLocked(canWrite, busy, edit.base === undefined)}
+          >
             <EditNotices edit={edit} error={error} onClear={() => setError(null)} />
             <article className="ds-card">
               <div className="form-grid">

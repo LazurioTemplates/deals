@@ -5,7 +5,7 @@ import { stageById } from "../../domain/settings.ts";
 import type { AppData } from "../App.tsx";
 import { api, type Stored } from "../api.ts";
 import { Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
-import { EditNotices, isRecordChanged, useRecordForm } from "../edit.tsx";
+import { EditNotices, formLocked, isRecordChanged, useRecordForm } from "../edit.tsx";
 import { useT } from "../i18n.tsx";
 import { href, navigate } from "../routes.ts";
 import { useCanWrite } from "../write.tsx";
@@ -113,7 +113,10 @@ export function ContactPage({
       />
       <div className="detail-grid">
         <form className="form" onSubmit={save}>
-          <fieldset className="form-fieldset" disabled={!canWrite}>
+          <fieldset
+            className="form-fieldset"
+            disabled={formLocked(canWrite, busy, edit.base === undefined)}
+          >
             <EditNotices edit={edit} error={error} onClear={() => setError(null)} />
             <article className="ds-card">
               <div className="form-grid">

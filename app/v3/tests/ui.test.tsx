@@ -18,6 +18,7 @@ import {
   ChangedNotice,
   driftOf,
   followRecord,
+  formLocked,
   isTouched,
   openForm,
   type RecordForm,
@@ -535,6 +536,17 @@ describe("a form over a record that changes meanwhile", () => {
     );
     expect(isTouched(quiet, formOf)).toBe(false);
   }
+
+  test("a new record's form takes no input while its save waits; an existing one does", () => {
+    // New: the save opens the record's page, so typing meanwhile has nowhere to stay.
+    expect(formLocked(true, true, true)).toBe(true);
+    expect(formLocked(true, false, true)).toBe(false);
+    // Existing: the form stays open and keeps what is typed (afterSave).
+    expect(formLocked(true, true, false)).toBe(false);
+    // A copy that may not write never takes input.
+    expect(formLocked(false, false, false)).toBe(true);
+    expect(formLocked(false, false, true)).toBe(true);
+  });
 
   test("a deal: what is typed while a save waits stays in the form", () =>
     slowSave(deal, { description: "Dopsáno během ukládání" }));
