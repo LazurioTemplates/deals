@@ -191,6 +191,24 @@ h3 {
 
 /* Overview */
 
+/* The forecast table needs four money-wide columns: side by side with the
+ * results only where both fit, else one under the other. */
+.overview-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ds-space-20);
+}
+
+@media (min-width: 90rem) {
+  .overview-panels {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+.overview-panels > * {
+  min-width: 0;
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));

@@ -196,7 +196,7 @@ export function MoveDeal({
           onChange={(event) => void move(event.target.value)}
         >
           <option value="" disabled>
-            {t("Přesunout do…", "Move to…")}
+            {t("Do fáze…", "Move to…")}
           </option>
           {others.map((stage) => (
             <option key={stage.id} value={stage.id}>

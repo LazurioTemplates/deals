@@ -112,7 +112,7 @@ export function OverviewPage({
         ))}
       </section>
 
-      <div className="two-columns">
+      <div className="overview-panels">
         <article className="ds-card">
           <h2>{t("Vážený forecast", "Weighted forecast")}</h2>
           <p className="muted small">
