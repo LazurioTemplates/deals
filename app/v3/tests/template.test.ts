@@ -21,9 +21,61 @@ const read = (path: string) => readFileSync(resolve(ROOT, path), "utf8");
 const TEMPLATE = JSON.parse(read("lazurio.module.json")).company === "REPLACE-WITH-ORG-NAME";
 
 describe("module contract", () => {
-  test("MIT by Lazurio contributors", () => {
+  test("MIT by Lazurio contributors, with the documents an adoption needs", () => {
     expect(read("LICENSE")).toContain("MIT License");
     expect(read("LICENSE")).toContain("Copyright (c) 2026 Lazurio contributors");
+    for (const file of [
+      "README.md",
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "NOTICE.md",
+      "SECURITY.md",
+      "CONTRIBUTING.md",
+      "docs/adoption.md",
+      "docs/extending.md",
+      "docs/data.md",
+      "docs/agents.md",
+    ]) {
+      expect({ file, exists: existsSync(resolve(ROOT, file)) }).toEqual({ file, exists: true });
+    }
+    expect(read("docs/extending.md")).toContain("app-data@2027.03");
+    expect(read("docs/adoption.md")).toContain(
+      "lazurio module create <Org>/<slug> --stack vite-react",
+    );
+    expect(read("docs/adoption.md")).toContain("git merge-base --is-ancestor");
+    expect(read("NOTICE.md")).toContain("design-system");
+    expect(read("NOTICE.md")).toContain("`example.com` and `.example`");
+  });
+
+  test("the changelog gathers changes under Unreleased; a version is a dated heading", () => {
+    expect(changelogProblems(read("CHANGELOG.md"))).toEqual([]);
+  });
+
+  test("a release as AGENTS.md describes it keeps the changelog check passing", () => {
+    // The release pull request puts the version under Unreleased's entries
+    // and keeps a new, empty Unreleased above it.
+    const changelog = read("CHANGELOG.md");
+    const released = changelog.replace(
+      /^## Unreleased\n\n/m,
+      "## Unreleased\n\n## 0.1.0 — 2026-11-25\n\n",
+    );
+    expect(released).not.toBe(changelog);
+    expect(changelogProblems(released)).toEqual([]);
+    // Turning Unreleased into the version, without a new one, is caught.
+    expect(
+      changelogProblems(changelog.replace(/^## Unreleased$/m, "## 0.1.0 — 2026-11-25")),
+    ).toEqual(["no ## Unreleased heading"]);
+  });
+
+  test("CI judges the readiness with a pinned Lazurio CLI and wants ready-for-live", () => {
+    const check = read(".github/workflows/check.yml");
+    expect(check).toMatch(/LAZURIO_VERSION: v\d+\.\d+\.\d+/);
+    expect(check).toContain(`releases/download/${"$"}{LAZURIO_VERSION}/install.sh`);
+    expect(check).toContain('lazurio module readiness "$GITHUB_WORKSPACE" --json');
+    expect(check).toContain('[ "$verdict" != "ready-for-live" ]');
+    // The readiness runs after the build, from the repository's root.
+    expect(check.indexOf("bun run build")).toBeLessThan(check.indexOf("module readiness"));
+    expect(check).toContain("working-directory: .");
   });
 
   test("exact versions, Bun 1.4.4 and the stack profile's pins", () => {
@@ -65,7 +117,9 @@ describe("module contract", () => {
     const runtime = packageJson.lazurio.runtime;
     const scripts = packageJson.scripts as Record<string, string>;
     expect(runtime.schema_version).toBe("lazurio.runtime.v1");
-    expect(runtime.module).toBe("deals");
+    // The module's slug is the Organization's (`deals`, or another agreed at
+    // adoption); it only has to match the Module manifest.
+    expect(identityProblems(JSON.parse(read("lazurio.module.json")), runtime)).toEqual([]);
     expect(runtime.title).toBe("Obchodní případy");
     expect(runtime.tags).toEqual(["deals", "pipeline", "repository-db"]);
     expect(runtime.dev_script).toBe("dev");
@@ -198,6 +252,25 @@ describe("module contract", () => {
       }
       // A skill publishes only on the person's instruction.
       if (skill.includes("publish_draft")) expect(skill).toMatch(/Publikuj/);
+      expect(read("AGENTS.md")).toContain(`.agents/skills/${name}/SKILL.md`);
+    }
+    // docs/agents.md names every tool with its effect.
+    const agents = read("docs/agents.md");
+    for (const tool of registry.list({
+      entry: "app",
+      appRole: "admin",
+      person: { subject: "s", username: "u" },
+      source: "gateway",
+      reason: null,
+    } as never)) {
+      if (tool.name === "get_app_context") continue;
+      expect({
+        tool: tool.name,
+        documented: agents.includes(`| \`${tool.name}\` | ${tool.effect} |`),
+      }).toEqual({
+        tool: tool.name,
+        documented: true,
+      });
     }
   });
 
@@ -215,12 +288,44 @@ describe("module contract", () => {
     const manifest = JSON.parse(read("lazurio.module.json"));
     expect(manifest).toMatchObject({
       schema_version: "lazurio.module.v1",
-      id: "deals",
       tcp_port_policy: { mode: "single" },
-      port_leases: [{ id: "main", host: "127.0.0.1", port: 24940 }],
       apps: ["app/v3/package.json"],
       default_app: "app/v3/package.json",
     });
+    expect(identityProblems(manifest, packageJson.lazurio.runtime)).toEqual([]);
+  });
+
+  test("an adopted Module keeps its own slug and port lease", () => {
+    const runtime = packageJson.lazurio.runtime;
+    const adopted = (id: string, port: number) => ({
+      manifest: { id, port_leases: [{ id: "main", host: "127.0.0.1", port }] },
+      runtime: { ...runtime, module: id },
+    });
+    // Another agreed slug and another free port pass.
+    for (const { manifest, runtime: own } of [adopted("obchod", 31_207), adopted("deals", 41_000)])
+      expect(identityProblems(manifest, own)).toEqual([]);
+    // A slug the manifest and the runtime disagree on, or a lease the
+    // listener does not name, or no valid port, fail.
+    const { manifest } = adopted("obchod", 31_207);
+    expect(identityProblems(manifest, { ...runtime, module: "deals" })).not.toEqual([]);
+    expect(
+      identityProblems(
+        { ...manifest, port_leases: [{ id: "web", host: "127.0.0.1", port: 1 }] },
+        {
+          ...runtime,
+          module: "obchod",
+        },
+      ),
+    ).not.toEqual([]);
+    expect(
+      identityProblems(
+        { ...manifest, port_leases: [{ id: "main", host: "0.0.0.0", port: 0 }] },
+        {
+          ...runtime,
+          module: "obchod",
+        },
+      ),
+    ).not.toEqual([]);
   });
 
   test("every tracked path checks out on Windows", () => {
@@ -248,6 +353,40 @@ describe.skipIf(!TEMPLATE)("template contract (skipped in an adopted Module)", (
     expect(packageJson.version).toBe("0.0.0");
   });
 
+  test("ships the same screenshots in Czech and English, 1600 px wide", () => {
+    const shots = (locale: string) =>
+      readdirSync(resolve(ROOT, "docs/screenshots", locale))
+        .filter((name) => name.endsWith(".webp"))
+        .sort();
+    const cs = shots("cs");
+    expect(cs).toEqual([
+      "company.webp",
+      "deal.webp",
+      "deals.webp",
+      "overview.webp",
+      "settings.webp",
+    ]);
+    expect(shots("en")).toEqual(cs);
+    const readme = read("README.md");
+    for (const locale of ["cs", "en"]) {
+      expect(readme).toContain(`docs/screenshots/${locale}/overview.webp`);
+      for (const name of cs) {
+        const file = readFileSync(resolve(ROOT, "docs/screenshots", locale, name));
+        expect({ file: `${locale}/${name}`, width: webpWidth(file) }).toEqual({
+          file: `${locale}/${name}`,
+          width: 1600,
+        });
+      }
+    }
+  });
+
+  test("the template's own slug and port", () => {
+    const manifest = JSON.parse(read("lazurio.module.json"));
+    expect(manifest.id).toBe("deals");
+    expect(manifest.port_leases).toEqual([{ id: "main", host: "127.0.0.1", port: 24940 }]);
+    expect(packageJson.lazurio.runtime.module).toBe("deals");
+  });
+
   test("leaves the Organization's identity as placeholders", () => {
     expect(JSON.parse(read("lazurio.module.json")).company).toBe("REPLACE-WITH-ORG-NAME");
     expect(packageJson.lazurio.runtime.company).toBe("REPLACE-WITH-ORG-NAME");
@@ -260,3 +399,54 @@ describe.skipIf(!TEMPLATE)("template contract (skipped in an adopted Module)", (
     );
   });
 });
+
+/** What is wrong with a changelog: one `## Unreleased` first, then dated versions only. */
+function changelogProblems(changelog: string): string[] {
+  const headings = changelog.match(/^## .+$/gm) ?? [];
+  const problems: string[] = [];
+  if (headings[0] !== "## Unreleased") problems.push("no ## Unreleased heading");
+  for (const heading of headings.slice(1)) {
+    if (!/^## \d+\.\d+\.\d+ — \d{4}-\d{2}-\d{2}$/.test(heading))
+      problems.push(`not a dated version: ${heading}`);
+  }
+  return problems;
+}
+
+/**
+ * What does not hold between the Module manifest and the App's runtime
+ * declaration, whatever slug and port the Organization chose: the slug is
+ * the same in both, a lowercase slug; one lease on 127.0.0.1 with a port
+ * Lazurio can give, and the entrypoint listener uses it.
+ */
+function identityProblems(
+  manifest: { id?: unknown; port_leases?: { id?: unknown; host?: unknown; port?: unknown }[] },
+  runtime: { module?: unknown; listeners?: { lease?: unknown }[] },
+): string[] {
+  const problems: string[] = [];
+  if (typeof manifest.id !== "string" || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(manifest.id))
+    problems.push("the manifest id is not a lowercase slug");
+  if (runtime.module !== manifest.id) problems.push("runtime.module is not the manifest id");
+  const leases = manifest.port_leases ?? [];
+  const [lease] = leases;
+  if (leases.length !== 1 || !lease) problems.push("not exactly one port lease");
+  else {
+    if (lease.host !== "127.0.0.1") problems.push("the lease is not on 127.0.0.1");
+    const port = lease.port;
+    if (typeof port !== "number" || !Number.isInteger(port) || port < 1024 || port > 65_535)
+      problems.push("the lease has no port Lazurio can give");
+    if (!(runtime.listeners ?? []).every((listener) => listener.lease === lease.id))
+      problems.push("a listener names another lease");
+  }
+  return problems;
+}
+
+/** The canvas width of a WebP file (VP8, VP8L or VP8X). */
+function webpWidth(bytes: Buffer): number {
+  if (bytes.toString("ascii", 0, 4) !== "RIFF" || bytes.toString("ascii", 8, 12) !== "WEBP")
+    return -1;
+  const chunk = bytes.toString("ascii", 12, 16);
+  if (chunk === "VP8X") return 1 + bytes.readUIntLE(24, 3);
+  if (chunk === "VP8 ") return bytes.readUInt16LE(26) & 0x3fff;
+  if (chunk === "VP8L") return 1 + ((bytes.readUInt32LE(21) & 0x3fff) >>> 0);
+  return -1;
+}
