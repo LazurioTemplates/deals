@@ -1,7 +1,17 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { resolve } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { hostedEnvironment } from "@lazurio/module-kit/tools/testing";
 import packageJson from "../package.json";
 import { createAgentTools } from "../src/server/agent-tools.ts";
@@ -43,6 +53,9 @@ describe("module contract", () => {
       "lazurio module create <Org>/<slug> --stack vite-react",
     );
     expect(read("docs/adoption.md")).toContain("git merge-base --is-ancestor");
+    // An Organization may keep its deals in a Module of its own under any
+    // name: the agent asks before it adds a second one.
+    expect(read("docs/adoption.md")).toContain("An existing pipeline under another name");
     expect(read("NOTICE.md")).toContain("design-system");
     expect(read("NOTICE.md")).toContain("`example.com` and `.example`");
   });
@@ -293,6 +306,67 @@ describe("module contract", () => {
       default_app: "app/v3/package.json",
     });
     expect(identityProblems(manifest, packageJson.lazurio.runtime)).toEqual([]);
+  });
+
+  test("the adoption guide checks the Teams and the reviews before the plan", () => {
+    const guide = read("docs/adoption.md");
+    expect(guide).toContain("**Teams the command accepts.**");
+    expect(guide).toContain("forge_binding.team.asserted_slug");
+    expect(guide).toContain("team-binding-mismatch");
+    expect(guide).toContain("gh api --paginate orgs/<Org>/teams");
+    // Every page: an existing pipeline or a Team past the first page counts.
+    expect(guide).toContain("gh api --paginate orgs/<Org>/repos");
+    expect(guide).not.toMatch(/gh repo list <Org>(?! stops)/);
+    expect(guide).not.toMatch(/gh api orgs\/<Org>\/teams/);
+    expect(guide).toContain("`v3` of `<Org>/<slug>-data`");
+    expect(guide).toContain("cannot be established yet");
+    expect(guide).toContain("**Who approves the pull requests.**");
+    expect(guide).toContain("never propose a bypass");
+    expect(guide).toContain("An existing pipeline under another name");
+  });
+
+  test("the adoption guide's clean-up removes every scaffold file the release lacks", () => {
+    // The guide's own loop, run in a repository like a Module after the merge:
+    // the release's files stay, whatever only the scaffold had goes.
+    const guide = read("docs/adoption.md");
+    const loop = /```bash\n(git ls-files app\/v3 \| while[\s\S]*?)```/.exec(guide)?.[1];
+    expect(loop).toBeString();
+    const dir = mkdtempSync(join(tmpdir(), "deals-adoption-"));
+    const git = (...args: string[]) =>
+      spawnSync(
+        "git",
+        ["-C", dir, "-c", "user.name=t", "-c", "user.email=t@example.invalid", ...args],
+        {
+          encoding: "utf8",
+        },
+      );
+    try {
+      git("init", "-q", "-b", "main");
+      const put = (path: string) => {
+        mkdirSync(join(dir, path, ".."), { recursive: true });
+        writeFileSync(join(dir, path), `${path}\n`);
+      };
+      put("app/v3/package.json");
+      put("app/v3/src/data/store.ts");
+      git("add", "-A");
+      git("commit", "-q", "-m", "release");
+      const release = git("rev-parse", "HEAD").stdout.trim();
+      // The scaffold's files beside the release's, as after the merge.
+      for (const path of ["app/v3/src/server.ts", "app/v3/src/agent-tools.ts", "app/v3/index.html"])
+        put(path);
+      git("add", "-A");
+      const ran = spawnSync("bash", ["-c", (loop as string).replaceAll("<commit>", release)], {
+        cwd: dir,
+        encoding: "utf8",
+      });
+      expect(ran.status).toBe(0);
+      expect(git("ls-files", "app/v3").stdout.trim().split("\n").sort()).toEqual([
+        "app/v3/package.json",
+        "app/v3/src/data/store.ts",
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   test("an adopted Module keeps its own slug and port lease", () => {
