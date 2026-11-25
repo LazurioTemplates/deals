@@ -67,11 +67,12 @@ your entry and role and whether you may change data.
   the `get_draft` the agent showed them, never one read afterwards. A draft
   that changed since is refused with `draft_changed`: call `get_draft`, show
   the person all of its changes again and publish only on their new word,
-  with the new `revision`. A draft that also changes a file that is no record
-  of Deals (`complete: false`, its records `reviewable: false`) is refused
-  with `draft_not_reviewable`: the tools cannot show that change whole, so
-  the person reviews and publishes it on the page "Koncept a publikování" /
-  "Draft & publish". A draft that breaks a rule across records is
+  with the new `revision`. A draft that also holds a change outside the fields
+  of Deals' records (`complete: false`, its entries `reviewable: false`:
+  another file, or a comment or the formatting of a record's file) is refused
+  with `draft_not_reviewable`: no tool shows that change, so the person
+  reviews it in the data repository and decides on the page "Koncept a
+  publikování" / "Draft & publish", publish or discard. A draft that breaks a rule across records is
   refused with `rules_failed`.
 - **A copy that may not write** (`LAZURIO_RUNTIME_DATA_WRITER` is not `true`
   on the application host) lists only the reading tools and refuses a write

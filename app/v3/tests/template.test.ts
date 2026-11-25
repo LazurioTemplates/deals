@@ -48,17 +48,23 @@ describe("module contract", () => {
   });
 
   test("the changelog gathers changes under Unreleased; a version is a dated heading", () => {
+    expect(changelogProblems(read("CHANGELOG.md"))).toEqual([]);
+  });
+
+  test("a release as AGENTS.md describes it keeps the changelog check passing", () => {
+    // The release pull request puts the version under Unreleased's entries
+    // and keeps a new, empty Unreleased above it.
     const changelog = read("CHANGELOG.md");
-    expect(changelog).toMatch(/^## Unreleased$/m);
-    for (const heading of changelog.match(/^## .+$/gm) ?? []) {
-      expect({
-        heading,
-        ok: /^## (Unreleased|\d+\.\d+\.\d+ — \d{4}-\d{2}-\d{2})$/.test(heading),
-      }).toEqual({
-        heading,
-        ok: true,
-      });
-    }
+    const released = changelog.replace(
+      /^## Unreleased\n\n/m,
+      "## Unreleased\n\n## 0.1.0 — 2026-11-25\n\n",
+    );
+    expect(released).not.toBe(changelog);
+    expect(changelogProblems(released)).toEqual([]);
+    // Turning Unreleased into the version, without a new one, is caught.
+    expect(
+      changelogProblems(changelog.replace(/^## Unreleased$/m, "## 0.1.0 — 2026-11-25")),
+    ).toEqual(["no ## Unreleased heading"]);
   });
 
   test("CI judges the readiness with a pinned Lazurio CLI and wants ready-for-live", () => {
@@ -393,6 +399,18 @@ describe.skipIf(!TEMPLATE)("template contract (skipped in an adopted Module)", (
     );
   });
 });
+
+/** What is wrong with a changelog: one `## Unreleased` first, then dated versions only. */
+function changelogProblems(changelog: string): string[] {
+  const headings = changelog.match(/^## .+$/gm) ?? [];
+  const problems: string[] = [];
+  if (headings[0] !== "## Unreleased") problems.push("no ## Unreleased heading");
+  for (const heading of headings.slice(1)) {
+    if (!/^## \d+\.\d+\.\d+ — \d{4}-\d{2}-\d{2}$/.test(heading))
+      problems.push(`not a dated version: ${heading}`);
+  }
+  return problems;
+}
 
 /**
  * What does not hold between the Module manifest and the App's runtime

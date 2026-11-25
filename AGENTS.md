@@ -40,7 +40,8 @@ skill keeps:
   before and after, a colleague's changes too), and only the draft's revision
   the person saw (`expected_revision` from the `get_draft` you showed them,
   never one read afterwards). A draft `get_draft` calls `complete: false`
-  holds a change the tools cannot show; the person publishes it on that page. A refusal with `draft_changed` means the
+  holds a change outside the records' fields (another file, a comment) that
+  no tool shows; the person reviews it and decides on that page. A refusal with `draft_changed` means the
   draft changed since: show it to the person again and publish only on their
   new word.
 - **Nothing goes to a company or a person.** Answering a customer, sending an
@@ -128,7 +129,9 @@ skill keeps:
 ## Releases
 
 A release is an annotated tag `v<semver>` and a GitHub Release, created only
-on the user's instruction; the release pull request turns `## Unreleased`
-into the version and its date. The release version is independent of the App
+on the user's instruction. The release pull request puts the version and
+its date (`## 0.1.0 — 2026-11-25`) under the entries of `## Unreleased` and
+keeps a new, empty `## Unreleased` above it, so the next change has its place
+and the changelog check passes. The release version is independent of the App
 generation `app/v3`. The Marketplace registry records the full commit of the
 tag.
