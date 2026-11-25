@@ -14,8 +14,6 @@ permissions:
 
 # One Linux job runs every gate on every pull request and every push to main
 # (Module Standard, CI). Windows runs separately, see windows-portability.yml.
-# The build of the client (`bun run build`) joins these steps with the
-# client itself; until then the App has nothing to build.
 jobs:
   check:
     name: bun run check (ubuntu-latest)
@@ -32,3 +30,4 @@ jobs:
       - run: test "$(bun --version)" = "1.4.4"
       - run: bun install --frozen-lockfile
       - run: bun run check
+      - run: bun run build

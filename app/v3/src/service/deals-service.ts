@@ -1,10 +1,11 @@
-import type { DealsStore, Stored } from "../data/store.ts";
+import { type DealsStore, type Revision, type Stored, StoreError } from "../data/store.ts";
 import { type Activity, nextActivityId } from "../domain/activity.ts";
-import { localToday } from "../domain/common.ts";
+import { addDays, localToday } from "../domain/common.ts";
 import { type Company, nextCompanyId } from "../domain/company.ts";
 import { type Contact, nextContactId } from "../domain/contact.ts";
 import { type Deal, nextDealId } from "../domain/deal.ts";
 import { type Forecast, forecast } from "../domain/forecast.ts";
+import { stageById } from "../domain/settings.ts";
 import { type Stats, type StatsPeriod, stats } from "../domain/stats.ts";
 
 /**
@@ -12,9 +13,9 @@ import { type Stats, type StatsPeriod, stats } from "../domain/stats.ts";
  * tools for agents and the command line. Each one reads what it needs, gives
  * a new record its id and saves a draft; none of them publishes.
  *
- * This first part holds what the data needs: new records get the next free
- * id, and the forecast and the statistics are computed from one consistent
- * read. The HTTP API and the tools build on it.
+ * New records get the next free id, a deal moves through the stages with
+ * what closing it needs, and the forecast and the statistics are computed
+ * from one consistent read.
  */
 export interface ServiceOptions {
   /** Today's date for new records and the forecast; injectable for tests. */
@@ -27,6 +28,25 @@ export type NewDeal = Omit<Deal, "id" | "createdAt" | "revision" | "updatedAt" |
   createdAt?: string | undefined;
 };
 export type NewActivity = Omit<Activity, "id" | "revision" | "updatedAt" | "updatedBy">;
+
+/**
+ * A move of a deal to another stage. Won asks for the value and the day it
+ * was won, lost for the reason, the day and an optional note; a move to an
+ * open stage reopens a closed deal and forgets what closing it said.
+ */
+export interface StageMove {
+  stageId: string;
+  baseRevision: Revision;
+  value?: number | undefined;
+  closedAt?: string | undefined;
+  lossReasonId?: string | undefined;
+  lossNote?: string | undefined;
+}
+
+/** The default period of the statistics: the last 90 days up to today, both included. */
+export function lastDays(today: string, days = 90): StatsPeriod {
+  return { from: addDays(today, -(days - 1)), to: today };
+}
 
 const ids = (entries: readonly Stored<{ id: string }>[]) => entries.map((entry) => entry.value.id);
 
@@ -57,11 +77,47 @@ export function createService(store: DealsStore, options: ServiceOptions = {}) {
       return store.saveActivity({ id, ...input }, null);
     },
 
+    /** Moves a deal to another stage; the rules refuse a won deal without a value. */
+    async moveDeal(id: string, move: StageMove): Promise<Stored<Deal>> {
+      const [settings, current] = await Promise.all([store.settings(), store.getDeal(id)]);
+      if (!current) {
+        throw new StoreError("not_found", {
+          cs: `Obchodní případ ${id} neexistuje.`,
+          en: `The deal ${id} does not exist.`,
+        });
+      }
+      const stage = stageById(settings.value, move.stageId);
+      if (!stage) {
+        throw new StoreError("invalid_record", {
+          cs: `Fáze ${move.stageId} neexistuje.`,
+          en: `The stage ${move.stageId} does not exist.`,
+        });
+      }
+      const {
+        closedAt: _closedAt,
+        lossReasonId: _reason,
+        lossNote: _note,
+        ...open
+      } = current.value;
+      const next: Deal = { ...open, stageId: stage.id };
+      if (stage.kind === "won") {
+        next.value = move.value ?? current.value.value;
+        next.closedAt = move.closedAt ?? today();
+      }
+      if (stage.kind === "lost") {
+        next.closedAt = move.closedAt ?? today();
+        if (move.lossReasonId !== undefined) next.lossReasonId = move.lossReasonId;
+        if (move.lossNote?.trim()) next.lossNote = move.lossNote.trim();
+      }
+      return store.saveDeal(next, move.baseRevision);
+    },
+
     async forecast(): Promise<Forecast> {
       return forecast(await store.readData(), { today: today() });
     },
 
-    async stats(period: StatsPeriod): Promise<Stats> {
+    /** The statistics of a period, the last 90 days by default. */
+    async stats(period: StatsPeriod = lastDays(today())): Promise<Stats> {
       return stats(await store.readData(), period);
     },
   };
