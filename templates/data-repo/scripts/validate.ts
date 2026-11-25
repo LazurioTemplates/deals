@@ -16,6 +16,8 @@ type Schema = {
   const?: unknown;
   enum?: unknown[];
   pattern?: string;
+  format?: string;
+  "x-calendar-day"?: boolean;
   minLength?: number;
   maxLength?: number;
   minItems?: number;
@@ -31,6 +33,20 @@ type Schema = {
   oneOf?: Schema[];
   allOf?: Schema[];
 };
+
+/**
+ * Whether `YYYY-MM-DD` at the start of a value names a day of the calendar,
+ * as the App's `isCalendarDate` checks it: `2027-02-31` does not.
+ */
+export function isCalendarDate(value: string): boolean {
+  const match = /^([0-9]{4})-([0-9]{2})-([0-9]{2})/.exec(value);
+  if (!match) return false;
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+  );
+}
 
 function typeOf(value: unknown): string {
   if (value === null) return "null";
@@ -73,6 +89,11 @@ export function check(schema: Schema, value: unknown, at = ""): string[] {
     }
     if (schema.pattern && !new RegExp(schema.pattern, "u").test(value)) {
       errors.push(`${here}: does not match ${schema.pattern}`);
+    }
+    const calendar =
+      schema.format === "date" || schema.format === "date-time" || schema["x-calendar-day"];
+    if (calendar && !isCalendarDate(value)) {
+      errors.push(`${here}: is not a day of the calendar`);
     }
   }
   if (typeof value === "number") {
@@ -165,8 +186,15 @@ export function validateRepository(root: string): string[] {
       }
       errors.push(...check(schema, document).map((error) => `${file} ${error}`));
       const id = decodeURIComponent(name.slice(0, -".yaml".length));
-      if ((document as { id?: unknown } | null)?.id !== id) {
+      const envelope = document as { id?: unknown; record?: { id?: unknown } } | null;
+      if (envelope?.id !== id) {
         errors.push(`${file}: the id must be the file name, ${JSON.stringify(id)}`);
+      }
+      // The App stores a record under the id inside it; settings is one document.
+      if (collection === "settings") {
+        if (id !== "settings") errors.push(`${file}: the settings are one document settings.yaml`);
+      } else if (envelope?.record?.id !== id) {
+        errors.push(`${file}: record.id must be the file name, ${JSON.stringify(id)}`);
       }
     }
   }

@@ -71,8 +71,9 @@ const LABELS: Record<CollectionName, Localized> = {
   activities: { cs: "Aktivita", en: "Activity" },
 };
 
+// Every value the port hands out is a copy: changing it changes nothing stored.
 const stored = <T>(entry: Entry<T>): Stored<T> => ({
-  value: entry.value,
+  value: structuredClone(entry.value),
   revision: entry.revision,
 });
 
@@ -102,6 +103,7 @@ export function createRecordStore(backend: RecordBackend): DealsStore {
     entries: readonly Save<RecordOf[C]>[],
   ): Promise<Stored<RecordOf[C]>[]> {
     // Audit fields a caller sent are not its to set: every write stores new ones.
+    // withoutAudit copies, so a caller changing its value later changes nothing stored.
     const parsed = entries.map((entry) => ({
       value: withoutAudit(parseIn(collection, entry.value)),
       base: entry.baseRevision,
@@ -164,7 +166,7 @@ export function createRecordStore(backend: RecordBackend): DealsStore {
         const kept = unchangedAt[index];
         if (kept) return stored(kept);
         return {
-          value: entry.value,
+          value: structuredClone(entry.value),
           revision: put(
             collection,
             ids[index] as string,

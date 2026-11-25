@@ -214,6 +214,38 @@ export function storeContract(
       }
     });
 
+    test("no value it hands out or takes in shares a nested object or array with the stored state", async () => {
+      const before = await store.getCompany("C-0001");
+      if (!before?.value.address) throw new Error("C-0001 has no address");
+      // A value read and then changed in place changes nothing stored.
+      before.value.address.city = "Jinde";
+      const deal = await store.getDeal("D-2026-0002");
+      if (!deal?.value.contactIds) throw new Error("D-2026-0002 has no contacts");
+      deal.value.contactIds.push("P-0404");
+      const listed = await store.listCompanies();
+      const first = listed.find((entry) => entry.value.id === "C-0001");
+      if (first?.value.address) first.value.address.city = "Jinde";
+      const data = await store.readData();
+      const read = data.companies.find((company) => company.id === "C-0001");
+      if (read?.address) read.address.city = "Jinde";
+      const again = await store.getCompany("C-0001");
+      expect(again?.value.address?.city).not.toBe("Jinde");
+      expect(again?.revision).toBe(before.revision);
+      expect((await store.getDeal("D-2026-0002"))?.value.contactIds).not.toContain("P-0404");
+      expect((await store.draft()).status?.state).toBe("published");
+
+      // A value saved and then changed in place, or the saved value handed
+      // back and changed, changes nothing stored either.
+      const input = newCompany();
+      const saved = await store.saveCompany(input, null);
+      if (!input.address || !saved.value.address) throw new Error("newCompany has no address");
+      input.address.city = "Jinde";
+      saved.value.address.city = "Jinde";
+      const stored = await store.getCompany(input.id);
+      expect(stored?.value.address?.city).toBe("Brno");
+      expect(stored?.revision).toBe(saved.revision);
+    });
+
     test("a save that changes nothing writes nothing and keeps the revision", async () => {
       const opened = await store.getCompany("C-0002");
       if (!opened) throw new Error("C-0002 missing");
@@ -239,6 +271,10 @@ export function storeContract(
         { ...deal, stageId: "lost", closedAt: "2026-11-25" },
         { ...deal, stageId: "lost", closedAt: "2026-11-25", lossReasonId: "weather" },
         { ...deal, stageId: "won", closedAt: "2026-11-01" },
+        // Days the calendar does not have.
+        { ...deal, createdAt: "2027-02-31" },
+        { ...deal, expectedClose: "2027-02-29" },
+        { ...deal, stageId: "lost", closedAt: "2026-04-31", lossReasonId: "price" },
       ]) {
         expect({ value, code: await refusal(() => store.saveDeal(value, null)) }).toEqual({
           value,
@@ -250,6 +286,11 @@ export function storeContract(
       );
       expect(
         await refusal(() => store.saveActivity({ ...newActivity(), dealId: "D-2026-0404" }, null)),
+      ).toBe("invalid_record");
+      expect(
+        await refusal(() =>
+          store.saveActivity({ ...newActivity(), at: "2027-02-31T10:00+01:00" }, null),
+        ),
       ).toBe("invalid_record");
       expect(
         await refusal(() => store.saveContact({ ...newContact(), companyId: "C-0404" }, null)),

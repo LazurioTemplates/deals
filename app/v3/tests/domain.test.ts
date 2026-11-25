@@ -7,8 +7,12 @@ import {
   daysBetween,
   formatDate,
   formatMonth,
+  isCalendarDate,
+  isoDate,
+  isoDateTime,
   monthOf,
   slugify,
+  writtenAt,
 } from "../src/domain/common.ts";
 import {
   addressLines,
@@ -38,6 +42,22 @@ describe("dates and ids", () => {
     expect(daysBetween("2026-03-28", "2026-03-30")).toBe(2);
     expect(daysBetween("2026-11-06", "2026-11-06")).toBe(0);
     expect(slugify("Bez rozhodnutí")).toBe("bez-rozhodnuti");
+  });
+
+  test("only days of the calendar are dates", () => {
+    expect(isCalendarDate("2028-02-29")).toBe(true);
+    expect(isCalendarDate("2027-02-29")).toBe(false);
+    expect(isCalendarDate("2027-02-31")).toBe(false);
+    expect(isCalendarDate("2026-04-31")).toBe(false);
+    expect(isCalendarDate("2026-12-31T23:59Z")).toBe(true);
+    expect(isoDate.safeParse("2028-02-29").success).toBe(true);
+    for (const day of ["2027-02-29", "2027-02-31", "2026-04-31", "2026-06-31"]) {
+      expect({ day, ok: isoDate.safeParse(day).success }).toEqual({ day, ok: false });
+    }
+    expect(isoDateTime.safeParse("2026-11-24T10:00+01:00").success).toBe(true);
+    expect(isoDateTime.safeParse("2027-02-31T10:00+01:00").success).toBe(false);
+    expect(writtenAt.safeParse("2026-11-24T10:00:00.000Z").success).toBe(true);
+    expect(writtenAt.safeParse("2027-02-31T10:00:00.000Z").success).toBe(false);
   });
 
   test("the next free id of every collection", () => {

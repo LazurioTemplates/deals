@@ -79,6 +79,11 @@ describe("data repository template", () => {
           { ...newDeal(), value: -1 },
           { ...newDeal(), probability: 101 },
           { ...newDeal(), expectedClose: "2026-13-01" },
+          { ...newDeal(), expectedClose: "2027-02-31" },
+          { ...newDeal(), createdAt: "2027-02-29" },
+          { ...newDeal(), createdAt: "2028-02-29" },
+          { ...newDeal(), updatedAt: "2027-02-31T10:00:00.000Z" },
+          { ...newDeal(), updatedAt: "2026-11-24T10:00:00.000Z" },
           { ...newDeal(), id: "D-26-1" },
           { ...newDeal(), quoteRef: { id: "" } },
           { ...newDeal(), owner: "" },
@@ -93,6 +98,8 @@ describe("data repository template", () => {
           { ...newActivity(), at: "2026-11-24" },
           { ...newActivity(), at: "2026-11-24T10:00:00" },
           { ...newActivity(), at: "2026-11-24T10:00Z" },
+          { ...newActivity(), at: "2026-04-31T10:00Z" },
+          { ...newActivity(), at: "2027-02-31T10:00:00+01:00" },
           { ...newActivity(), done: "no" },
           { ...newActivity(), id: "A-2026-1" },
         ],
@@ -131,9 +138,31 @@ describe("data repository template", () => {
         join(first.mountRoot, "data", "companies", "C-0999.yaml"),
         "id: OTHER\nrecord:\n  id: C-0999\nschemaVersion: deals.company.v1\n",
       );
+      // A record whose own id is not its file name: the App would drop it.
+      writeFileSync(
+        join(first.mountRoot, "data", "companies", "C-0998.yaml"),
+        "schemaVersion: deals.company.v1\nid: C-0998\nrecord:\n  id: C-0997\n  name: Jiná\n",
+      );
+      // A second settings document.
+      writeFileSync(
+        join(first.mountRoot, "data", "settings", "other.yaml"),
+        readFileSync(join(first.mountRoot, "data", "settings", "settings.yaml"), "utf8").replace(
+          "id: settings",
+          "id: other",
+        ),
+      );
       const errors = validateRepository(first.mountRoot);
       expect(errors.some((error) => error.includes("/record/name: is required"))).toBe(true);
       expect(errors.some((error) => error.includes("the id must be the file name"))).toBe(true);
+      expect(errors).toContain(
+        'data/companies/C-0998.yaml: record.id must be the file name, "C-0998"',
+      );
+      expect(errors).toContain(
+        "data/settings/other.yaml: the settings are one document settings.yaml",
+      );
+      expect(errors.filter((error) => error.startsWith("data/companies/C-0998.yaml"))).toHaveLength(
+        1,
+      );
     } finally {
       for (const fixture of fixtures) fixture.cleanup();
     }

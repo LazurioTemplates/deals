@@ -101,10 +101,15 @@ export function parseIn<C extends CollectionName>(
  */
 export const AUDIT_FIELDS = ["revision", "updatedAt", "updatedBy"] as const;
 
-/** A record without its audit fields, as the port hands it out and compares it. */
+/**
+ * A record without its audit fields, as the port hands it out and compares
+ * it: a deep copy, so no caller shares a nested object or array (an address,
+ * a list of contacts) with the stored state.
+ */
 export function withoutAudit<T>(value: T): T {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
-  const rest = { ...(value as Record<string, unknown>) };
+  if (!value || typeof value !== "object") return value;
+  if (Array.isArray(value)) return structuredClone(value);
+  const rest = structuredClone(value) as Record<string, unknown>;
   for (const field of AUDIT_FIELDS) delete rest[field];
   return rest as T;
 }
@@ -163,9 +168,10 @@ export function emptySnapshot(): Snapshot {
 
 export function dataSetOf(snapshot: Snapshot): DataSet {
   const values = <C extends CollectionName>(collection: C) =>
-    [...snapshot[collection].values()].map((entry) => entry.value as RecordOf[C]);
+    [...snapshot[collection].values()].map((entry) => structuredClone(entry.value) as RecordOf[C]);
+  const settings = snapshot.settings.get("settings")?.value;
   return {
-    settings: snapshot.settings.get("settings")?.value ?? null,
+    settings: settings === undefined ? null : structuredClone(settings),
     companies: values("companies"),
     contacts: values("contacts"),
     deals: values("deals"),

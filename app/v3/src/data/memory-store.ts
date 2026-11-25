@@ -40,7 +40,11 @@ export function createMemoryStore(seed: Partial<DataSet>): DealsStore {
   const published = new Map<Key, unknown>();
   const add = <C extends CollectionName>(collection: C, values: readonly unknown[]) => {
     for (const value of values) {
-      published.set(recordKey(collection, recordId(collection, value as never)), value);
+      // A copy: the caller's seed objects never alias the stored state.
+      published.set(
+        recordKey(collection, recordId(collection, value as never)),
+        structuredClone(value),
+      );
     }
   };
   if (seed.settings) add("settings", [seed.settings]);
@@ -77,8 +81,9 @@ export function createMemoryStore(seed: Partial<DataSet>): DealsStore {
 
   // `value` carries this write's new `revision`, `updatedAt` and `updatedBy`.
   const put: Put = (collection, id, value) => {
-    draft.set(recordKey(collection, id), value);
-    return revisionOf(value);
+    const copy = structuredClone(value);
+    draft.set(recordKey(collection, id), copy);
+    return revisionOf(copy);
   };
 
   function assertRevision(expected: string) {

@@ -1,10 +1,32 @@
 import { z } from "zod";
 import type { Locale } from "../i18n/locale.ts";
 
+/**
+ * Whether `YYYY-MM-DD` at the start of a value names a day of the calendar:
+ * `2028-02-29` does, `2027-02-29` and `2027-04-31` do not. The data
+ * repository's validator checks the same for the JSON Schema `format` `date`
+ * and `date-time` (`templates/data-repo/scripts/validate.ts`).
+ */
+export function isCalendarDate(value: string): boolean {
+  const match = /^([0-9]{4})-([0-9]{2})-([0-9]{2})/.exec(value);
+  if (!match) return false;
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+  );
+}
+
+const calendarDay = { message: "expected a day of the calendar" };
+
 /** A calendar date as the records store it: `YYYY-MM-DD`, no time zone. */
-export const isoDate = z.string().regex(/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/, {
-  message: "expected a date YYYY-MM-DD",
-});
+export const isoDate = z
+  .string()
+  .regex(/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/, {
+    message: "expected a date YYYY-MM-DD",
+  })
+  .refine(isCalendarDate, calendarDay)
+  .meta({ format: "date" });
 
 /**
  * An instant with a time and an offset: `2026-11-06T09:30:00+01:00` or
@@ -15,7 +37,10 @@ export const isoDateTime = z
   .regex(
     /^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\.[0-9]{1,3})?)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$/,
     { message: "expected a date and time YYYY-MM-DDTHH:MM with an offset" },
-  );
+  )
+  .refine(isCalendarDate, calendarDay)
+  // Not `format: date-time`: RFC 3339 needs seconds, this allows `T08:30Z`.
+  .meta({ "x-calendar-day": true });
 
 /** A non-empty line of text. */
 export const text = z.string().trim().min(1);
@@ -46,6 +71,8 @@ export const writtenAt = z
   .regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$/, {
     message: "expected an instant YYYY-MM-DDTHH:MM:SS.sssZ",
   })
+  .refine(isCalendarDate, calendarDay)
+  .meta({ format: "date-time" })
   .optional()
   .describe("When the App last wrote the record (UTC); audit metadata, not business data.");
 
