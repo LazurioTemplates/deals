@@ -180,7 +180,7 @@ export function CompanyPage({
             <ErrorNotice error={error} />
             <article className="ds-card">
               <div className="form-grid">
-                <Field label={t("IČO", "Company ID (IČO)")} error={errors.ico}>
+                <Field label={t("IČO", "Company ID")} error={errors.ico}>
                   <input
                     value={form.ico}
                     inputMode="numeric"
