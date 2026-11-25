@@ -43,6 +43,9 @@ describe("module contract", () => {
       "lazurio module create <Org>/<slug> --stack vite-react",
     );
     expect(read("docs/adoption.md")).toContain("git merge-base --is-ancestor");
+    // An Organization may keep its deals in a Module of its own under any
+    // name: the agent asks before it adds a second one.
+    expect(read("docs/adoption.md")).toContain("An existing pipeline under another name");
     expect(read("NOTICE.md")).toContain("design-system");
     expect(read("NOTICE.md")).toContain("`example.com` and `.example`");
   });

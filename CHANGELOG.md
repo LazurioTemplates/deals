@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### For whoever adopts it
+
+- **An existing pipeline first.** Before the plan, the adoption looks for a
+  Module that already keeps the Organization's deals, customers or pipeline,
+  under any name, and asks the person whether Deals goes beside it, replaces
+  it (without touching it) or serves only as a pattern; without an answer it
+  adopts nothing (`docs/adoption.md`, step 1.4).
+
 ## 0.1.0 — 2026-11-25
 
 The first release of Deals, a sales pipeline for a Lazurio Organization, on

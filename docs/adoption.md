@@ -48,7 +48,25 @@ Do all of this live, before showing a plan.
      CRM or pipeline): tell the person what exists and agree another slug
      with them (for example `obchod`); use it below for the Module and
      its `<slug>-data` repository. Never overwrite or merge into it.
-4. **Compatibility.** The Organization's Environments run a LazurioPlatform
+4. **An existing pipeline under another name.** A collision of the slug
+   is not the only overlap: the Organization may already keep its deals in a
+   Module of its own, a CRM, a pipeline or a sales tracker, under any name.
+   Read its `modules.manifest.json` (each slot's name, title and
+   description) and its repositories on GitHub (`gh repo list <Org>` with
+   their descriptions) for one that keeps deals, customers or a sales
+   pipeline. When there is one, stop before the plan and ask the person,
+   naming it with its link, which they want:
+   - **beside it:** Deals as a second, separate Module; say that the two do
+     not share data and that their people will keep deals in two places;
+   - **instead of it:** Deals replaces it; this adoption only adds Deals,
+     never touches, migrates or archives the existing Module, and moving its
+     data over is a plan of its own with the person;
+   - **only as a pattern:** nothing is adopted; the existing Module takes
+     what it wants from this release (its skills, its tools for agents, its
+     forecast) by its own pull requests, and this adoption ends here.
+
+   Go on only with their answer; without one, adopt nothing.
+5. **Compatibility.** The Organization's Environments run a LazurioPlatform
    release that knows `start_script` and `build_output` (v0.1.11 or newer);
    Bun 1.4.4 is fetched by Lazurio when missing.
 
@@ -56,6 +74,8 @@ Do all of this live, before showing a plan.
 
 Show the person, in their language and in a few lines:
 
+- when the Organization already keeps its deals in another Module (step 1.4),
+  that Module and what the person chose: beside it or instead of it;
 - the release (version, tag, commit) and that its code runs in the
   Organization's Environments (`bun install`, the tests, the App);
 - the two private repositories that will be created: `<Org>/<slug>` and
