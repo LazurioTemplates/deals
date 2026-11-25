@@ -553,8 +553,14 @@ h3 {
 /* Long names, e-mails and addresses wrap instead of widening a table or a card. */
 
 .cell-title {
-  min-width: 10rem;
+  min-width: 8rem;
+  max-width: 16rem;
   overflow-wrap: anywhere;
+}
+
+.cell-id {
+  display: block;
+  white-space: nowrap;
 }
 
 .cell-break {
@@ -845,5 +851,10 @@ select,
 
   .period {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The ARES button sits under the IČO; no empty label above it. */
+  .ares-field .ds-field__label {
+    display: none;
   }
 }

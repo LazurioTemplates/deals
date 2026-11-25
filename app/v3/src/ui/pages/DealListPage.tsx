@@ -69,7 +69,11 @@ export function DealListPage({ data, tab }: { data: AppData; tab: DealTab }) {
               <th>{t("Fáze", "Stage")}</th>
               <th>{t("Obchodník", "Owner")}</th>
               <th>
-                {closed ? t("Uzavřeno", "Closed") : t("Očekávané uzavření", "Expected close")}
+                {closed
+                  ? t("Uzavřeno", "Closed")
+                  : tab === "open"
+                    ? t("Očekávané uzavření", "Expected close")
+                    : t("Uzavření", "Close")}
               </th>
               {tab === "lost" ? <th>{t("Důvod", "Reason")}</th> : null}
               <th className="ds-table__num">{t("Hodnota", "Value")}</th>
@@ -80,7 +84,7 @@ export function DealListPage({ data, tab }: { data: AppData; tab: DealTab }) {
               <tr key={deal.id}>
                 <td className="cell-title">
                   <a href={href({ page: "deal", id: deal.id })}>{deal.title}</a>
-                  <span className="muted small"> · {deal.id}</span>
+                  <span className="muted small cell-id">{deal.id}</span>
                 </td>
                 <td className="cell-title">
                   <a href={href({ page: "company", id: deal.companyId })}>
@@ -91,7 +95,7 @@ export function DealListPage({ data, tab }: { data: AppData; tab: DealTab }) {
                   <StageChip stage={stages.get(deal.stageId)} />
                 </td>
                 <td>{deal.owner}</td>
-                <td>
+                <td className="nowrap">
                   {kindOf(deal) === "open"
                     ? deal.expectedClose
                       ? f.date(deal.expectedClose)

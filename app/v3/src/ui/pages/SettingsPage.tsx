@@ -237,6 +237,12 @@ export function SettingsPage({
                 );
               })}
             </ol>
+            <p className="muted small">
+              {t(
+                "Fázi, ve které je obchodní případ, nejde odebrat; nejdřív ho přesuňte jinam.",
+                "A stage a deal is in cannot be removed; move the deal elsewhere first.",
+              )}
+            </p>
             <Button variant="secondary" size="sm" onClick={addStage}>
               {t("Přidat otevřenou fázi", "Add an open stage")}
             </Button>
@@ -275,6 +281,12 @@ export function SettingsPage({
                 </li>
               ))}
             </ul>
+            <p className="muted small">
+              {t(
+                "Důvod, který uvádí ztracený případ, nejde odebrat.",
+                "A reason a lost deal names cannot be removed.",
+              )}
+            </p>
             <Button variant="secondary" size="sm" onClick={addReason}>
               {t("Přidat důvod", "Add a reason")}
             </Button>
