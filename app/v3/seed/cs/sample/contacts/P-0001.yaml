@@ -1,0 +1,9 @@
+id: P-0001
+record:
+  companyId: C-0001
+  email: eva.smyslena@ukazka-nabytek.example
+  id: P-0001
+  name: Eva Smyšlená
+  phone: +420 000 000 101
+  role: jednatelka
+schemaVersion: deals.contact.v1

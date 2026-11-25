@@ -1,0 +1,11 @@
+id: C-0002
+record:
+  address:
+    city: Ostrava
+    country: Česká republika
+    postalCode: 702 00
+    street: Skladová 4
+  id: C-0002
+  name: Vzorová Logistika a.s.
+  website: https://www.vzorova-logistika.example
+schemaVersion: deals.company.v1

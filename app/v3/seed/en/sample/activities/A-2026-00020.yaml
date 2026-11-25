@@ -1,0 +1,10 @@
+id: A-2026-00020
+record:
+  at: 2026-11-16T16:20:00+01:00
+  contactIds:
+    - P-0009
+  dealId: D-2026-0009
+  id: A-2026-00020
+  summary: Sent layout options for the waiting room
+  type: email
+schemaVersion: deals.activity.v1

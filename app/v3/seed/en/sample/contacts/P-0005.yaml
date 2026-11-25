@@ -1,0 +1,9 @@
+id: P-0005
+record:
+  companyId: C-0003
+  email: jamie.invented@trial-bakery.example
+  id: P-0005
+  name: Jamie Invented
+  phone: +420 000 000 145
+  role: owner
+schemaVersion: deals.contact.v1

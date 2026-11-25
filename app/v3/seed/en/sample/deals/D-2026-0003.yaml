@@ -1,0 +1,13 @@
+id: D-2026-0003
+record:
+  companyId: C-0002
+  contactIds:
+    - P-0004
+  createdAt: 2026-10-14
+  expectedClose: 2027-02-26
+  id: D-2026-0003
+  owner: Jordan Example
+  stageId: qualified
+  title: Annual warehouse system contract
+  value: 80000000
+schemaVersion: deals.deal.v1

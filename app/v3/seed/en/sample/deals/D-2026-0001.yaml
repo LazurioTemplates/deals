@@ -1,0 +1,13 @@
+id: D-2026-0001
+record:
+  companyId: C-0001
+  contactIds:
+    - P-0002
+  createdAt: 2026-10-05
+  expectedClose: 2027-01-29
+  id: D-2026-0001
+  owner: Alex Sample
+  stageId: lead
+  title: Meeting room furniture
+  value: 12000000
+schemaVersion: deals.deal.v1

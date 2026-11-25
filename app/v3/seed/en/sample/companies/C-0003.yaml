@@ -1,0 +1,11 @@
+id: C-0003
+record:
+  address:
+    city: Olomouc
+    country: Czech Republic
+    postalCode: 779 00
+    street: 7 Bread Lane
+  id: C-0003
+  name: Trial Bakery Ltd.
+  website: https://www.trial-bakery.example
+schemaVersion: deals.company.v1

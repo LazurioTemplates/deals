@@ -1,0 +1,11 @@
+id: C-0002
+record:
+  address:
+    city: Ostrava
+    country: Czech Republic
+    postalCode: 702 00
+    street: 4 Depot Road
+  id: C-0002
+  name: Model Logistics plc
+  website: https://www.model-logistics.example
+schemaVersion: deals.company.v1

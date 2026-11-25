@@ -1,0 +1,12 @@
+id: C-0001
+record:
+  address:
+    city: Brno
+    country: Czech Republic
+    postalCode: 602 00
+    street: 12 Sample Street
+  id: C-0001
+  name: Sample Furniture Ltd.
+  note: Office furniture maker; buys twice a year.
+  website: https://www.sample-furniture.example
+schemaVersion: deals.company.v1

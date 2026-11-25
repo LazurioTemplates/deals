@@ -1,0 +1,10 @@
+id: A-2026-00018
+record:
+  at: 2026-10-28T11:30:00+01:00
+  contactIds:
+    - P-0004
+  dealId: D-2026-0003
+  id: A-2026-00018
+  summary: Checked next year's budget
+  type: call
+schemaVersion: deals.activity.v1

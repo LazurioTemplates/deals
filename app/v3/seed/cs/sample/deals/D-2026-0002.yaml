@@ -1,0 +1,15 @@
+id: D-2026-0002
+record:
+  companyId: C-0001
+  contactIds:
+    - P-0001
+  createdAt: 2026-09-22
+  expectedClose: 2026-12-15
+  id: D-2026-0002
+  owner: Jana Ukázková
+  quoteRef:
+    id: NAB-2026-0007
+  stageId: proposal
+  title: Kancelářský nábytek pro nové patro
+  value: 34500000
+schemaVersion: deals.deal.v1

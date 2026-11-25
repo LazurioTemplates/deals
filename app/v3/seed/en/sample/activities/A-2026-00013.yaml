@@ -1,0 +1,11 @@
+id: A-2026-00013
+record:
+  at: 2026-12-01T09:00:00+01:00
+  contactIds:
+    - P-0001
+  dealId: D-2026-0002
+  done: false
+  id: A-2026-00013
+  summary: Call about the quote
+  type: task
+schemaVersion: deals.activity.v1

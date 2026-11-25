@@ -1,0 +1,9 @@
+id: P-0007
+record:
+  companyId: C-0004
+  email: avery.test@example-software.example
+  id: P-0007
+  name: Avery Test
+  phone: +420 000 000 167
+  role: project manager
+schemaVersion: deals.contact.v1

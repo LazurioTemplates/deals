@@ -1,0 +1,13 @@
+id: D-2026-0010
+record:
+  closedAt: 2026-09-14
+  companyId: C-0003
+  contactIds:
+    - P-0005
+  createdAt: 2026-07-01
+  id: D-2026-0010
+  owner: Alex Sample
+  stageId: won
+  title: Shop fit-out
+  value: 18600000
+schemaVersion: deals.deal.v1

@@ -1,0 +1,12 @@
+id: C-0004
+record:
+  address:
+    city: Prague 7
+    country: Czech Republic
+    postalCode: 170 00
+    street: 21 Coder Avenue
+  id: C-0004
+  name: Example Software Ltd.
+  note: A fast-growing team; the CTO decides.
+  website: https://www.example-software.example
+schemaVersion: deals.company.v1

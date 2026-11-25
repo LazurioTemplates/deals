@@ -1,0 +1,9 @@
+id: P-0003
+record:
+  companyId: C-0002
+  email: riley.model@model-logistics.example
+  id: P-0003
+  name: Riley Model
+  phone: +420 000 000 123
+  role: head of logistics
+schemaVersion: deals.contact.v1

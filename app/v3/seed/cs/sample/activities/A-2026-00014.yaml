@@ -1,0 +1,10 @@
+id: A-2026-00014
+record:
+  at: 2026-11-12T10:00:00+01:00
+  contactIds:
+    - P-0003
+  dealId: D-2026-0004
+  id: A-2026-00014
+  summary: Jednání o podmínkách leasingu
+  type: meeting
+schemaVersion: deals.activity.v1

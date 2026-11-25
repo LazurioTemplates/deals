@@ -1,0 +1,12 @@
+id: C-0001
+record:
+  address:
+    city: Brno
+    country: Česká republika
+    postalCode: 602 00
+    street: Ukázková 12
+  id: C-0001
+  name: Ukázka Nábytek s.r.o.
+  note: Výrobce kancelářského nábytku, nakupuje dvakrát ročně.
+  website: https://www.ukazka-nabytek.example
+schemaVersion: deals.company.v1

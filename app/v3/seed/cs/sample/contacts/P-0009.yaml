@@ -1,0 +1,9 @@
+id: P-0009
+record:
+  companyId: C-0006
+  email: zuzana.pokusna@smyslena-klinika.example
+  id: P-0009
+  name: Zuzana Pokusná
+  phone: +420 000 000 189
+  role: ředitelka kliniky
+schemaVersion: deals.contact.v1

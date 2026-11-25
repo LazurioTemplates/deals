@@ -1,0 +1,9 @@
+id: P-0005
+record:
+  companyId: C-0003
+  email: hana.fiktivni@pokusna-pekarna.example
+  id: P-0005
+  name: Hana Fiktivní
+  phone: +420 000 000 145
+  role: majitelka
+schemaVersion: deals.contact.v1

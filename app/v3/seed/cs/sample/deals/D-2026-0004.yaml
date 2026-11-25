@@ -1,0 +1,16 @@
+id: D-2026-0004
+record:
+  companyId: C-0002
+  contactIds:
+    - P-0003
+    - P-0004
+  createdAt: 2026-08-25
+  description: Zákazník váhá mezi koupí a leasingem, proto nižší pravděpodobnost než ve fázi.
+  expectedClose: 2026-12-18
+  id: D-2026-0004
+  owner: Petr Vzorný
+  probability: 45
+  stageId: negotiation
+  title: Chladicí vozy do flotily
+  value: 21999990
+schemaVersion: deals.deal.v1

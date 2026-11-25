@@ -1,0 +1,10 @@
+id: A-2026-00003
+record:
+  at: 2026-09-14T08:15:00+02:00
+  contactIds:
+    - P-0005
+  dealId: D-2026-0010
+  id: A-2026-00003
+  summary: Zákaznice potvrdila objednávku
+  type: email
+schemaVersion: deals.activity.v1

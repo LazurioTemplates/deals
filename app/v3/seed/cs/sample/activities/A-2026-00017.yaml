@@ -1,0 +1,11 @@
+id: A-2026-00017
+record:
+  at: 2026-11-18T09:30:00+01:00
+  contactIds:
+    - P-0006
+    - P-0007
+  dealId: D-2026-0006
+  id: A-2026-00017
+  summary: Domluva osnovy školení
+  type: meeting
+schemaVersion: deals.activity.v1

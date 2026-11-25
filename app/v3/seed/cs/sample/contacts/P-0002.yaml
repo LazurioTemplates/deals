@@ -1,0 +1,9 @@
+id: P-0002
+record:
+  companyId: C-0001
+  email: karel.pokusny@ukazka-nabytek.example
+  id: P-0002
+  name: Karel Pokusný
+  phone: +420 000 000 112
+  role: nákup
+schemaVersion: deals.contact.v1

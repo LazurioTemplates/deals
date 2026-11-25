@@ -1,0 +1,9 @@
+id: P-0004
+record:
+  companyId: C-0002
+  email: taylor.sample@model-logistics.example
+  id: P-0004
+  name: Taylor Sample
+  phone: +420 000 000 134
+  role: finance director
+schemaVersion: deals.contact.v1

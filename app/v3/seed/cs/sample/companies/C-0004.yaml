@@ -1,0 +1,12 @@
+id: C-0004
+record:
+  address:
+    city: Praha 7
+    country: Česká republika
+    postalCode: 170 00
+    street: Programátorská 21
+  id: C-0004
+  name: Modelový Software s.r.o.
+  note: Rychle rostoucí tým, rozhoduje technický ředitel.
+  website: https://www.modelovy-software.example
+schemaVersion: deals.company.v1

@@ -1,0 +1,10 @@
+id: A-2026-00016
+record:
+  at: 2026-11-04T14:15:00+01:00
+  contactIds:
+    - P-0005
+  dealId: D-2026-0005
+  id: A-2026-00016
+  summary: Question about the installation date
+  type: call
+schemaVersion: deals.activity.v1

@@ -1,0 +1,11 @@
+id: C-0005
+record:
+  address:
+    city: Plzeň
+    country: Česká republika
+    postalCode: 301 00
+    street: Cihlová 3
+  id: C-0005
+  name: Fiktivní Stavby s.r.o.
+  website: https://www.fiktivni-stavby.example
+schemaVersion: deals.company.v1

@@ -1,0 +1,14 @@
+id: D-2026-0014
+record:
+  closedAt: 2026-11-03
+  companyId: C-0004
+  contactIds:
+    - P-0006
+  createdAt: 2026-08-20
+  id: D-2026-0014
+  lossReasonId: competitor
+  owner: Alex Sample
+  stageId: lost
+  title: New intranet
+  value: 11000000
+schemaVersion: deals.deal.v1
