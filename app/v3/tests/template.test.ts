@@ -312,8 +312,12 @@ describe("module contract", () => {
     const guide = read("docs/adoption.md");
     expect(guide).toContain("**Teams the command accepts.**");
     expect(guide).toContain("forge_binding.team.asserted_slug");
+    expect(guide).toContain("team-binding-mismatch");
+    expect(guide).toContain("gh api --paginate orgs/<Org>/teams");
+    expect(guide).toContain("`v3` of `<Org>/<slug>-data`");
+    expect(guide).toContain("cannot be established yet");
     expect(guide).toContain("**Who approves the pull requests.**");
-    expect(guide).toContain("Never propose a bypass");
+    expect(guide).toContain("never propose a bypass");
     expect(guide).toContain("An existing pipeline under another name");
   });
 
