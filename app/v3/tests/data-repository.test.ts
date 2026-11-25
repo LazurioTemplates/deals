@@ -151,7 +151,10 @@ describe("data repository template", () => {
           "id: other",
         ),
       );
-      const errors = validateRepository(first.mountRoot);
+      // The validator names files with the platform's separator; compare with `/`.
+      const errors = validateRepository(first.mountRoot).map((error) =>
+        error.replaceAll("\\", "/"),
+      );
       expect(errors.some((error) => error.includes("/record/name: is required"))).toBe(true);
       expect(errors.some((error) => error.includes("the id must be the file name"))).toBe(true);
       expect(errors).toContain(
