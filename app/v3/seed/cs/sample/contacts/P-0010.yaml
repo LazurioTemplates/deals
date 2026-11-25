@@ -1,0 +1,9 @@
+id: P-0010
+record:
+  companyId: C-0006
+  email: filip.vymysleny@smyslena-klinika.example
+  id: P-0010
+  name: Filip Vymyšlený
+  phone: +420 000 000 200
+  role: provozní
+schemaVersion: deals.contact.v1

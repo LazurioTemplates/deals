@@ -1,0 +1,14 @@
+id: D-2026-0012
+record:
+  closedAt: 2026-11-06
+  companyId: C-0006
+  contactIds:
+    - P-0009
+    - P-0010
+  createdAt: 2026-09-01
+  id: D-2026-0012
+  owner: Jordan Example
+  stageId: won
+  title: Ground floor surgery
+  value: 9950000
+schemaVersion: deals.deal.v1

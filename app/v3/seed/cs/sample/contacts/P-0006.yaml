@@ -1,0 +1,9 @@
+id: P-0006
+record:
+  companyId: C-0004
+  email: ondrej.ukazkovy@modelovy-software.example
+  id: P-0006
+  name: Ondřej Ukázkový
+  phone: +420 000 000 156
+  role: technický ředitel
+schemaVersion: deals.contact.v1

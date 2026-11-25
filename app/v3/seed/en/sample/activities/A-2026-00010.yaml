@@ -1,0 +1,10 @@
+id: A-2026-00010
+record:
+  at: 2026-09-10T15:00:00+02:00
+  contactIds:
+    - P-0006
+  dealId: D-2026-0014
+  id: A-2026-00010
+  summary: Demo for the CTO
+  type: meeting
+schemaVersion: deals.activity.v1

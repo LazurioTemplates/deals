@@ -1,0 +1,9 @@
+id: P-0010
+record:
+  companyId: C-0006
+  email: rowan.placeholder@invented-clinic.example
+  id: P-0010
+  name: Rowan Placeholder
+  phone: +420 000 000 200
+  role: operations
+schemaVersion: deals.contact.v1

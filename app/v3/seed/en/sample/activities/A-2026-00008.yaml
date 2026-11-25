@@ -1,0 +1,10 @@
+id: A-2026-00008
+record:
+  at: 2026-09-03T09:00:00+02:00
+  contactIds:
+    - P-0009
+  dealId: D-2026-0012
+  id: A-2026-00008
+  summary: Sent references of similar surgeries
+  type: email
+schemaVersion: deals.activity.v1

@@ -1,0 +1,9 @@
+id: P-0003
+record:
+  companyId: C-0002
+  email: lenka.vzorova@vzorova-logistika.example
+  id: P-0003
+  name: Lenka Vzorová
+  phone: +420 000 000 123
+  role: vedoucí logistiky
+schemaVersion: deals.contact.v1

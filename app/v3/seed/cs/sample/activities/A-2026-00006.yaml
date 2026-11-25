@@ -1,0 +1,10 @@
+id: A-2026-00006
+record:
+  at: 2026-08-11T11:00:00+02:00
+  contactIds:
+    - P-0008
+  dealId: D-2026-0011
+  id: A-2026-00006
+  summary: Upřesnění počtu kanceláří na stavbě
+  type: call
+schemaVersion: deals.activity.v1

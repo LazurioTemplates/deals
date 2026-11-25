@@ -1,0 +1,11 @@
+id: C-0006
+record:
+  address:
+    city: Hradec Kralove
+    country: Czech Republic
+    postalCode: 500 02
+    street: 9 Health Square
+  id: C-0006
+  name: Invented Clinic Ltd.
+  website: https://www.invented-clinic.example
+schemaVersion: deals.company.v1

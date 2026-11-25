@@ -1,0 +1,11 @@
+id: C-0006
+record:
+  address:
+    city: Hradec Králové
+    country: Česká republika
+    postalCode: 500 02
+    street: Zdravá 9
+  id: C-0006
+  name: Smyšlená Klinika s.r.o.
+  website: https://www.smyslena-klinika.example
+schemaVersion: deals.company.v1

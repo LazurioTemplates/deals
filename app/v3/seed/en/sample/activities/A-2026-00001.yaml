@@ -1,0 +1,10 @@
+id: A-2026-00001
+record:
+  at: 2026-07-02T09:30:00+02:00
+  contactIds:
+    - P-0005
+  dealId: D-2026-0010
+  id: A-2026-00001
+  summary: First call about fitting out the new shop
+  type: call
+schemaVersion: deals.activity.v1

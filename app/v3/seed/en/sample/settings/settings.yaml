@@ -1,0 +1,42 @@
+id: settings
+record:
+  aresLookup: false
+  currency: CZK
+  lossReasons:
+    - id: price
+      label: Price
+    - id: competitor
+      label: Competitor
+    - id: timing
+      label: Timing
+    - id: no-decision
+      label: No decision
+  owners:
+    - Alex Sample
+    - Jordan Example
+  stages:
+    - id: lead
+      kind: open
+      label: Lead
+      probability: 10
+    - id: qualified
+      kind: open
+      label: Qualified
+      probability: 25
+    - id: proposal
+      kind: open
+      label: Proposal
+      probability: 50
+    - id: negotiation
+      kind: open
+      label: Negotiation
+      probability: 75
+    - id: won
+      kind: won
+      label: Won
+      probability: 100
+    - id: lost
+      kind: lost
+      label: Lost
+      probability: 0
+schemaVersion: deals.settings.v1

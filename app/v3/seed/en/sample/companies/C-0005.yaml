@@ -1,0 +1,11 @@
+id: C-0005
+record:
+  address:
+    city: Pilsen
+    country: Czech Republic
+    postalCode: 301 00
+    street: 3 Brick Row
+  id: C-0005
+  name: Fictive Builders Ltd.
+  website: https://www.fictive-builders.example
+schemaVersion: deals.company.v1

@@ -1,0 +1,11 @@
+id: A-2026-00019
+record:
+  at: 2026-11-02T08:00:00+01:00
+  contactIds:
+    - P-0008
+  dealId: D-2026-0008
+  done: false
+  id: A-2026-00019
+  summary: Ověřit nový termín rozhodnutí
+  type: task
+schemaVersion: deals.activity.v1

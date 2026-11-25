@@ -1,0 +1,9 @@
+id: P-0009
+record:
+  companyId: C-0006
+  email: harper.pretend@invented-clinic.example
+  id: P-0009
+  name: Harper Pretend
+  phone: +420 000 000 189
+  role: clinic director
+schemaVersion: deals.contact.v1

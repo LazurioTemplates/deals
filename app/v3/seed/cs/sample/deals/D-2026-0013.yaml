@@ -1,0 +1,16 @@
+id: D-2026-0013
+record:
+  closedAt: 2026-09-30
+  companyId: C-0002
+  contactIds:
+    - P-0003
+    - P-0004
+  createdAt: 2026-06-15
+  id: D-2026-0013
+  lossNote: Konkurence nabídla o 15 % nižší cenu.
+  lossReasonId: price
+  owner: Petr Vzorný
+  stageId: lost
+  title: Rámcová smlouva na přepravu
+  value: 26000000
+schemaVersion: deals.deal.v1

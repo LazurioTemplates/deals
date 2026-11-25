@@ -1,0 +1,11 @@
+id: C-0003
+record:
+  address:
+    city: Olomouc
+    country: Česká republika
+    postalCode: 779 00
+    street: Chlebová 7
+  id: C-0003
+  name: Pokusná Pekárna s.r.o.
+  website: https://www.pokusna-pekarna.example
+schemaVersion: deals.company.v1

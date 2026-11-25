@@ -1,0 +1,9 @@
+id: P-0004
+record:
+  companyId: C-0002
+  email: martin.modelovy@vzorova-logistika.example
+  id: P-0004
+  name: Martin Modelový
+  phone: +420 000 000 134
+  role: finanční ředitel
+schemaVersion: deals.contact.v1

@@ -1,0 +1,9 @@
+id: P-0002
+record:
+  companyId: C-0001
+  email: casey.trial@sample-furniture.example
+  id: P-0002
+  name: Casey Trial
+  phone: +420 000 000 112
+  role: purchasing
+schemaVersion: deals.contact.v1

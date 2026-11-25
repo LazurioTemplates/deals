@@ -1,0 +1,10 @@
+id: A-2026-00009
+record:
+  at: 2026-11-06T10:30:00+01:00
+  contactIds:
+    - P-0009
+  dealId: D-2026-0012
+  id: A-2026-00009
+  summary: The clinic director confirmed the order
+  type: call
+schemaVersion: deals.activity.v1

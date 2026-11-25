@@ -1,0 +1,13 @@
+id: D-2026-0011
+record:
+  closedAt: 2026-10-20
+  companyId: C-0005
+  contactIds:
+    - P-0008
+  createdAt: 2026-08-10
+  id: D-2026-0011
+  owner: Alex Sample
+  stageId: won
+  title: Site offices
+  value: 42000000
+schemaVersion: deals.deal.v1

@@ -1,0 +1,10 @@
+id: A-2026-00002
+record:
+  at: 2026-07-20T14:00:00+02:00
+  contactIds:
+    - P-0005
+  dealId: D-2026-0010
+  id: A-2026-00002
+  summary: Prohlídka prodejny a zaměření
+  type: meeting
+schemaVersion: deals.activity.v1

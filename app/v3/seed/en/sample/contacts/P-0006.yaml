@@ -1,0 +1,9 @@
+id: P-0006
+record:
+  companyId: C-0004
+  email: drew.example@example-software.example
+  id: P-0006
+  name: Drew Example
+  phone: +420 000 000 156
+  role: CTO
+schemaVersion: deals.contact.v1

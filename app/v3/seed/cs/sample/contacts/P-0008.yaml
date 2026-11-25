@@ -1,0 +1,9 @@
+id: P-0008
+record:
+  companyId: C-0005
+  email: radek.smysleny@fiktivni-stavby.example
+  id: P-0008
+  name: Radek Smyšlený
+  phone: +420 000 000 178
+  role: stavbyvedoucí
+schemaVersion: deals.contact.v1

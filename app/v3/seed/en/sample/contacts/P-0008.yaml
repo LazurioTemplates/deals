@@ -1,0 +1,9 @@
+id: P-0008
+record:
+  companyId: C-0005
+  email: quinn.madeup@fictive-builders.example
+  id: P-0008
+  name: Quinn Madeup
+  phone: +420 000 000 178
+  role: site manager
+schemaVersion: deals.contact.v1

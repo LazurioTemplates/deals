@@ -1,0 +1,14 @@
+id: D-2026-0009
+record:
+  companyId: C-0006
+  contactIds:
+    - P-0009
+  createdAt: 2026-10-30
+  expectedClose: 2027-01-29
+  id: D-2026-0009
+  owner: Jordan Example
+  probability: 65
+  stageId: proposal
+  title: Reception and waiting room
+  value: 7300010
+schemaVersion: deals.deal.v1

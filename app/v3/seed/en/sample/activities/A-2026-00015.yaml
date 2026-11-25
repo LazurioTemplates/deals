@@ -1,0 +1,11 @@
+id: A-2026-00015
+record:
+  at: 2026-11-20T17:00:00+01:00
+  contactIds:
+    - P-0004
+  dealId: D-2026-0004
+  done: true
+  id: A-2026-00015
+  summary: Send the revised terms
+  type: task
+schemaVersion: deals.activity.v1

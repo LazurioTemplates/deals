@@ -1,0 +1,39 @@
+id: settings
+record:
+  aresLookup: false
+  currency: CZK
+  lossReasons:
+    - id: price
+      label: Cena
+    - id: competitor
+      label: Konkurence
+    - id: timing
+      label: Načasování
+    - id: no-decision
+      label: Bez rozhodnutí
+  stages:
+    - id: lead
+      kind: open
+      label: Nový kontakt
+      probability: 10
+    - id: qualified
+      kind: open
+      label: Ověřená potřeba
+      probability: 25
+    - id: proposal
+      kind: open
+      label: Nabídka
+      probability: 50
+    - id: negotiation
+      kind: open
+      label: Jednání
+      probability: 75
+    - id: won
+      kind: won
+      label: Vyhráno
+      probability: 100
+    - id: lost
+      kind: lost
+      label: Prohráno
+      probability: 0
+schemaVersion: deals.settings.v1

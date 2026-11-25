@@ -1,0 +1,14 @@
+id: D-2026-0005
+record:
+  companyId: C-0003
+  contactIds:
+    - P-0005
+  createdAt: 2026-10-20
+  expectedClose: 2026-12-31
+  id: D-2026-0005
+  owner: Alex Sample
+  probability: 33
+  stageId: proposal
+  title: Till system for the second shop
+  value: 4750050
+schemaVersion: deals.deal.v1

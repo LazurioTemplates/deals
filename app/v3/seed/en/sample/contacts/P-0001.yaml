@@ -1,0 +1,9 @@
+id: P-0001
+record:
+  companyId: C-0001
+  email: morgan.fictive@sample-furniture.example
+  id: P-0001
+  name: Morgan Fictive
+  phone: +420 000 000 101
+  role: managing director
+schemaVersion: deals.contact.v1

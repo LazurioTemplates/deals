@@ -1,0 +1,10 @@
+id: A-2026-00007
+record:
+  at: 2026-09-18T13:30:00+02:00
+  contactIds:
+    - P-0008
+  dealId: D-2026-0011
+  id: A-2026-00007
+  summary: Meeting on the site
+  type: meeting
+schemaVersion: deals.activity.v1

@@ -1,0 +1,10 @@
+id: A-2026-00012
+record:
+  at: 2026-10-12T08:45:00+02:00
+  contactIds:
+    - P-0001
+  dealId: D-2026-0002
+  id: A-2026-00012
+  summary: Sent the quote
+  type: email
+schemaVersion: deals.activity.v1
