@@ -99,7 +99,13 @@ export function createMemoryStore(seed: Partial<DataSet>): DealsStore {
     available: async () => ({ ok: true }),
     read: async (operation) => operation(snapshot()),
     async write(_kind, operation) {
-      const result = operation(snapshot(), put);
+      let wrote = false;
+      const result = operation(snapshot(), (collection, id, value, baseRevision) => {
+        wrote = true;
+        return put(collection, id, value, baseRevision);
+      });
+      // Every open page reloads what it shows, not only the draft card.
+      if (wrote) emit({ type: "records-changed" });
       emit({ type: "draft-changed" });
       return result;
     },

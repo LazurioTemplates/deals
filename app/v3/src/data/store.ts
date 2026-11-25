@@ -51,7 +51,7 @@ export type DraftCard = DraftPanelInput;
 export type DiscardScope = { kind: "draft" } | { kind: "record"; path: string };
 
 export type StoreEvent =
-  /** Records changed outside this process (a colleague's publish came in, a discard). */
+  /** Records changed: a write or a discard of any page, a colleague's publish that came in. */
   | { type: "records-changed" }
   /** The draft or the sync state changed; reload the card. */
   | { type: "draft-changed" };

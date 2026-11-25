@@ -446,5 +446,37 @@ export function storeContract(
       stop();
       expect(events).toContain("draft-changed");
     });
+
+    test("tells every subscriber that records changed on a write and a discard", async () => {
+      // Two open pages over the same store: the one that writes and another.
+      const writer: string[] = [];
+      const other: string[] = [];
+      const stops = [
+        store.subscribe((event) => writer.push(event.type)),
+        store.subscribe((event) => other.push(event.type)),
+      ];
+      try {
+        await store.saveCompany(newCompany(), null);
+        expect(writer).toContain("records-changed");
+        expect(other).toContain("records-changed");
+        const opened = await store.getDeal("D-2026-0004");
+        if (!opened) throw new Error("D-2026-0004 missing");
+        other.length = 0;
+        await store.saveDeal({ ...opened.value, title: "Přejmenovaný případ" }, opened.revision);
+        expect(other).toContain("records-changed");
+
+        // A refused write changes no record and says none changed.
+        other.length = 0;
+        await expect(
+          store.saveDeal({ ...opened.value, title: "Zastaralé" }, opened.revision),
+        ).rejects.toMatchObject({ code: "record_changed" });
+        expect(other).not.toContain("records-changed");
+
+        await store.discard({ kind: "draft" }, (await store.draft()).revision ?? "");
+        expect(other).toContain("records-changed");
+      } finally {
+        for (const stop of stops) stop();
+      }
+    });
   });
 }
