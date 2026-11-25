@@ -1,0 +1,35 @@
+import { seedDirectory } from "../cli/paths.ts";
+import { readDataDirectory } from "../data/directory.ts";
+import { createMemoryStore } from "../data/memory-store.ts";
+import { StoreError } from "../data/store.ts";
+import { parseLocale } from "../i18n/locale.ts";
+import { serve } from "./serve.ts";
+
+/**
+ * `bun run dev:demo [cs|en]`: the App over the fictional example data in
+ * that language, held in memory. Nothing is read from or written to a data
+ * repository, and every change is gone when the process ends. For trying the
+ * template and for the Marketplace screenshots (open the App with `?lang=en`
+ * for the English interface); never the start of a real Module.
+ *
+ * ARES is never asked: the example's settings turn the lookup off, and a
+ * demo that turns it on in Settings gets ARES as unavailable, so a company is
+ * filled in by hand, as when ARES is down.
+ */
+const locale = parseLocale(process.argv[2]) ?? "cs";
+const sample = readDataDirectory(seedDirectory(locale, "sample"));
+if (sample.issues.length > 0) {
+  console.error(`seed/${locale}/sample is not valid; run \`bun run validate:data\`.`);
+  process.exit(1);
+}
+
+// The demo's data live only in memory: its visitor is admitted and writes.
+await serve(() => createMemoryStore(sample.data), `demo (${locale} example data in memory)`, {
+  access: () => ({ admitted: true, mayWrite: true }),
+  ares: async () => {
+    throw new StoreError("ares_unavailable", {
+      cs: "Ukázka se ARES neptá. Vyplňte firmu ručně.",
+      en: "The demo does not ask ARES. Fill the company in by hand.",
+    });
+  },
+});
