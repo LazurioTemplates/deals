@@ -91,7 +91,7 @@ export function ContactPage({
     const opened = edit.base;
     try {
       const saved = await submitContact(opened, form);
-      if (opened) edit.saved(saved);
+      if (opened) edit.saved(saved, form);
       await onChanged();
       navigate({ page: "contact", id: saved.value.id });
     } catch (caught) {

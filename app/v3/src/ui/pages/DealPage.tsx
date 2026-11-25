@@ -168,7 +168,7 @@ export function DealPage({
     const opened = edit.base;
     try {
       const saved = await submitDeal(opened, form, settings, f);
-      if (opened) edit.saved(saved);
+      if (opened) edit.saved(saved, form);
       await onChanged();
       navigate({ page: "deal", id: saved.value.id });
     } catch (caught) {

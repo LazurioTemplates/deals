@@ -61,6 +61,23 @@ export function followRecord<T, F>(
   return isTouched(state, formOf) ? state : openForm(current, formOf);
 }
 
+/**
+ * The form after a save answered. The fields stay editable while a save
+ * waits, so the person may have typed on: when the values are still the ones
+ * sent, the form continues from what was stored; when they changed meanwhile,
+ * they stay as typed on top of the stored record, whose revision the next
+ * save sends, and the form shows them as not yet saved.
+ */
+export function afterSave<T, F>(
+  state: RecordForm<T, F>,
+  stored: Stored<T>,
+  submitted: F,
+  formOf: (value: T | undefined) => F,
+): RecordForm<T, F> {
+  if (canonicalJson(state.form) === canonicalJson(submitted)) return openForm(stored, formOf);
+  return { base: stored, form: state.form, dismissed: null };
+}
+
 /** The key of a change under the form, so keeping on editing past it hides only that one. */
 function changeKey<T>(drift: Drift, current: Stored<T> | undefined): string | null {
   if (drift === "changed") return current?.revision ?? null;
@@ -100,8 +117,12 @@ export function useRecordForm<T, F>(
     keepEditing: () => setHeld((before) => ({ ...before, dismissed: change })),
     /** Drop the values and open the form on the record stored now. */
     loadCurrent: () => setHeld(openForm(current, formOf)),
-    /** After a save: the form continues from what was stored. */
-    saved: (stored: Stored<T>) => setHeld(openForm(stored, formOf)),
+    /**
+     * After a save of `submitted`: the form continues from what was stored,
+     * keeping what the person typed while the save waited (`afterSave`).
+     */
+    saved: (stored: Stored<T>, submitted: F) =>
+      setHeld((before) => afterSave(before, stored, submitted, formOf)),
   };
 }
 

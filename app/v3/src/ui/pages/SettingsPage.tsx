@@ -162,7 +162,8 @@ export function SettingsPage({
     setError(null);
     setSaved(false);
     try {
-      edit.saved(await submitSettings(edit.base ?? data.settings, edit.form));
+      const submitted = edit.form;
+      edit.saved(await submitSettings(edit.base ?? data.settings, submitted), submitted);
       await onChanged();
       setSaved(true);
     } catch (caught) {

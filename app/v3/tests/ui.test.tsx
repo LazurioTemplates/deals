@@ -14,9 +14,11 @@ import { type AppData, detailKey, loadAppData } from "../src/ui/App.tsx";
 import { ApiError, api, type Stored } from "../src/ui/api.ts";
 import { englishModel } from "../src/ui/components/DraftCard.tsx";
 import {
+  afterSave,
   ChangedNotice,
   driftOf,
   followRecord,
+  isTouched,
   openForm,
   type RecordForm,
 } from "../src/ui/edit.tsx";
@@ -488,6 +490,59 @@ describe("a form over a record that changes meanwhile", () => {
     expect(which.colleagues(saved.value)).toBe(which.colleagues(current.value));
   }
 
+  /**
+   * A save that answers late: the fields stay editable while it waits, and
+   * what the person types meanwhile stays in the form, unsaved, on top of
+   * the stored record; the next save sends the stored revision and keeps it.
+   */
+  async function slowSave<T, F>(which: Case<T, F>, later: Partial<F>) {
+    const opened = await loadAppData();
+    const record = which.open(opened);
+    if (!record) throw new Error(`${which.name} missing`);
+    const formOf = which.formOf(opened);
+    let state: RecordForm<T, F> = openForm(record, formOf);
+    state = { ...state, form: { ...state.form, ...which.typed } };
+    const submitted = state.form;
+    // The save is sent; before it answers, the person types on.
+    let answer!: (value: Stored<T>) => void;
+    const answered = new Promise<Stored<T>>((resolve) => {
+      answer = resolve;
+    });
+    const sending = which.submit(opened, state.base, submitted).then(answer);
+    state = { ...state, form: { ...state.form, ...later } };
+    await sending;
+    const stored = await answered;
+    state = afterSave(state, stored, submitted, formOf);
+
+    // The typing during the save stays, on top of what was stored.
+    expect(state.form).toMatchObject({ ...which.typed, ...later } as object);
+    expect(state.base?.revision).toBe(stored.revision);
+    expect(isTouched(state, formOf)).toBe(true);
+    // The reload after the save keeps it too.
+    const reloaded = await loadAppData();
+    state = followRecord(state, which.open(reloaded), which.formOf(reloaded));
+    expect(state.form).toMatchObject(later as object);
+    // The next save goes through and stores it.
+    const next = await which.submit(reloaded, state.base, state.form);
+    expect(formOf(next.value)).toMatchObject({ ...which.typed, ...later } as object);
+
+    // Without typing during the save, the form continues from what was stored.
+    const quiet = afterSave(
+      { ...openForm(next, formOf), form: formOf(next.value) },
+      next,
+      formOf(next.value),
+      formOf,
+    );
+    expect(isTouched(quiet, formOf)).toBe(false);
+  }
+
+  test("a deal: what is typed while a save waits stays in the form", () =>
+    slowSave(deal, { description: "Dopsáno během ukládání" }));
+  test("a company: what is typed while a save waits stays in the form", () =>
+    slowSave(company, { website: "https://dopsano.example" }));
+  test("a contact: what is typed while a save waits stays in the form", () =>
+    slowSave(contact, { phone: "+420 000 000 222" }));
+
   test("a deal: a stale save is refused and keeps the colleague's change and the values", () =>
     staleSave(deal));
   test("a company: a stale save is refused and keeps the colleague's change and the values", () =>
@@ -551,6 +606,26 @@ describe("a form over a record that changes meanwhile", () => {
     const after = await loadAppData();
     expect(after.settings.value.stages[0]?.label).toBe("Zájemce");
     expect(after.settings.value.owners).toEqual(opened.settings.value.owners);
+  });
+
+  test("the settings: what is typed while a save waits stays in the form", async () => {
+    const opened = await loadAppData();
+    let state = openForm(opened.settings, settingsFormOf);
+    state = { ...state, form: { ...state.form, owners: "Jana Ukázková\nNový Obchodník" } };
+    const submitted = state.form;
+    const sending = submitSettings(opened.settings, submitted);
+    // The person switches the ARES lookup on before the save answers.
+    state = { ...state, form: { ...state.form, ares: true } };
+    const stored = await sending;
+    state = afterSave(state, stored, submitted, settingsFormOf);
+    expect(state.form.owners).toBe("Jana Ukázková\nNový Obchodník");
+    expect(state.form.ares).toBe(true);
+    expect(state.base?.revision).toBe(stored.revision);
+    expect(stored.value.aresLookup).toBe(false);
+    expect(isTouched(state, settingsFormOf)).toBe(true);
+    const next = await submitSettings(state.base ?? stored, state.form);
+    expect(next.value.aresLookup).toBe(true);
+    expect(next.value.owners).toEqual(["Jana Ukázková", "Nový Obchodník"]);
   });
 
   test("the notice says what happened and offers the current version or going on", () => {

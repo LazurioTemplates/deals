@@ -163,7 +163,7 @@ export function CompanyPage({
     const opened = edit.base;
     try {
       const saved = await submitCompany(opened, form);
-      if (opened) edit.saved(saved);
+      if (opened) edit.saved(saved, form);
       await onChanged();
       navigate({ page: "company", id: saved.value.id });
     } catch (caught) {
