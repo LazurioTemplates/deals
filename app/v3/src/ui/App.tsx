@@ -1,6 +1,6 @@
 import type { DraftPanelInput } from "@lazurio/repository-db";
 import { Alert } from "design-system/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Activity } from "../domain/activity.ts";
 import type { DataSet } from "../domain/collections.ts";
 import type { Company } from "../domain/company.ts";
@@ -43,6 +43,18 @@ export function dataSetOf(data: AppData): DataSet & { settings: Settings } {
   };
 }
 
+/** Every record the pages read, as the API stores them now. */
+export async function loadAppData(): Promise<AppData> {
+  const [settings, companies, contacts, deals, activities] = await Promise.all([
+    api.settings(),
+    api.companies(),
+    api.contacts(),
+    api.deals(),
+    api.activities(),
+  ]);
+  return { settings, companies, contacts, deals, activities };
+}
+
 function useHashRoute(): Route {
   const [route, setRoute] = useState(() => parseRoute(window.location.hash));
   useEffect(() => {
@@ -73,18 +85,18 @@ export function App() {
     );
   }, []);
 
+  // Only the reload asked last shows: an earlier one that answers later
+  // never puts older records back under the forms.
+  const asked = useRef(0);
   const reload = useCallback(async () => {
+    const mine = ++asked.current;
     try {
-      const [settings, companies, contacts, deals, activities] = await Promise.all([
-        api.settings(),
-        api.companies(),
-        api.contacts(),
-        api.deals(),
-        api.activities(),
-      ]);
-      setData({ settings, companies, contacts, deals, activities });
+      const loaded = await loadAppData();
+      if (mine !== asked.current) return;
+      setData(loaded);
       setError(null);
     } catch (caught) {
+      if (mine !== asked.current) return;
       setError(caught instanceof Error ? caught : new Error(String(caught)));
     }
   }, []);
@@ -95,6 +107,9 @@ export function App() {
   useEffect(() => {
     void reload();
     void reloadDraft();
+    // Every write of any page, a discard and a colleague's work that came in
+    // say `records-changed`: the lists and the overview reload, and an open
+    // form keeps what the person is typing (`useRecordForm`).
     return subscribe((type) => {
       if (type === "records-changed") {
         void reload();
@@ -136,10 +151,11 @@ export function App() {
 }
 
 /**
- * The key of a record's detail page. A copy that writes keeps the page while
- * the record changes, so what the person is typing stays; a copy that may
- * not write shows the record as it is now, so a new revision opens the page
- * afresh with its fields filled from it.
+ * The key of a record's detail page or the settings. A copy that writes
+ * keeps the page while the record changes, so what the person is typing
+ * stays with the revision it came from; a copy that may not write shows the
+ * record as it is now, so a new revision opens the page afresh with its
+ * fields filled from it.
  */
 export function detailKey(id: string, revision: string | undefined, canWrite: boolean): string {
   return canWrite ? id : `${id}@${revision ?? ""}`;
@@ -224,7 +240,13 @@ function Page({
         />
       );
     case "settings":
-      return <SettingsPage key={data.settings.revision} data={data} onChanged={onChanged} />;
+      return (
+        <SettingsPage
+          key={detailKey("settings", data.settings.revision, canWrite)}
+          data={data}
+          onChanged={onChanged}
+        />
+      );
     case "draft":
       return <DraftPage onChanged={onChanged} />;
     case "not-found":

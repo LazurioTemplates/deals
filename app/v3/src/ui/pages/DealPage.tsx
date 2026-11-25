@@ -3,13 +3,14 @@ import { useState } from "react";
 import { ACTIVITY_TYPES, type Activity, type ActivityType } from "../../domain/activity.ts";
 import { localToday } from "../../domain/common.ts";
 import type { Deal } from "../../domain/deal.ts";
-import { openStages, stageById } from "../../domain/settings.ts";
+import { openStages, type Settings, stageById } from "../../domain/settings.ts";
 import type { Localized } from "../../i18n/locale.ts";
 import type { AppData } from "../App.tsx";
 import { api, type Stored } from "../api.ts";
 import { CloseDealDialog, MoveDeal } from "../components/CloseDeal.tsx";
 import { ErrorNotice, Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
-import { useFormat, useT } from "../i18n.tsx";
+import { EditNotices, isRecordChanged, useRecordForm } from "../edit.tsx";
+import { type Format, useFormat, useT } from "../i18n.tsx";
 import { href, navigate } from "../routes.ts";
 import { localDateTime, withOffset } from "../time.ts";
 import { useCanWrite } from "../write.tsx";
@@ -35,6 +36,68 @@ interface DealForm {
   quote: string;
 }
 
+/** The form of a deal as stored, or of a new one (of `company` when the route names it). */
+export function dealFormOf(
+  deal: Deal | undefined,
+  settings: Settings,
+  f: Format,
+  company: string | null,
+): DealForm {
+  return {
+    title: deal?.title ?? "",
+    companyId: deal?.companyId ?? company ?? "",
+    contactIds: deal?.contactIds ?? [],
+    owner: deal?.owner ?? settings.owners?.[0] ?? "",
+    stageId: deal?.stageId ?? openStages(settings)[0]?.id ?? "",
+    value: deal ? f.amount(deal.value) : "",
+    probability: deal?.probability === undefined ? "" : String(deal.probability),
+    expectedClose: deal?.expectedClose ?? "",
+    description: deal?.description ?? "",
+    quote: deal?.quoteRef?.id ?? "",
+  };
+}
+
+/**
+ * Sends a deal's form: a change of the deal the form came from, with that
+ * deal's revision as the base, or a new deal. A closed deal keeps its stage;
+ * it moves only through closing or reopening.
+ */
+export function submitDeal(
+  base: Stored<Deal> | undefined,
+  form: DealForm,
+  settings: Settings,
+  f: Format,
+): Promise<Stored<Deal>> {
+  const deal = base?.value;
+  const open = !deal || stageById(settings, deal.stageId)?.kind === "open";
+  const value = form.value.trim() === "" ? 0 : f.parseMoney(form.value);
+  const probability = form.probability.trim() === "" ? undefined : Number(form.probability);
+  const {
+    probability: _p,
+    expectedClose: _e,
+    description: _d,
+    quoteRef: _q,
+    contactIds: _c,
+    ...kept
+  } = deal ?? ({} as Partial<Deal>);
+  const record = {
+    ...kept,
+    title: form.title.trim(),
+    companyId: form.companyId,
+    owner: form.owner.trim(),
+    stageId: open ? form.stageId : (deal?.stageId ?? form.stageId),
+    value: value ?? 0,
+    ...(form.contactIds.length > 0 ? { contactIds: form.contactIds } : {}),
+    ...(probability !== undefined ? { probability } : {}),
+    ...(form.expectedClose ? { expectedClose: form.expectedClose } : {}),
+    ...(form.description.trim() ? { description: form.description.trim() } : {}),
+    ...(form.quote.trim() ? { quoteRef: { id: form.quote.trim() } } : {}),
+  };
+  return base && deal
+    ? api.saveDeal({ ...record, id: deal.id, createdAt: deal.createdAt }, base.revision)
+    : api.createDeal(record);
+}
+
 /** A deal's detail and its edit in one page, with its activities; a new deal without them. */
 export function DealPage({
   data,
@@ -53,23 +116,16 @@ export function DealPage({
   const canWrite = useCanWrite();
   const settings = data.settings.value;
   const f = useFormat(settings.currency);
-  const stored = id ? data.deals.find((entry) => entry.value.id === id) : undefined;
+  const current = id ? data.deals.find((entry) => entry.value.id === id) : undefined;
   const open = openStages(settings);
-  const [form, setForm] = useState<DealForm>(() => {
-    const deal = stored?.value;
-    return {
-      title: deal?.title ?? "",
-      companyId: deal?.companyId ?? company ?? "",
-      contactIds: deal?.contactIds ?? [],
-      owner: deal?.owner ?? settings.owners?.[0] ?? "",
-      stageId: deal?.stageId ?? open[0]?.id ?? "",
-      value: deal ? f.amount(deal.value) : "",
-      probability: deal?.probability === undefined ? "" : String(deal.probability),
-      expectedClose: deal?.expectedClose ?? "",
-      description: deal?.description ?? "",
-      quote: deal?.quoteRef?.id ?? "",
-    };
-  });
+  // The form keeps the deal it came from: a reload of the data never
+  // replaces what the person is typing, and the save sends that revision.
+  const edit = useRecordForm<Deal, DealForm>(current, (deal) =>
+    dealFormOf(deal, settings, f, company),
+  );
+  const form = edit.form;
+  // The page shows the deal as stored now; the form edits the one it came from.
+  const stored = current ?? edit.base;
   const [closing, setClosing] = useState<"won" | "lost" | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -83,6 +139,8 @@ export function DealPage({
   }
   const stage = stored ? stageById(settings, stored.value.stageId) : undefined;
   const isOpen = !stored || stage?.kind === "open";
+  const baseStage = edit.base ? stageById(settings, edit.base.value.stageId) : undefined;
+  const formIsOpen = !edit.base || baseStage?.kind === "open";
   const value = form.value.trim() === "" ? 0 : f.parseMoney(form.value);
   const probability = form.probability.trim() === "" ? undefined : Number(form.probability);
   const probabilityProblem =
@@ -100,46 +158,22 @@ export function DealPage({
   const reasons = new Map(settings.lossReasons.map((reason) => [reason.id, reason.label]));
   const won = settings.stages.find((entry) => entry.kind === "won");
   const lost = settings.stages.find((entry) => entry.kind === "lost");
-  const update = (patch: Partial<DealForm>) => setForm({ ...form, ...patch });
+  const update = edit.update;
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
     if (valueProblem || probabilityProblem) return;
     setBusy(true);
     setError(null);
-    const base = stored?.value;
-    const {
-      probability: _p,
-      expectedClose: _e,
-      description: _d,
-      quoteRef: _q,
-      contactIds: _c,
-      ...kept
-    } = base ?? ({} as Partial<Deal>);
-    const record = {
-      ...kept,
-      title: form.title.trim(),
-      companyId: form.companyId,
-      owner: form.owner.trim(),
-      stageId: isOpen ? form.stageId : (base?.stageId ?? form.stageId),
-      value: value ?? 0,
-      ...(form.contactIds.length > 0 ? { contactIds: form.contactIds } : {}),
-      ...(probability !== undefined ? { probability } : {}),
-      ...(form.expectedClose ? { expectedClose: form.expectedClose } : {}),
-      ...(form.description.trim() ? { description: form.description.trim() } : {}),
-      ...(form.quote.trim() ? { quoteRef: { id: form.quote.trim() } } : {}),
-    };
+    const opened = edit.base;
     try {
-      const saved =
-        stored && base
-          ? await api.saveDeal(
-              { ...record, id: base.id, createdAt: base.createdAt },
-              stored.revision,
-            )
-          : await api.createDeal(record);
+      const saved = await submitDeal(opened, form, settings, f);
+      if (opened) edit.saved(saved);
       await onChanged();
       navigate({ page: "deal", id: saved.value.id });
     } catch (caught) {
+      // The deal stored now, so the person can load it; their values stay.
+      if (isRecordChanged(caught)) await onChanged();
       setError(caught);
     } finally {
       setBusy(false);
@@ -214,7 +248,7 @@ export function DealPage({
       <div className="detail-grid">
         <form className="form" onSubmit={save}>
           <fieldset className="form-fieldset" disabled={!canWrite}>
-            <ErrorNotice error={error} />
+            <EditNotices edit={edit} error={error} onClear={() => setError(null)} />
             <article className="ds-card">
               <div className="form-grid">
                 <Field label={t("Název", "Title")} error={errors.title} wide>
@@ -262,7 +296,7 @@ export function DealPage({
                     <option key={owner} value={owner} />
                   ))}
                 </datalist>
-                {isOpen ? (
+                {formIsOpen ? (
                   <Field label={t("Fáze", "Stage")} error={errors.stageId}>
                     <select
                       value={form.stageId}

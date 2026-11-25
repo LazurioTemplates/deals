@@ -57,21 +57,25 @@ export function formatDateTime(at: string, locale: Locale): string {
   return `${formatDate(at.slice(0, 10), locale)} ${time}`;
 }
 
+/** Formatting and parsing in a language. */
+export function formatIn(locale: Locale, currency = "CZK") {
+  return {
+    locale,
+    money: (amount: number) => formatMoney(amount, currency, locale),
+    amount: (amount: number) => formatAmount(amount, locale),
+    rate: (basisPoints: number | null) =>
+      basisPoints === null ? "–" : formatBasisPoints(basisPoints, locale),
+    date: (value: string | undefined) => formatDate(value, locale),
+    month: (value: string) => formatMonth(value, locale),
+    dateTime: (value: string) => formatDateTime(value, locale),
+    parseMoney: (text: string) => parseMoney(text, locale),
+  };
+}
+
+export type Format = ReturnType<typeof formatIn>;
+
 /** Formatting and parsing in the interface's language. */
-export function useFormat(currency = "CZK") {
+export function useFormat(currency = "CZK"): Format {
   const locale = useLocale();
-  return useMemo(
-    () => ({
-      locale,
-      money: (amount: number) => formatMoney(amount, currency, locale),
-      amount: (amount: number) => formatAmount(amount, locale),
-      rate: (basisPoints: number | null) =>
-        basisPoints === null ? "–" : formatBasisPoints(basisPoints, locale),
-      date: (value: string | undefined) => formatDate(value, locale),
-      month: (value: string) => formatMonth(value, locale),
-      dateTime: (value: string) => formatDateTime(value, locale),
-      parseMoney: (text: string) => parseMoney(text, locale),
-    }),
-    [locale, currency],
-  );
+  return useMemo(() => formatIn(locale, currency), [locale, currency]);
 }

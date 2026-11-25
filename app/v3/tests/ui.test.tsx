@@ -1,20 +1,39 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { deriveDraftPanel } from "@lazurio/repository-db";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { createMemoryStore } from "../src/data/memory-store.ts";
+import type { DealsStore } from "../src/data/store.ts";
 import type { DataSet } from "../src/domain/collections.ts";
+import type { Company } from "../src/domain/company.ts";
+import type { Contact } from "../src/domain/contact.ts";
+import type { Deal } from "../src/domain/deal.ts";
 import type { Locale } from "../src/i18n/locale.ts";
-import { type AppData, detailKey } from "../src/ui/App.tsx";
+import { createApi } from "../src/server/api.ts";
+import { type AppData, detailKey, loadAppData } from "../src/ui/App.tsx";
+import { ApiError, api, type Stored } from "../src/ui/api.ts";
 import { englishModel } from "../src/ui/components/DraftCard.tsx";
-import { LocaleContext } from "../src/ui/i18n.tsx";
+import {
+  ChangedNotice,
+  driftOf,
+  followRecord,
+  openForm,
+  type RecordForm,
+} from "../src/ui/edit.tsx";
+import { formatIn, LocaleContext } from "../src/ui/i18n.tsx";
 import { CompanyListPage } from "../src/ui/pages/CompanyListPage.tsx";
-import { CompanyPage } from "../src/ui/pages/CompanyPage.tsx";
+import { CompanyPage, companyFormOf, submitCompany } from "../src/ui/pages/CompanyPage.tsx";
 import { ContactListPage } from "../src/ui/pages/ContactListPage.tsx";
-import { ContactPage } from "../src/ui/pages/ContactPage.tsx";
+import { ContactPage, contactFormOf, submitContact } from "../src/ui/pages/ContactPage.tsx";
 import { DealListPage } from "../src/ui/pages/DealListPage.tsx";
-import { DealPage } from "../src/ui/pages/DealPage.tsx";
+import { DealPage, dealFormOf, submitDeal } from "../src/ui/pages/DealPage.tsx";
 import { OverviewPage } from "../src/ui/pages/OverviewPage.tsx";
-import { freshId, SettingsPage } from "../src/ui/pages/SettingsPage.tsx";
+import {
+  freshId,
+  SettingsPage,
+  settingsFormOf,
+  submitSettings,
+} from "../src/ui/pages/SettingsPage.tsx";
 import { href, parseRoute, type Route } from "../src/ui/routes.ts";
 import { withOffset } from "../src/ui/time.ts";
 import { followWriteStatus, statusRetryDelay, WriteContext } from "../src/ui/write.tsx";
@@ -341,5 +360,282 @@ describe("small helpers of the interface", () => {
     expect(freshId("Nová fáze", ["lead"], "stage")).toBe("nova-faze");
     expect(freshId("Nová fáze", ["nova-faze", "nova-faze-2"], "stage")).toBe("nova-faze-3");
     expect(freshId("???", [], "stage")).toBe("stage");
+  });
+});
+
+/**
+ * The interface's API client over the real HTTP API and a memory store, in
+ * this process: `fetch` of the page answers through the server's handler, so
+ * every page of a test is one browser tab over the same store.
+ */
+function serveInProcess(): { store: DealsStore; handle: (request: Request) => Promise<Response> } {
+  const origin = "http://127.0.0.1:24941";
+  const store = createMemoryStore(sampleData("cs"));
+  const handle = createApi(store, {
+    allowedOrigins: new Set([origin]),
+    access: () => ({ admitted: true, mayWrite: true }),
+    today: () => TODAY,
+  });
+  const fetchInProcess = (input: string | URL | Request, init?: RequestInit) => {
+    const headers = new Headers(init?.headers);
+    headers.set("origin", origin);
+    return handle(new Request(new URL(String(input), origin), { ...init, headers }));
+  };
+  globalThis.fetch = fetchInProcess as typeof fetch;
+  return { store, handle };
+}
+
+describe("a form over a record that changes meanwhile", () => {
+  const realFetch = globalThis.fetch;
+  let store: DealsStore;
+  beforeEach(() => {
+    ({ store } = serveInProcess());
+  });
+  afterEach(() => {
+    store.close();
+    globalThis.fetch = realFetch;
+  });
+
+  /** A record's form as the page builds and sends it. */
+  interface Case<T, F> {
+    name: string;
+    open: (data: AppData) => Stored<T> | undefined;
+    formOf: (data: AppData) => (value: T | undefined) => F;
+    /** What the person types into the open form. */
+    typed: Partial<F>;
+    /** What the colleague saves meanwhile, and how to read it back. */
+    colleague: (stored: Stored<T>) => Promise<unknown>;
+    colleagues: (value: T) => unknown;
+    submit: (data: AppData, base: Stored<T> | undefined, form: F) => Promise<Stored<T>>;
+  }
+
+  const f = formatIn("cs", "CZK");
+  const deal: Case<Deal, ReturnType<typeof dealFormOf>> = {
+    name: "a deal",
+    open: (data) => data.deals.find((entry) => entry.value.id === "D-2026-0004"),
+    formOf: (data) => (value) => dealFormOf(value, data.settings.value, f, null),
+    typed: { title: "Chladicí vozy, upravená nabídka" },
+    colleague: (stored) =>
+      api.saveDeal({ ...stored.value, description: "Popis kolegy" }, stored.revision),
+    colleagues: (value) => value.description,
+    submit: (data, base, form) => submitDeal(base, form, data.settings.value, f),
+  };
+  const company: Case<Company, ReturnType<typeof companyFormOf>> = {
+    name: "a company",
+    open: (data) => data.companies.find((entry) => entry.value.id === "C-0002"),
+    formOf: () => (value) => companyFormOf(value, "Česká republika"),
+    typed: { note: "Moje poznámka" },
+    colleague: (stored) =>
+      api.saveCompany({ ...stored.value, website: "https://kolega.example" }, stored.revision),
+    colleagues: (value) => value.website,
+    submit: (_data, base, form) => submitCompany(base, form),
+  };
+  const contact: Case<Contact, ReturnType<typeof contactFormOf>> = {
+    name: "a contact",
+    open: (data) => data.contacts.find((entry) => entry.value.id === "P-0004"),
+    formOf: () => (value) => contactFormOf(value, null),
+    typed: { role: "Moje role" },
+    colleague: (stored) =>
+      api.saveContact({ ...stored.value, phone: "+420 000 000 111" }, stored.revision),
+    colleagues: (value) => value.phone,
+    submit: (_data, base, form) => submitContact(base, form),
+  };
+
+  async function staleSave<T, F>(which: Case<T, F>) {
+    // The person opens the form and types.
+    const opened = await loadAppData();
+    const record = which.open(opened);
+    if (!record) throw new Error(`${which.name} missing`);
+    const formOf = which.formOf(opened);
+    let state: RecordForm<T, F> = openForm(record, formOf);
+    state = { ...state, form: { ...state.form, ...which.typed } };
+
+    // A colleague saves a change, then the person adds an activity, which
+    // reloads the data under the open form.
+    await which.colleague(record);
+    await api.createActivity({
+      dealId: "D-2026-0004",
+      type: "note",
+      at: "2026-11-25T09:00:00+01:00",
+      summary: "Aktivita během úprav",
+    });
+    const reloaded = await loadAppData();
+    const current = which.open(reloaded);
+    if (!current) throw new Error(`${which.name} missing after the reload`);
+    state = followRecord(state, current, which.formOf(reloaded));
+
+    // The reload kept the typed values and the revision they came from.
+    expect(state.form).toMatchObject(which.typed as object);
+    expect(state.base?.revision).toBe(record.revision);
+    expect(driftOf(state.base, current)).toBe("changed");
+
+    // The save sends that revision and is refused; the colleague's change stays.
+    const refused = await which.submit(reloaded, state.base, state.form).catch((error) => error);
+    expect(refused).toBeInstanceOf(ApiError);
+    expect(refused).toMatchObject({ code: "record_changed", currentRevision: current.revision });
+    expect((refused as ApiError).message).toContain("někdo jiný");
+    const after = which.open(await loadAppData());
+    expect(after?.revision).toBe(current.revision);
+    expect(which.colleagues(after?.value as T)).toBe(which.colleagues(current.value));
+    expect(state.form).toMatchObject(which.typed as object);
+
+    // Loading the current version takes the colleague's change; the save goes through.
+    const fresh = openForm(current, which.formOf(reloaded));
+    const saved = await which.submit(reloaded, fresh.base, {
+      ...fresh.form,
+      ...which.typed,
+    });
+    expect(which.colleagues(saved.value)).toBe(which.colleagues(current.value));
+  }
+
+  test("a deal: a stale save is refused and keeps the colleague's change and the values", () =>
+    staleSave(deal));
+  test("a company: a stale save is refused and keeps the colleague's change and the values", () =>
+    staleSave(company));
+  test("a contact: a stale save is refused and keeps the colleague's change and the values", () =>
+    staleSave(contact));
+
+  test("an untouched form follows the record as it is stored now", async () => {
+    const opened = await loadAppData();
+    const record = deal.open(opened);
+    if (!record) throw new Error("D-2026-0004 missing");
+    const state = openForm(record, deal.formOf(opened));
+    await deal.colleague(record);
+    const reloaded = await loadAppData();
+    const current = deal.open(reloaded);
+    const followed = followRecord(state, current, deal.formOf(reloaded));
+    expect(followed.base?.revision).toBe(current?.revision as string);
+    expect(followed.form.description).toBe("Popis kolegy");
+    // A reload that changed nothing keeps the very same form.
+    expect(followRecord(followed, current, deal.formOf(reloaded))).toBe(followed);
+  });
+
+  test("the settings: the edits outlive a reload, and a stale save is record_changed", async () => {
+    const opened = await loadAppData();
+    let state = openForm(opened.settings, settingsFormOf);
+    state = { ...state, form: { ...state.form, owners: "Jana Ukázková\nNový Obchodník" } };
+
+    // A colleague renames a stage; another action reloads the data.
+    await api.saveSettings(
+      {
+        ...opened.settings.value,
+        stages: opened.settings.value.stages.map((stage, index) =>
+          index === 0 ? { ...stage, label: "Zájemce" } : stage,
+        ),
+      },
+      opened.settings.revision,
+    );
+    await api.createActivity({
+      dealId: "D-2026-0004",
+      type: "note",
+      at: "2026-11-25T09:00:00+01:00",
+      summary: "Jiná akce",
+    });
+    const reloaded = await loadAppData();
+    // The settings page stays mounted on a copy that writes, whatever the revision.
+    expect(detailKey("settings", opened.settings.revision, true)).toBe(
+      detailKey("settings", reloaded.settings.revision, true),
+    );
+    state = followRecord(state, reloaded.settings, settingsFormOf);
+    expect(state.form.owners).toBe("Jana Ukázková\nNový Obchodník");
+    expect(state.base?.revision).toBe(opened.settings.revision);
+    expect(driftOf(state.base, reloaded.settings)).toBe("changed");
+
+    const refused = await submitSettings(state.base ?? opened.settings, state.form).catch(
+      (error) => error,
+    );
+    expect(refused).toMatchObject({
+      code: "record_changed",
+      currentRevision: reloaded.settings.revision,
+    });
+    const after = await loadAppData();
+    expect(after.settings.value.stages[0]?.label).toBe("Zájemce");
+    expect(after.settings.value.owners).toEqual(opened.settings.value.owners);
+  });
+
+  test("the notice says what happened and offers the current version or going on", () => {
+    const noop = () => {};
+    const changedCs = render(
+      "cs",
+      <ChangedNotice drift="changed" refused={false} onLoadCurrent={noop} onKeepEditing={noop} />,
+    );
+    expect(changedCs).toContain("Záznam mezitím změnil někdo jiný.");
+    expect(changedCs).toContain("Vaše rozpracované úpravy zůstávají ve formuláři.");
+    expect(changedCs).toContain("Načíst aktuální verzi");
+    expect(changedCs).toContain("Pokračovat v úpravách");
+    const refusedCs = render(
+      "cs",
+      <ChangedNotice drift="changed" refused settings onLoadCurrent={noop} onKeepEditing={noop} />,
+    );
+    expect(refusedCs).toContain("Neuloženo. Nastavení mezitím změnil někdo jiný.");
+    const refusedEn = render(
+      "en",
+      <ChangedNotice drift="changed" refused onLoadCurrent={noop} onKeepEditing={noop} />,
+    );
+    expect(refusedEn).toContain("Not saved. Someone else changed the record meanwhile.");
+    expect(refusedEn).toContain("Load the current version");
+    expect(refusedEn).toContain("Keep editing");
+    expect(refusedEn.match(/[ěščřžýáíéůúťďňĚŠČŘŽÝÁÍÉŮÚ]+/g) ?? []).toEqual([]);
+  });
+});
+
+describe("two pages over one store", () => {
+  const realFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  test("a write of one page reaches the lists and the overview of the other", async () => {
+    const { store, handle } = serveInProcess();
+    // The other page listens to the server's events, as `subscribe` of the client does.
+    const stop = new AbortController();
+    const events = await handle(
+      new Request("http://127.0.0.1:24941/api/events", { signal: stop.signal }),
+    );
+    const reader = (events.body as ReadableStream<Uint8Array | string>).getReader();
+    let heard = "";
+    const hear = async (type: string) => {
+      while (!heard.includes(`event: ${type}`)) {
+        const { value, done } = await reader.read();
+        if (done) throw new Error(`the stream ended before ${type}`);
+        heard += typeof value === "string" ? value : new TextDecoder().decode(value);
+      }
+      heard = "";
+    };
+    try {
+      const other = await loadAppData();
+      expect(other.deals.some((entry) => entry.value.title === "Vybavení recepce")).toBe(false);
+
+      // This page creates a deal and renames another one.
+      await api.createDeal({
+        title: "Vybavení recepce",
+        companyId: "C-0001",
+        owner: "Jana Ukázková",
+        stageId: "qualified",
+        value: 6_400_000,
+        expectedClose: "2027-03-31",
+      });
+      await hear("records-changed");
+      const renamed = other.deals.find((entry) => entry.value.id === "D-2026-0004");
+      if (!renamed) throw new Error("D-2026-0004 missing");
+      await api.saveDeal({ ...renamed.value, title: "Přejmenovaný případ" }, renamed.revision);
+      await hear("records-changed");
+
+      // The other page reloads on the event, as the App does.
+      const reloaded = await loadAppData();
+      const overview = render(
+        "cs",
+        <OverviewPage data={reloaded} onChanged={changed} today={TODAY} />,
+      );
+      const list = render("cs", <DealListPage data={reloaded} tab="all" />);
+      for (const shown of [overview, list]) {
+        expect(shown).toContain("Vybavení recepce");
+        expect(shown).toContain("Přejmenovaný případ");
+      }
+      expect(list).toContain("Všechny (15)");
+    } finally {
+      stop.abort();
+      store.close();
+    }
   });
 });

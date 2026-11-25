@@ -4,8 +4,9 @@ import type { Address, Company } from "../../domain/company.ts";
 import { stageById } from "../../domain/settings.ts";
 import type { Localized } from "../../i18n/locale.ts";
 import type { AppData } from "../App.tsx";
-import { ApiError, api } from "../api.ts";
-import { ErrorNotice, Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
+import { ApiError, api, type Stored } from "../api.ts";
+import { Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
+import { EditNotices, isRecordChanged, useRecordForm } from "../edit.tsx";
 import { useFormat, useLocale, useT } from "../i18n.tsx";
 import { href, navigate } from "../routes.ts";
 import { useCanWrite } from "../write.tsx";
@@ -29,7 +30,7 @@ const ADDRESS_FIELDS: { key: keyof Address; label: Localized }[] = [
   { key: "country", label: { cs: "Stát", en: "Country" } },
 ];
 
-function formOf(company: Company | undefined, country: string): CompanyForm {
+export function companyFormOf(company: Company | undefined, country: string): CompanyForm {
   return {
     name: company?.name ?? "",
     ico: company?.ico ?? "",
@@ -41,6 +42,33 @@ function formOf(company: Company | undefined, country: string): CompanyForm {
     website: company?.website ?? "",
     note: company?.note ?? "",
   };
+}
+
+/**
+ * Sends a company's form: a change of the company the form came from, with
+ * that company's revision as the base, or a new company.
+ */
+export function submitCompany(
+  base: Stored<Company> | undefined,
+  form: CompanyForm,
+): Promise<Stored<Company>> {
+  const trimmed = (value: string) => value.trim();
+  const address: Address = Object.fromEntries(
+    ADDRESS_FIELDS.flatMap((field) =>
+      trimmed(form[field.key]) ? [[field.key, trimmed(form[field.key])]] : [],
+    ),
+  );
+  const record = {
+    name: trimmed(form.name),
+    ...(trimmed(form.ico) ? { ico: trimmed(form.ico).replace(/\s/g, "") } : {}),
+    ...(trimmed(form.dic) ? { dic: trimmed(form.dic) } : {}),
+    ...(Object.keys(address).length > 0 ? { address } : {}),
+    ...(trimmed(form.website) ? { website: trimmed(form.website) } : {}),
+    ...(trimmed(form.note) ? { note: trimmed(form.note) } : {}),
+  };
+  return base
+    ? api.saveCompany({ ...record, id: base.value.id }, base.revision)
+    : api.createCompany(record);
 }
 
 /** A company's detail and its edit, with its deals and contacts. */
@@ -58,10 +86,16 @@ export function CompanyPage({
   const canWrite = useCanWrite();
   const settings = data.settings.value;
   const f = useFormat(settings.currency);
-  const stored = id ? data.companies.find((entry) => entry.value.id === id) : undefined;
-  const [form, setForm] = useState<CompanyForm>(() =>
-    formOf(stored?.value, t("Česká republika", "Czech Republic")),
+  const current = id ? data.companies.find((entry) => entry.value.id === id) : undefined;
+  // The form keeps the company it came from: a reload of the data never
+  // replaces what the person is typing, and the save sends that revision.
+  const country = t("Česká republika", "Czech Republic");
+  const edit = useRecordForm<Company, CompanyForm>(current, (value) =>
+    companyFormOf(value, country),
   );
+  const { form, setForm } = edit;
+  // The page shows the company as stored now; the form edits the one it came from.
+  const stored = current ?? edit.base;
   const [busy, setBusy] = useState(false);
   const [looking, setLooking] = useState(false);
   const [aresNote, setAresNote] = useState<{ tone: "success" | "warning"; text: string } | null>(
@@ -76,7 +110,7 @@ export function CompanyPage({
       </section>
     );
   }
-  const update = (patch: Partial<CompanyForm>) => setForm({ ...form, ...patch });
+  const update = edit.update;
   const deals = stored
     ? data.deals.filter((entry) => entry.value.companyId === stored.value.id)
     : [];
@@ -126,27 +160,15 @@ export function CompanyPage({
     event.preventDefault();
     setBusy(true);
     setError(null);
-    const trimmed = (value: string) => value.trim();
-    const address: Address = Object.fromEntries(
-      ADDRESS_FIELDS.flatMap((field) =>
-        trimmed(form[field.key]) ? [[field.key, trimmed(form[field.key])]] : [],
-      ),
-    );
-    const record = {
-      name: trimmed(form.name),
-      ...(trimmed(form.ico) ? { ico: trimmed(form.ico).replace(/\s/g, "") } : {}),
-      ...(trimmed(form.dic) ? { dic: trimmed(form.dic) } : {}),
-      ...(Object.keys(address).length > 0 ? { address } : {}),
-      ...(trimmed(form.website) ? { website: trimmed(form.website) } : {}),
-      ...(trimmed(form.note) ? { note: trimmed(form.note) } : {}),
-    };
+    const opened = edit.base;
     try {
-      const saved = stored
-        ? await api.saveCompany({ ...record, id: stored.value.id }, stored.revision)
-        : await api.createCompany(record);
+      const saved = await submitCompany(opened, form);
+      if (opened) edit.saved(saved);
       await onChanged();
       navigate({ page: "company", id: saved.value.id });
     } catch (caught) {
+      // The company stored now, so the person can load it; their values stay.
+      if (isRecordChanged(caught)) await onChanged();
       setError(caught);
     } finally {
       setBusy(false);
@@ -177,7 +199,7 @@ export function CompanyPage({
       <div className="detail-grid">
         <form className="form" onSubmit={save}>
           <fieldset className="form-fieldset" disabled={!canWrite}>
-            <ErrorNotice error={error} />
+            <EditNotices edit={edit} error={error} onClear={() => setError(null)} />
             <article className="ds-card">
               <div className="form-grid">
                 <Field label={t("IČO", "Company ID")} error={errors.ico}>

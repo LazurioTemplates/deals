@@ -3,13 +3,47 @@ import { useState } from "react";
 import type { Contact } from "../../domain/contact.ts";
 import { stageById } from "../../domain/settings.ts";
 import type { AppData } from "../App.tsx";
-import { api } from "../api.ts";
-import { ErrorNotice, Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
+import { api, type Stored } from "../api.ts";
+import { Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
+import { EditNotices, isRecordChanged, useRecordForm } from "../edit.tsx";
 import { useT } from "../i18n.tsx";
 import { href, navigate } from "../routes.ts";
 import { useCanWrite } from "../write.tsx";
 
-type ContactForm = Record<"name" | "email" | "phone" | "role" | "companyId" | "note", string>;
+export type ContactForm = Record<
+  "name" | "email" | "phone" | "role" | "companyId" | "note",
+  string
+>;
+
+/** The form of a contact as stored, or of a new one (of `company` when the route names it). */
+export function contactFormOf(contact: Contact | undefined, company: string | null): ContactForm {
+  return {
+    name: contact?.name ?? "",
+    email: contact?.email ?? "",
+    phone: contact?.phone ?? "",
+    role: contact?.role ?? "",
+    companyId: contact?.companyId ?? company ?? "",
+    note: contact?.note ?? "",
+  };
+}
+
+/**
+ * Sends a contact's form: a change of the contact the form came from, with
+ * that contact's revision as the base, or a new contact.
+ */
+export function submitContact(
+  base: Stored<Contact> | undefined,
+  form: ContactForm,
+): Promise<Stored<Contact>> {
+  const record = Object.fromEntries(
+    Object.entries(form).flatMap(([key, value]) =>
+      value.trim() === "" ? [] : [[key, value.trim()]],
+    ),
+  ) as Omit<Contact, "id">;
+  return base
+    ? api.saveContact({ ...record, id: base.value.id }, base.revision)
+    : api.createContact(record);
+}
 
 /** A contact's detail and its edit, with the deals that name the contact. */
 export function ContactPage({
@@ -26,15 +60,15 @@ export function ContactPage({
   const t = useT();
   const canWrite = useCanWrite();
   const settings = data.settings.value;
-  const stored = id ? data.contacts.find((entry) => entry.value.id === id) : undefined;
-  const [form, setForm] = useState<ContactForm>(() => ({
-    name: stored?.value.name ?? "",
-    email: stored?.value.email ?? "",
-    phone: stored?.value.phone ?? "",
-    role: stored?.value.role ?? "",
-    companyId: stored?.value.companyId ?? company ?? "",
-    note: stored?.value.note ?? "",
-  }));
+  const current = id ? data.contacts.find((entry) => entry.value.id === id) : undefined;
+  // The form keeps the contact it came from: a reload of the data never
+  // replaces what the person is typing, and the save sends that revision.
+  const edit = useRecordForm<Contact, ContactForm>(current, (value) =>
+    contactFormOf(value, company),
+  );
+  const form = edit.form;
+  // The page shows the contact as stored now; the form edits the one it came from.
+  const stored = current ?? edit.base;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const errors = fieldErrors(error);
@@ -45,7 +79,7 @@ export function ContactPage({
       </section>
     );
   }
-  const update = (patch: Partial<ContactForm>) => setForm({ ...form, ...patch });
+  const update = edit.update;
   const deals = stored
     ? data.deals.filter((entry) => entry.value.contactIds?.includes(stored.value.id))
     : [];
@@ -54,18 +88,15 @@ export function ContactPage({
     event.preventDefault();
     setBusy(true);
     setError(null);
-    const record = Object.fromEntries(
-      Object.entries(form).flatMap(([key, value]) =>
-        value.trim() === "" ? [] : [[key, value.trim()]],
-      ),
-    ) as Omit<Contact, "id">;
+    const opened = edit.base;
     try {
-      const saved = stored
-        ? await api.saveContact({ ...record, id: stored.value.id }, stored.revision)
-        : await api.createContact(record);
+      const saved = await submitContact(opened, form);
+      if (opened) edit.saved(saved);
       await onChanged();
       navigate({ page: "contact", id: saved.value.id });
     } catch (caught) {
+      // The contact stored now, so the person can load it; their values stay.
+      if (isRecordChanged(caught)) await onChanged();
       setError(caught);
     } finally {
       setBusy(false);
@@ -83,7 +114,7 @@ export function ContactPage({
       <div className="detail-grid">
         <form className="form" onSubmit={save}>
           <fieldset className="form-fieldset" disabled={!canWrite}>
-            <ErrorNotice error={error} />
+            <EditNotices edit={edit} error={error} onClear={() => setError(null)} />
             <article className="ds-card">
               <div className="form-grid">
                 <Field label={t("Jméno", "Name")} error={errors.name} wide>

@@ -3,13 +3,35 @@ import { useState } from "react";
 import { slugify } from "../../domain/common.ts";
 import type { LossReason, Settings, Stage } from "../../domain/settings.ts";
 import type { AppData } from "../App.tsx";
-import { api } from "../api.ts";
-import { ErrorNotice, Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
+import { api, type Stored } from "../api.ts";
+import { Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
+import { EditNotices, isRecordChanged, useRecordForm } from "../edit.tsx";
 import { useLocale, useT } from "../i18n.tsx";
 import { useCanWrite } from "../write.tsx";
 
-interface StageRow extends Omit<Stage, "probability"> {
+export interface StageRow extends Omit<Stage, "probability"> {
   probability: string;
+}
+
+export interface SettingsForm {
+  stages: StageRow[];
+  reasons: LossReason[];
+  currency: string;
+  owners: string;
+  ares: boolean;
+}
+
+export function settingsFormOf(settings: Settings | undefined): SettingsForm {
+  return {
+    stages: (settings?.stages ?? []).map((stage) => ({
+      ...stage,
+      probability: String(stage.probability),
+    })),
+    reasons: (settings?.lossReasons ?? []).map((reason) => ({ ...reason })),
+    currency: settings?.currency ?? "",
+    owners: (settings?.owners ?? []).join("\n"),
+    ares: settings?.aresLookup ?? false,
+  };
 }
 
 /** A new id from a label that no other entry has: `jednani`, `jednani-2`. */
@@ -18,6 +40,40 @@ export function freshId(label: string, taken: readonly string[], fallback: strin
   let id = base;
   for (let index = 2; taken.includes(id); index += 1) id = `${base}-${index}`;
   return id;
+}
+
+/** A stage's probability as written, or `null` while it is no whole number from 0 to 100. */
+export function probabilityOf(row: StageRow): number | null {
+  const value = Number(row.probability);
+  return row.probability.trim() !== "" && Number.isInteger(value) && value >= 0 && value <= 100
+    ? value
+    : null;
+}
+
+/**
+ * Sends the settings' form as a change of the settings it came from, with
+ * their revision as the base.
+ */
+export function submitSettings(base: Stored<Settings>, form: SettingsForm) {
+  const list = form.owners
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const { owners: _owners, ...rest } = base.value;
+  const record: Settings = {
+    ...rest,
+    currency: form.currency,
+    stages: form.stages.map((row) => ({
+      id: row.id,
+      label: row.label.trim(),
+      kind: row.kind,
+      probability: probabilityOf(row) ?? 0,
+    })),
+    lossReasons: form.reasons.map((reason) => ({ id: reason.id, label: reason.label.trim() })),
+    ...(list.length > 0 ? { owners: [...new Set(list)] } : {}),
+    aresLookup: form.ares,
+  };
+  return api.saveSettings(record, base.revision);
 }
 
 /**
@@ -36,16 +92,15 @@ export function SettingsPage({
   const t = useT();
   const locale = useLocale();
   const canWrite = useCanWrite();
-  const stored = data.settings;
-  const [stages, setStages] = useState<StageRow[]>(() =>
-    stored.value.stages.map((stage) => ({ ...stage, probability: String(stage.probability) })),
-  );
-  const [reasons, setReasons] = useState<LossReason[]>(() =>
-    stored.value.lossReasons.map((reason) => ({ ...reason })),
-  );
-  const [currency, setCurrency] = useState(stored.value.currency);
-  const [owners, setOwners] = useState((stored.value.owners ?? []).join("\n"));
-  const [ares, setAres] = useState(stored.value.aresLookup);
+  // The form keeps the settings it came from: a reload of the data never
+  // replaces what the person is typing, and the save sends that revision.
+  const edit = useRecordForm<Settings, SettingsForm>(data.settings, settingsFormOf);
+  const { stages, reasons, currency, owners, ares } = edit.form;
+  const setStages = (next: StageRow[]) => edit.update({ stages: next });
+  const setReasons = (next: LossReason[]) => edit.update({ reasons: next });
+  const setCurrency = (next: string) => edit.update({ currency: next });
+  const setOwners = (next: string) => edit.update({ owners: next });
+  const setAres = (next: boolean) => edit.update({ ares: next });
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -53,12 +108,6 @@ export function SettingsPage({
   const usedStages = new Set(data.deals.map((entry) => entry.value.stageId));
   const usedReasons = new Set(data.deals.flatMap((entry) => entry.value.lossReasonId ?? []));
 
-  const probabilityOf = (row: StageRow) => {
-    const value = Number(row.probability);
-    return row.probability.trim() !== "" && Number.isInteger(value) && value >= 0 && value <= 100
-      ? value
-      : null;
-  };
   const invalid =
     stages.some((row) => !row.label.trim() || probabilityOf(row) === null) ||
     reasons.length === 0 ||
@@ -112,29 +161,13 @@ export function SettingsPage({
     setBusy(true);
     setError(null);
     setSaved(false);
-    const list = owners
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean);
-    const { owners: _owners, ...rest } = stored.value;
-    const record: Settings = {
-      ...rest,
-      currency,
-      stages: stages.map((row) => ({
-        id: row.id,
-        label: row.label.trim(),
-        kind: row.kind,
-        probability: probabilityOf(row) ?? 0,
-      })),
-      lossReasons: reasons.map((reason) => ({ id: reason.id, label: reason.label.trim() })),
-      ...(list.length > 0 ? { owners: [...new Set(list)] } : {}),
-      aresLookup: ares,
-    };
     try {
-      await api.saveSettings(record, stored.revision);
+      edit.saved(await submitSettings(edit.base ?? data.settings, edit.form));
       await onChanged();
       setSaved(true);
     } catch (caught) {
+      // The settings stored now, so the person can load them; their values stay.
+      if (isRecordChanged(caught)) await onChanged();
       setError(caught);
     } finally {
       setBusy(false);
@@ -152,7 +185,7 @@ export function SettingsPage({
       />
       <form className="form form-wide" onSubmit={save}>
         <fieldset className="form-fieldset" disabled={!canWrite}>
-          <ErrorNotice error={error} />
+          <EditNotices edit={edit} error={error} onClear={() => setError(null)} settings />
           {saved ? (
             <Alert tone="success" locale={locale}>
               {t("Uloženo do konceptu.", "Saved to the draft.")}
