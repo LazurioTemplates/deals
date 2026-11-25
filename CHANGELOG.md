@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.1 — 2026-11-25
+
 ### For whoever adopts it
 
 - **An existing pipeline first.** Before the plan, the adoption looks for a
