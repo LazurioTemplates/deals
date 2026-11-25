@@ -314,6 +314,10 @@ describe("module contract", () => {
     expect(guide).toContain("forge_binding.team.asserted_slug");
     expect(guide).toContain("team-binding-mismatch");
     expect(guide).toContain("gh api --paginate orgs/<Org>/teams");
+    // Every page: an existing pipeline or a Team past the first page counts.
+    expect(guide).toContain("gh api --paginate orgs/<Org>/repos");
+    expect(guide).not.toMatch(/gh repo list <Org>(?! stops)/);
+    expect(guide).not.toMatch(/gh api orgs\/<Org>\/teams/);
     expect(guide).toContain("`v3` of `<Org>/<slug>-data`");
     expect(guide).toContain("cannot be established yet");
     expect(guide).toContain("**Who approves the pull requests.**");
