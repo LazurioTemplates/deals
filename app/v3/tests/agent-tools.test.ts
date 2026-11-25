@@ -473,6 +473,67 @@ describe("the draft", () => {
     expect(await store.listCompanies()).toHaveLength(6);
   });
 
+  test("get_draft shows every changed field with its whole value before and after", async () => {
+    const { tools, store } = setup(true);
+    // A colleague changes a company on the same writer, past the tools: one
+    // nested field, a long note and the website.
+    const company = await store.getCompany("C-0002");
+    if (!company) throw new Error("C-0002 missing");
+    const note = `${"Dlouhá poznámka kolegy. ".repeat(20)}Konec.`;
+    await store.saveCompany(
+      {
+        ...company.value,
+        note,
+        website: "https://kolega.example",
+        address: { ...company.value.address, city: "Jinde" },
+      },
+      company.revision,
+    );
+    // The agent changes a deal: its title, value and contacts.
+    const deal = await ok(tools, "get_deal", { id: "D-2026-0004" });
+    await ok(tools, "update_deal", {
+      id: "D-2026-0004",
+      base_revision: deal.revision,
+      changes: { title: "Nový název", value: 1_234_500, contact_ids: ["P-0004", "P-0001"] },
+    });
+    const draft = await ok(tools, "get_draft", {});
+    const records = draft.records as {
+      path: string;
+      fields: { field: string; label: string; before: unknown; after: unknown }[];
+    }[];
+    const companyFields = records.find((record) => record.path.includes("C-0002"))?.fields;
+    expect(companyFields).toEqual([
+      {
+        field: "address/city",
+        label: "Address",
+        before: company.value.address?.city ?? null,
+        after: "Jinde",
+      },
+      { field: "note", label: "Note", before: company.value.note ?? null, after: note },
+      {
+        field: "website",
+        label: "Website",
+        before: company.value.website ?? null,
+        after: "https://kolega.example",
+      },
+    ]);
+    // The long note is whole, never shortened.
+    expect(companyFields?.find((field) => field.field === "note")?.after).toBe(note);
+    const dealFields = records.find((record) => record.path.includes("D-2026-0004"))?.fields;
+    expect(dealFields?.map((field) => field.field)).toEqual(["contactIds", "title", "value"]);
+    expect(dealFields?.find((field) => field.field === "contactIds")?.after).toEqual([
+      "P-0004",
+      "P-0001",
+    ]);
+    expect(dealFields?.find((field) => field.field === "value")?.after).toBe(1_234_500);
+    // No audit field is shown as a change.
+    for (const record of records) {
+      for (const field of record.fields) {
+        expect(["revision", "updatedAt", "updatedBy"]).not.toContain(field.field);
+      }
+    }
+  });
+
   test("publish_draft publishes exactly the draft shown and is audited as a publication", async () => {
     const { tools, store, audits } = setup(true);
     await ok(tools, "create_company", { name: "Publikovaná s.r.o." });

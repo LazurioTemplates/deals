@@ -46,7 +46,9 @@ question for the person, not a step for you.
    to report; an error means something is wrong; fix it with the person.
 8. **Tell the person**, in their language: what you created (ids and names),
    what you left empty and why, and that it all waits as a draft in
-   "Koncept a publikování" / "Draft & publish". `get_draft` lists it.
+   "Koncept a publikování" / "Draft & publish". `get_draft` lists every
+   record of the draft with its changed fields and their values before and
+   after; show them all, a colleague's changes too, before any publication.
 
 ## Never
 

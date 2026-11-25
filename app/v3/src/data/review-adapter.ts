@@ -158,7 +158,21 @@ function recordOf(text: string | undefined): Record<string, unknown> | undefined
   }
 }
 
-/** One change of one record as the Draft & Publish card shows it. */
+/** The label of a record's field in the person's language: `address/city` → „Adresa“. */
+export function fieldLabel(fieldPath: string, locale: Locale = "cs"): string {
+  const key = fieldPath.split("/").filter(Boolean)[0] ?? "";
+  return FIELD_LABELS[key]?.[locale] ?? key;
+}
+
+/** A JSON value of a record, as the card's metadata may carry it. */
+type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
+
+/**
+ * One change of one record as the Draft & Publish card shows it. Besides the
+ * card's short field summaries, `metadata.record` carries the whole record
+ * before and after (without its audit fields), so a reviewer that is not a
+ * person, the tools for agents, can show every changed value in full.
+ */
 export function reviewResource(
   collection: CollectionName,
   id: string,
@@ -199,7 +213,13 @@ export function reviewResource(
       },
     ],
     fallback: { activeLevel: "resource_adapter", steps: [] },
-    metadata: { typeLabel: subject.typeLabel },
+    metadata: {
+      typeLabel: subject.typeLabel,
+      record: {
+        before: (before ? withoutAudit(before) : null) as Json,
+        after: (after ? withoutAudit(after) : null) as Json,
+      },
+    },
   };
 }
 

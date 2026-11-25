@@ -38,14 +38,17 @@ page's tools while the App is open in the browser).
 5. **Check and show the draft:** `check_data` (a won deal needs a value
    above zero; a lost one a reason) and `get_draft`. Tell the person, in their
    language, every record the draft holds (not only yours: a colleague's
-   change may wait in it too) and that it waits in "Koncept a publikování" /
+   change may wait in it too) with each of its `fields`: the field, its value
+   before and its value after, whole, as `get_draft` gives them; never only a
+   count of changed fields. Say that it waits in "Koncept a publikování" /
    "Draft & publish". Keep the draft's `revision` you showed.
 6. **Publish only what they approved.** When the person says "Publikuj" /
    "Publish" for this draft, `publish_draft` with `expected_revision` the
    `revision` you showed in step 5, never one read afterwards: the App
    publishes only that very draft. A refusal with `draft_changed` means the
-   draft changed since they saw it: `get_draft`, show the person what is new
-   in it and publish only on their new word, with the new `revision`.
+   draft changed since they saw it: `get_draft`, show the person every
+   change in it again as in step 5 and publish only on their new word, with
+   the new `revision`.
 
 ## Never
 

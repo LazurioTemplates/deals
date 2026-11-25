@@ -9,6 +9,7 @@ import {
 import type { DraftPanelInput } from "@lazurio/repository-db";
 import { z } from "zod";
 import packageJson from "../../package.json";
+import { fieldLabel } from "../data/review-adapter.ts";
 import { ACTIVITY_TYPES, type Activity } from "../domain/activity.ts";
 import { isoDate, isoDateTime, slug } from "../domain/common.ts";
 import type { Company } from "../domain/company.ts";
@@ -86,8 +87,8 @@ export const TOOL_DESCRIPTIONS = {
     "Checks the data by the rules across records. An error stops a publication, a warning does not.",
   ),
   get_draft: localized(
-    "Vrátí koncept: stav, revizi konceptu a změněné záznamy s cestou pro discard_draft.",
-    "Returns the draft: its state, its revision and the changed records with the path for discard_draft.",
+    "Vrátí koncept: stav, revizi konceptu a každý změněný záznam s cestou pro discard_draft a se všemi změněnými poli, každé s celou hodnotou před a po. Před publikací ukaž člověku všechny tyto změny.",
+    "Returns the draft: its state, its revision and every changed record with the path for discard_draft and all its changed fields, each with its whole value before and after. Show the person all of these changes before a publication.",
   ),
   create_deal: localized(
     "Založí obchodní případ jako koncept, s dalším id roku. Firma musí existovat; nic nepublikuje.",
@@ -795,13 +796,19 @@ export function createAgentTools(options: AgentToolsOptions): ToolRegistry {
               state: card.status?.state ?? null,
               unavailable: card.unavailableReason ?? null,
               revision: card.revision ?? null,
-              records: (card.records ?? []).map((record) => ({
-                path: record.technicalPath,
-                label: record.resource.label,
-                type: record.resource.metadata?.typeLabel ?? record.resource.resourceType,
-                change: record.resource.changes[0]?.kind ?? null,
-                summary: record.resource.changes[0]?.summary ?? null,
-              })),
+              records: (card.records ?? []).map((record) => {
+                const full = record.resource.metadata?.record as
+                  | { before?: unknown; after?: unknown }
+                  | undefined;
+                return {
+                  path: record.technicalPath,
+                  label: record.resource.label,
+                  type: record.resource.metadata?.typeLabel ?? record.resource.resourceType,
+                  change: record.resource.changes[0]?.kind ?? null,
+                  summary: record.resource.changes[0]?.summary ?? null,
+                  fields: changedFields(full?.before ?? null, full?.after ?? null, locale),
+                };
+              }),
             },
           };
         },
@@ -1027,6 +1034,47 @@ export function createAgentTools(options: AgentToolsOptions): ToolRegistry {
       }),
     ],
   });
+}
+
+/**
+ * Every field that differs between a record before and after, with its whole
+ * values: a nested object (an address) by each of its fields, a list as a
+ * whole. Nothing is shortened or left out, so a person shown the draft sees
+ * what a publication would make public.
+ */
+export function changedFields(
+  before: unknown,
+  after: unknown,
+  locale: Locale,
+): { field: string; label: string; before: unknown; after: unknown }[] {
+  const result: { field: string; label: string; before: unknown; after: unknown }[] = [];
+  const isObject = (value: unknown): value is Record<string, unknown> =>
+    value !== null && typeof value === "object" && !Array.isArray(value);
+  const walk = (left: unknown, right: unknown, path: string) => {
+    if (JSON.stringify(left) === JSON.stringify(right)) return;
+    if (isObject(left) && isObject(right) && path !== "") {
+      for (const key of [...new Set([...Object.keys(left), ...Object.keys(right)])].sort()) {
+        walk(left[key], right[key], `${path}/${key}`);
+      }
+      return;
+    }
+    if (path === "") {
+      const l = isObject(left) ? left : {};
+      const r = isObject(right) ? right : {};
+      for (const key of [...new Set([...Object.keys(l), ...Object.keys(r)])].sort()) {
+        walk(l[key], r[key], `/${key}`);
+      }
+      return;
+    }
+    result.push({
+      field: path.slice(1),
+      label: fieldLabel(path, locale),
+      before: left ?? null,
+      after: right ?? null,
+    });
+  };
+  walk(before, after, "");
+  return result;
 }
 
 /** The tools in the language of each request, over one registry per language. */
