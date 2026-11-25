@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { appendFileSync } from "node:fs";
+import { join } from "node:path";
 import type { ToolAuditEvent } from "@lazurio/module-kit/tools";
 import {
   gatewayRequest,
@@ -11,10 +13,13 @@ import {
   TEST_ORIGIN,
 } from "@lazurio/module-kit/tools/testing";
 import { createMemoryStore } from "../src/data/memory-store.ts";
+import { createRepositoryDbStore } from "../src/data/repository-db-store.ts";
+import type { DealsStore } from "../src/data/store.ts";
 import type { Locale } from "../src/i18n/locale.ts";
 import { accessOf, LISTENER } from "../src/server/access.ts";
 import { createAgentTools, createAgentToolsHandler } from "../src/server/agent-tools.ts";
 import { CHANNEL_HEADER, createApi } from "../src/server/api.ts";
+import { createFixtureRepo, git } from "./support/fixture-repo.ts";
 import { sampleData, TODAY } from "./support/seed.ts";
 
 const READ_TOOLS = [
@@ -47,11 +52,14 @@ const PUBLISH_TOOLS = ["publish_draft"];
 /** The App's API and its tools over the example in memory, as the
  * Application host runs them: the gateway states who came, `accessOf`
  * reads it as for every click. */
-function setup(writer: boolean, locale: Locale = "en") {
+function setup(
+  writer: boolean,
+  locale: Locale = "en",
+  store: DealsStore = createMemoryStore(sampleData()),
+) {
   const audits: ToolAuditEvent[] = [];
   const channels: Array<string | null> = [];
   const env = hostedEnvironment({ writer, listener: LISTENER });
-  const store = createMemoryStore(sampleData());
   const handle = createApi(store, {
     allowedOrigins: new Set([TEST_ORIGIN]),
     access: (request) => accessOf(request, env),
@@ -533,6 +541,61 @@ describe("the draft", () => {
       }
     }
   });
+
+  test("a change get_draft cannot show whole is left to the person: publish_draft refuses it", async () => {
+    // The real repository-db: a company changed through the tools and, in
+    // the same data checkout, a file that is no record of Deals.
+    const fixture = createFixtureRepo();
+    const store = createRepositoryDbStore({
+      mountRoot: fixture.mountRoot,
+      expect: { remote: fixture.origin, branch: "v3", within: fixture.moduleRoot },
+      intervalMs: 0,
+      writes: true,
+    });
+    try {
+      const { tools } = setup(true, "en", store);
+      const company = await ok(tools, "get_company", { id: "C-0002" });
+      await ok(tools, "update_company", {
+        id: "C-0002",
+        base_revision: company.revision,
+        changes: { note: "Poznámka" },
+      });
+      appendFileSync(join(fixture.mountRoot, "README.md"), "\nA line nobody reviewed.\n");
+      const draft = await ok(tools, "get_draft", {});
+      expect(draft.complete).toBe(false);
+      const records = draft.records as { path: string; reviewable: boolean; fields: unknown[] }[];
+      expect(records.find((record) => record.path === "README.md")).toMatchObject({
+        reviewable: false,
+        fields: [],
+      });
+      expect(records.find((record) => record.path.includes("C-0002"))).toMatchObject({
+        reviewable: true,
+        fields: [{ field: "note", after: "Poznámka" }],
+      });
+      // Even on the person's word, the tool does not publish what it cannot show.
+      const refused = await mcpTool(
+        tools,
+        "publish_draft",
+        { expected_revision: draft.revision },
+        user,
+      );
+      expect(refused.isError).toBe(true);
+      expect(refused.structured.reason).toBe("draft_not_reviewable");
+      expect(String(refused.structured.message)).toContain("README.md");
+      expect((await store.draft()).status?.state).toBe("draft");
+
+      // Without the foreign file the same tool publishes the draft shown.
+      git(fixture.mountRoot, ["checkout", "--", "README.md"]);
+      const shown = await ok(tools, "get_draft", {});
+      expect(shown.complete).toBe(true);
+      expect(await ok(tools, "publish_draft", { expected_revision: shown.revision })).toEqual({
+        published: true,
+      });
+    } finally {
+      store.close();
+      fixture.cleanup();
+    }
+  }, 60_000);
 
   test("publish_draft publishes exactly the draft shown and is audited as a publication", async () => {
     const { tools, store, audits } = setup(true);

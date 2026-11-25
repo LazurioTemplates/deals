@@ -49,6 +49,8 @@ question for the person, not a step for you.
    "Koncept a publikování" / "Draft & publish". `get_draft` lists every
    record of the draft with its changed fields and their values before and
    after; show them all, a colleague's changes too, before any publication.
+   With `complete: false` some change can be seen only on that page: say so,
+   and the person publishes there.
 
 ## Never
 

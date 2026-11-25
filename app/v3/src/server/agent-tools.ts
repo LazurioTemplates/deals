@@ -87,8 +87,8 @@ export const TOOL_DESCRIPTIONS = {
     "Checks the data by the rules across records. An error stops a publication, a warning does not.",
   ),
   get_draft: localized(
-    "Vrátí koncept: stav, revizi konceptu a každý změněný záznam s cestou pro discard_draft a se všemi změněnými poli, každé s celou hodnotou před a po. Před publikací ukaž člověku všechny tyto změny.",
-    "Returns the draft: its state, its revision and every changed record with the path for discard_draft and all its changed fields, each with its whole value before and after. Show the person all of these changes before a publication.",
+    "Vrátí koncept: stav, revizi konceptu a každý změněný záznam s cestou pro discard_draft a se všemi změněnými poli, každé s celou hodnotou před a po. Před publikací ukaž člověku všechny tyto změny. complete: false znamená, že koncept obsahuje změnu souboru, který není záznamem Deals; tu vidí jen člověk na stránce Koncept a publikování a publish_draft takový koncept odmítne.",
+    "Returns the draft: its state, its revision and every changed record with the path for discard_draft and all its changed fields, each with its whole value before and after. Show the person all of these changes before a publication. complete: false means the draft changes a file that is no record of Deals; only the person sees it on the page Draft & publish, and publish_draft refuses such a draft.",
   ),
   create_deal: localized(
     "Založí obchodní případ jako koncept, s dalším id roku. Firma musí existovat; nic nepublikuje.",
@@ -127,8 +127,8 @@ export const TOOL_DESCRIPTIONS = {
     "Discards the whole draft, or one of its records by the path from get_draft. It needs the draft's revision from get_draft.",
   ),
   publish_draft: localized(
-    "Publikuje celý koncept, jak ho ukázal get_draft, do datového repozitáře Organizace, kde ho uvidí kolegové. Volej jen na výslovný pokyn člověka („Publikuj“).",
-    "Publishes the whole draft as get_draft showed it to the Organization's data repository, where colleagues see it. Call it only on the person's explicit instruction (“Publish”).",
+    "Publikuje celý koncept, jak ho ukázal get_draft, do datového repozitáře Organizace, kde ho uvidí kolegové. Volej jen na výslovný pokyn člověka („Publikuj“). Koncept se změnou, kterou get_draft neumí ukázat celou (complete: false), odmítne s draft_not_reviewable.",
+    "Publishes the whole draft as get_draft showed it to the Organization's data repository, where colleagues see it. Call it only on the person's explicit instruction (“Publish”). A draft with a change get_draft cannot show whole (complete: false) is refused with draft_not_reviewable.",
   ),
 } as const satisfies Record<string, Localized>;
 
@@ -790,25 +790,30 @@ export function createAgentTools(options: AgentToolsOptions): ToolRegistry {
           const found = await request(context, "/api/draft");
           if (!found.ok) return found;
           const card = found.data as DraftPanelInput;
+          const records = (card.records ?? []).map((record) => {
+            const full = wholeRecord(record);
+            return {
+              path: record.technicalPath,
+              label: record.resource.label,
+              type: record.resource.metadata?.typeLabel ?? record.resource.resourceType,
+              change: record.resource.changes[0]?.kind ?? null,
+              summary: record.resource.changes[0]?.summary ?? null,
+              // A file that is no record of Deals (a README, a file of
+              // another tool) has no whole values to show here.
+              reviewable: full !== undefined,
+              fields: full ? changedFields(full.before, full.after, locale) : [],
+            };
+          });
           return {
             ok: true,
             data: {
               state: card.status?.state ?? null,
               unavailable: card.unavailableReason ?? null,
               revision: card.revision ?? null,
-              records: (card.records ?? []).map((record) => {
-                const full = record.resource.metadata?.record as
-                  | { before?: unknown; after?: unknown }
-                  | undefined;
-                return {
-                  path: record.technicalPath,
-                  label: record.resource.label,
-                  type: record.resource.metadata?.typeLabel ?? record.resource.resourceType,
-                  change: record.resource.changes[0]?.kind ?? null,
-                  summary: record.resource.changes[0]?.summary ?? null,
-                  fields: changedFields(full?.before ?? null, full?.after ?? null, locale),
-                };
-              }),
+              // false: some change can be seen only on the page "Koncept a
+              // publikování"; publish_draft refuses such a draft.
+              complete: records.every((record) => record.reviewable),
+              records,
             },
           };
         },
@@ -1025,6 +1030,26 @@ export function createAgentTools(options: AgentToolsOptions): ToolRegistry {
         // A publication: colleagues see it and it does not simply go back.
         effect: "publish",
         run: async ({ expected_revision, summary }, context) => {
+          // Only a draft whose every change the tools can show whole: a change
+          // of a file that is no record of Deals is published by the person
+          // on the page, where they see it.
+          const found = await request(context, "/api/draft");
+          if (!found.ok) return found;
+          const card = found.data as DraftPanelInput;
+          const hidden = (card.records ?? [])
+            .filter((record) => wholeRecord(record) === undefined)
+            .map((record) => record.technicalPath);
+          if (hidden.length > 0) {
+            return {
+              ok: false,
+              reason: "draft_not_reviewable",
+              message: say(
+                `Koncept obsahuje změny, které nástroje neumějí ukázat celé (${hidden.join(", ")}). Ať je člověk prohlédne a publikuje sám na stránce „Koncept a publikování“.`,
+                `The draft holds changes the tools cannot show whole (${hidden.join(", ")}). The person reviews and publishes it on the page "Draft & publish".`,
+              ),
+              details: { paths: hidden },
+            };
+          }
           const result = await request(context, "/api/draft/publish", {
             method: "POST",
             body: { expectedRevision: expected_revision, ...(summary ? { summary } : {}) },
@@ -1034,6 +1059,16 @@ export function createAgentTools(options: AgentToolsOptions): ToolRegistry {
       }),
     ],
   });
+}
+
+/** A draft record's whole values before and after, when the record is one of Deals. */
+function wholeRecord(
+  record: NonNullable<DraftPanelInput["records"]>[number],
+): { before: unknown; after: unknown } | undefined {
+  const full = record.resource.metadata?.record;
+  if (!full || typeof full !== "object" || Array.isArray(full)) return undefined;
+  const { before = null, after = null } = full as { before?: unknown; after?: unknown };
+  return { before, after };
 }
 
 /**
