@@ -35,9 +35,11 @@ skill keeps:
 - **Drafts only.** Every write of an agent is a draft. Publishing it
   (`publish_draft`, or the person's button in "Koncept a publikování" /
   "Draft & publish") is a Publication: only on the person's explicit
-  instruction for that draft ("Publikuj" / "Publish"), and only the draft's
-  revision the person saw (`expected_revision` from the `get_draft` you showed
-  them, never one read afterwards). A refusal with `draft_changed` means the
+  instruction for that draft ("Publikuj" / "Publish"), after you showed them
+  every change in it (each record's `fields` from `get_draft`, with values
+  before and after, a colleague's changes too), and only the draft's revision
+  the person saw (`expected_revision` from the `get_draft` you showed them,
+  never one read afterwards). A refusal with `draft_changed` means the
   draft changed since: show it to the person again and publish only on their
   new word.
 - **Nothing goes to a company or a person.** Answering a customer, sending an

@@ -36,7 +36,7 @@ channel `mcp` or `webmcp`, and the person's subject goes into the record's
 | `get_forecast` | read | | the weighted forecast by month, the bucket without a date, the total and won deals by month |
 | `get_stats` | read | `from`, `to` (the last 90 days by default) | conversion, won, lost, the average win and cycle, by stage, lost by reason |
 | `check_data` | read | | the `errors` and the `warnings` of the rules across records |
-| `get_draft` | read | | the draft's state, its `revision` and the changed records with their `path` |
+| `get_draft` | read | | the draft's state, its `revision` and every changed record with its `path` and `fields`: each changed field with its whole value `before` and `after` |
 | `create_deal` | write | `title`, `company_id`, `owner`, `value`, and `stage_id`, `probability`, `expected_close`, `contact_ids`, `description`, `quote_id` | the new deal's `id`, `revision` and `record` |
 | `update_deal` | write | `id`, `base_revision`, `changes` (the fields above but the stage; `null` takes an optional one away) | the deal's new `revision` and `record` |
 | `move_deal_stage` | write | `id`, `base_revision`, `stage_id`; won: `value`, `closed_at`; lost: `loss_reason_id`, `closed_at`, `loss_note` | the deal's new `revision` and `record` |
@@ -60,11 +60,14 @@ your entry and role and whether you may change data.
   It is a tool of its own with `effect: "publish"` and `destructiveHint`,
   every call is audited with that effect, and **an agent calls it only on the
   person's explicit instruction for that draft** ("Publikuj" / "Publish").
-  It publishes only the draft's revision the person saw: `expected_revision`
-  is the `revision` of the `get_draft` the agent showed them, never one read
-  afterwards. A draft that changed since is refused with `draft_changed`:
-  call `get_draft`, show the person what is new and publish only on their new
-  word, with the new `revision`. A draft that breaks a rule across records is
+  Before it, the agent shows the person every record of the draft, a
+  colleague's changes too, with each changed field and its value before and
+  after as `get_draft` gives them, never only a count. It publishes only the
+  draft's revision the person saw: `expected_revision` is the `revision` of
+  the `get_draft` the agent showed them, never one read afterwards. A draft
+  that changed since is refused with `draft_changed`: call `get_draft`, show
+  the person all of its changes again and publish only on their new word,
+  with the new `revision`. A draft that breaks a rule across records is
   refused with `rules_failed`.
 - **A copy that may not write** (`LAZURIO_RUNTIME_DATA_WRITER` is not `true`
   on the application host) lists only the reading tools and refuses a write
