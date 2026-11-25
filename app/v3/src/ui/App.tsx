@@ -20,6 +20,7 @@ import { DraftPage } from "./pages/DraftPage.tsx";
 import { OverviewPage } from "./pages/OverviewPage.tsx";
 import { SettingsPage } from "./pages/SettingsPage.tsx";
 import { parseRoute, type Route } from "./routes.ts";
+import { type InstalledTools, installTools } from "./tools.ts";
 import { followWriteStatus, useCanWrite, WriteContext } from "./write.tsx";
 
 /** Everything the pages read, loaded once and again whenever the data moves. */
@@ -84,6 +85,23 @@ export function App() {
       () => {},
     );
   }, []);
+
+  // The tools for agents: the server's, as it lists them for the person now
+  // (role and writer mode), in the App's language.
+  const installed = useRef<InstalledTools | null>(null);
+  useEffect(() => {
+    const tools = installTools(locale);
+    installed.current = tools;
+    return () => {
+      installed.current = null;
+      tools.remove();
+    };
+  }, [locale]);
+  // Once the server said whether this copy writes for the visitor, or that
+  // changed, it lists other tools.
+  useEffect(() => {
+    if (canWrite !== null) installed.current?.refresh();
+  }, [canWrite]);
 
   // Only the reload asked last shows: an earlier one that answers later
   // never puts older records back under the forms.
