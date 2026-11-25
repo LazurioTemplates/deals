@@ -9,6 +9,21 @@
   under any name, and asks the person whether Deals goes beside it, replaces
   it (without touching it) or serves only as a pattern; without an answer it
   adopts nothing (`docs/adoption.md`, step 1.4).
+- **The scaffold's own files go.** After the merge of the release, the
+  adoption removes every file under `app/v3/` the release does not have, by
+  one loop over `git ls-files`, instead of a fixed list that missed what
+  `lazurio module create --data` adds today (`src/server.ts`,
+  `src/app-server.ts`, `src/agent-tools.ts`, `tests/store-contract.test.ts`
+  and their tests); left behind, they failed the Module's checks. A test runs
+  the loop.
+- **Teams the command accepts.** The adoption offers only Teams the root's
+  `lazurio.organization.json` declares and GitHub has (step 1.6), and stops
+  before the plan when none is, instead of meeting `unknown_team` or
+  `team-not-on-github` at the command.
+- **Who approves, said up front.** The plan names who approves the three
+  pull requests; when the person is the only one who could, it says so
+  before anything is created and asks whom to ask, never proposing a bypass
+  (step 1.7).
 
 ## 0.1.0 — 2026-11-25
 
