@@ -37,6 +37,15 @@ export function storeContract(
       throw new Error("expected a refusal");
     };
 
+    const refused = async (operation: () => Promise<unknown>) => {
+      try {
+        await operation();
+      } catch (error) {
+        return error as { code?: string; currentRevision?: string | null };
+      }
+      throw new Error("expected a refusal");
+    };
+
     test("a read-only view refuses every change and changes nothing", async () => {
       const view = readOnly(store);
       const state = async () => ({
@@ -152,9 +161,9 @@ export function storeContract(
       ).toBe("record_changed");
       expect((await store.getDeal("D-2026-0002"))?.value.stageId).toBe("negotiation");
       // A new record under an existing id is refused.
-      expect(await refusal(() => store.saveDeal(newDeal("D-2026-0002"), null))).toBe(
-        "record_changed",
-      );
+      const taken = await refused(() => store.saveDeal(newDeal("D-2026-0002"), null));
+      expect(taken.code).toBe("record_changed");
+      expect(taken.currentRevision).toBe(saved.revision);
     });
 
     test("every write of every collection gives a new revision, also after A → B → A", async () => {
@@ -207,9 +216,13 @@ export function storeContract(
         for (const field of ["revision", "updatedAt", "updatedBy"]) {
           expect(Object.keys(back.value as object)).not.toContain(field);
         }
-        // An editor who opened A or B before is refused, not overwritten.
-        expect(await refusal(() => save(edit, opened.revision))).toBe("record_changed");
-        expect(await refusal(() => save(edit, b.revision))).toBe("record_changed");
+        // An editor who opened A or B before is refused, not overwritten, and
+        // learns the revision stored now.
+        for (const stale of [opened.revision, b.revision]) {
+          const error = await refused(() => save(edit, stale));
+          expect(error.code).toBe("record_changed");
+          expect(error.currentRevision).toBe(back.revision);
+        }
         expect(await read()).toBe(back.revision);
       }
     });

@@ -272,11 +272,17 @@ export function createRepositoryDbStore(options: RepositoryDbStoreOptions): Deal
                 const path = pathOf(db, collection, id);
                 const file = assertDataPath(mountRoot, path);
                 // The gate is held: the file is the version the checks read.
-                if (recordRevision(file) !== baseRevision) {
-                  throw new StoreError("record_changed", {
-                    cs: `${path} se mezitím změnil; nic se neuložilo.`,
-                    en: `${path} changed meanwhile; nothing was saved.`,
-                  });
+                const current = recordRevision(file) ?? null;
+                if (current !== baseRevision) {
+                  throw new StoreError(
+                    "record_changed",
+                    {
+                      cs: `${path} se mezitím změnil; nic se neuložilo.`,
+                      en: `${path} changed meanwhile; nothing was saved.`,
+                    },
+                    [],
+                    { currentRevision: current },
+                  );
                 }
                 remember(file);
                 // `value` carries this write's new `revision`, `updatedAt` and `updatedBy`.
