@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.0 — 2026-11-25
+
 The first release of Deals, a sales pipeline for a Lazurio Organization, on
 the stack profile `app-data@2027.03` (Bun 1.4.4, `@lazurio/repository-db`
 v3.4.0, `@lazurio/module-kit` v0.6.0) and the design system v2.2.0.

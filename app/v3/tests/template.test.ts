@@ -350,7 +350,12 @@ describe.skipIf(!TEMPLATE)("template contract (skipped in an adopted Module)", (
     expect(packageJson.dependencies["design-system"]).toBe(
       "github:LazurioTemplates/design-system#v2.2.0",
     );
-    expect(packageJson.version).toBe("0.0.0");
+  });
+
+  test("the App's version is the newest release in the changelog", () => {
+    // Before the first release 0.0.0; a release pull request sets both.
+    const newest = /^## (\d+\.\d+\.\d+) — /m.exec(read("CHANGELOG.md"))?.[1] ?? "0.0.0";
+    expect(packageJson.version).toBe(newest);
   });
 
   test("ships the same screenshots in Czech and English, 1600 px wide", () => {
