@@ -21,9 +21,55 @@ const read = (path: string) => readFileSync(resolve(ROOT, path), "utf8");
 const TEMPLATE = JSON.parse(read("lazurio.module.json")).company === "REPLACE-WITH-ORG-NAME";
 
 describe("module contract", () => {
-  test("MIT by Lazurio contributors", () => {
+  test("MIT by Lazurio contributors, with the documents an adoption needs", () => {
     expect(read("LICENSE")).toContain("MIT License");
     expect(read("LICENSE")).toContain("Copyright (c) 2026 Lazurio contributors");
+    for (const file of [
+      "README.md",
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "NOTICE.md",
+      "SECURITY.md",
+      "CONTRIBUTING.md",
+      "docs/adoption.md",
+      "docs/extending.md",
+      "docs/data.md",
+      "docs/agents.md",
+    ]) {
+      expect({ file, exists: existsSync(resolve(ROOT, file)) }).toEqual({ file, exists: true });
+    }
+    expect(read("docs/extending.md")).toContain("app-data@2027.03");
+    expect(read("docs/adoption.md")).toContain(
+      "lazurio module create <Org>/<slug> --stack vite-react",
+    );
+    expect(read("docs/adoption.md")).toContain("git merge-base --is-ancestor");
+    expect(read("NOTICE.md")).toContain("design-system");
+    expect(read("NOTICE.md")).toContain("`example.com` and `.example`");
+  });
+
+  test("the changelog gathers changes under Unreleased; a version is a dated heading", () => {
+    const changelog = read("CHANGELOG.md");
+    expect(changelog).toMatch(/^## Unreleased$/m);
+    for (const heading of changelog.match(/^## .+$/gm) ?? []) {
+      expect({
+        heading,
+        ok: /^## (Unreleased|\d+\.\d+\.\d+ — \d{4}-\d{2}-\d{2})$/.test(heading),
+      }).toEqual({
+        heading,
+        ok: true,
+      });
+    }
+  });
+
+  test("CI judges the readiness with a pinned Lazurio CLI and wants ready-for-live", () => {
+    const check = read(".github/workflows/check.yml");
+    expect(check).toMatch(/LAZURIO_VERSION: v\d+\.\d+\.\d+/);
+    expect(check).toContain(`releases/download/${"$"}{LAZURIO_VERSION}/install.sh`);
+    expect(check).toContain('lazurio module readiness "$GITHUB_WORKSPACE" --json');
+    expect(check).toContain('[ "$verdict" != "ready-for-live" ]');
+    // The readiness runs after the build, from the repository's root.
+    expect(check.indexOf("bun run build")).toBeLessThan(check.indexOf("module readiness"));
+    expect(check).toContain("working-directory: .");
   });
 
   test("exact versions, Bun 1.4.4 and the stack profile's pins", () => {
@@ -198,6 +244,25 @@ describe("module contract", () => {
       }
       // A skill publishes only on the person's instruction.
       if (skill.includes("publish_draft")) expect(skill).toMatch(/Publikuj/);
+      expect(read("AGENTS.md")).toContain(`.agents/skills/${name}/SKILL.md`);
+    }
+    // docs/agents.md names every tool with its effect.
+    const agents = read("docs/agents.md");
+    for (const tool of registry.list({
+      entry: "app",
+      appRole: "admin",
+      person: { subject: "s", username: "u" },
+      source: "gateway",
+      reason: null,
+    } as never)) {
+      if (tool.name === "get_app_context") continue;
+      expect({
+        tool: tool.name,
+        documented: agents.includes(`| \`${tool.name}\` | ${tool.effect} |`),
+      }).toEqual({
+        tool: tool.name,
+        documented: true,
+      });
     }
   });
 
@@ -248,6 +313,33 @@ describe.skipIf(!TEMPLATE)("template contract (skipped in an adopted Module)", (
     expect(packageJson.version).toBe("0.0.0");
   });
 
+  test("ships the same screenshots in Czech and English, 1600 px wide", () => {
+    const shots = (locale: string) =>
+      readdirSync(resolve(ROOT, "docs/screenshots", locale))
+        .filter((name) => name.endsWith(".webp"))
+        .sort();
+    const cs = shots("cs");
+    expect(cs).toEqual([
+      "company.webp",
+      "deal.webp",
+      "deals.webp",
+      "overview.webp",
+      "settings.webp",
+    ]);
+    expect(shots("en")).toEqual(cs);
+    const readme = read("README.md");
+    for (const locale of ["cs", "en"]) {
+      expect(readme).toContain(`docs/screenshots/${locale}/overview.webp`);
+      for (const name of cs) {
+        const file = readFileSync(resolve(ROOT, "docs/screenshots", locale, name));
+        expect({ file: `${locale}/${name}`, width: webpWidth(file) }).toEqual({
+          file: `${locale}/${name}`,
+          width: 1600,
+        });
+      }
+    }
+  });
+
   test("leaves the Organization's identity as placeholders", () => {
     expect(JSON.parse(read("lazurio.module.json")).company).toBe("REPLACE-WITH-ORG-NAME");
     expect(packageJson.lazurio.runtime.company).toBe("REPLACE-WITH-ORG-NAME");
@@ -260,3 +352,14 @@ describe.skipIf(!TEMPLATE)("template contract (skipped in an adopted Module)", (
     );
   });
 });
+
+/** The canvas width of a WebP file (VP8, VP8L or VP8X). */
+function webpWidth(bytes: Buffer): number {
+  if (bytes.toString("ascii", 0, 4) !== "RIFF" || bytes.toString("ascii", 8, 12) !== "WEBP")
+    return -1;
+  const chunk = bytes.toString("ascii", 12, 16);
+  if (chunk === "VP8X") return 1 + bytes.readUIntLE(24, 3);
+  if (chunk === "VP8 ") return bytes.readUInt16LE(26) & 0x3fff;
+  if (chunk === "VP8L") return 1 + ((bytes.readUInt32LE(21) & 0x3fff) >>> 0);
+  return -1;
+}
