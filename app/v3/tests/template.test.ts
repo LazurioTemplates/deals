@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import { hostedEnvironment } from "@lazurio/module-kit/tools/testing";
 import packageJson from "../package.json";
+import { createAgentTools } from "../src/server/agent-tools.ts";
 import { lockProblem, parseDesignSystemPin } from "./support/design-system-pin.ts";
 
 // The contract of the Module, checked on every pull request: the license,
@@ -12,7 +14,7 @@ import { lockProblem, parseDesignSystemPin } from "./support/design-system-pin.t
 // placeholder identity and its own pins) runs only while the identity is the
 // template's and is skipped in an adopted Module. The documents, the skills
 // and the screenshots join this contract with the parts of the template that
-// add them.
+// add them. The skills and the tools for agents are checked here as well.
 const ROOT = resolve(import.meta.dir, "..", "..", "..");
 const APP = resolve(import.meta.dir, "..");
 const read = (path: string) => readFileSync(resolve(ROOT, path), "utf8");
@@ -151,6 +153,62 @@ describe("module contract", () => {
       readFileSync(resolve(APP, file), "utf8").includes("ares.gov.cz"),
     );
     expect(asking.map((file) => file.replaceAll("\\", "/"))).toEqual(["src/server/ares.ts"]);
+  });
+
+  test("carries the process for agents, the same for Codex and Claude Code", () => {
+    const names = readdirSync(resolve(ROOT, ".agents/skills")).sort();
+    expect(names).toEqual(["close-deal", "create-deal-from-message", "weekly-pipeline-review"]);
+    expect(readdirSync(resolve(ROOT, ".claude/skills")).sort()).toEqual(names);
+    const registry = createAgentTools({
+      api: async () => Response.json({}),
+      origin: "http://127.0.0.1:24940",
+      locale: "en",
+      env: hostedEnvironment({ writer: true }),
+      audit: () => {},
+    });
+    const tools = new Set(
+      registry
+        .list({
+          entry: "app",
+          appRole: "admin",
+          person: { subject: "s", username: "u" },
+          source: "gateway",
+          reason: null,
+        } as never)
+        .map((tool) => tool.name),
+    );
+    for (const name of names) {
+      const skill = read(`.agents/skills/${name}/SKILL.md`);
+      expect(read(`.claude/skills/${name}/SKILL.md`)).toBe(skill);
+      const [, frontmatter = ""] = /^---\n([\s\S]*?)\n---\n/.exec(skill) ?? [];
+      expect(frontmatter).toContain(`name: ${name}`);
+      const description = /^description: (.*)$/m.exec(frontmatter)?.[1] ?? "";
+      expect(typeof JSON.parse(description)).toBe("string");
+      // Every tool a skill names is one the App offers.
+      const named = skill.match(
+        /`((?:find|get|check|create|update|move|add|discard|publish)_[a-z_]+)`/g,
+      );
+      for (const tool of named ?? []) {
+        const bare = tool.replaceAll("`", "");
+        expect({ skill: name, tool: bare, offered: tools.has(bare) }).toEqual({
+          skill: name,
+          tool: bare,
+          offered: true,
+        });
+      }
+      // A skill publishes only on the person's instruction.
+      if (skill.includes("publish_draft")) expect(skill).toMatch(/Publikuj/);
+    }
+  });
+
+  test("offers its tools on /mcp and to the page from one server", () => {
+    const serve = read("app/v3/src/server/serve.ts");
+    expect(serve).toContain('url.pathname === "/mcp"');
+    expect(serve).toContain("tools.handlePage(req)");
+    const page = read("app/v3/src/ui/tools.ts");
+    expect(page).toContain("@lazurio/module-kit/webmcp");
+    // The kit's AbortError on removing a tool is handled (Lazurio/module-kit#14).
+    expect(page).toContain("quietModelContext");
   });
 
   test("leases one port for its one process", () => {

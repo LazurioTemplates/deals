@@ -8,6 +8,7 @@ import {
 } from "@lazurio/module-kit";
 import type { DealsStore } from "../data/store.ts";
 import { accessOf, LISTENER } from "./access.ts";
+import { createAgentToolsHandler } from "./agent-tools.ts";
 import { createApi } from "./api.ts";
 import { type AresClient, createAres } from "./ares.ts";
 import { clientDirectory, createStaticHandler } from "./static.ts";
@@ -16,7 +17,8 @@ export const HEALTH_PATH = "/healthz";
 
 /**
  * Starts the one server process of the App over a store: the API (with the
- * ARES lookup, which only the server calls), the health path and the client.
+ * ARES lookup, which only the server calls), the tools for agents (`/mcp`
+ * and the page's `/api/agent-tools`), the health path and the client.
  * Host and port come only from the Lazurio listener (Module Standard);
  * without them the process exits 2.
  */
@@ -53,6 +55,14 @@ export async function serve(
     ares: options.ares ?? createAres(),
   });
 
+  // The tools for agents call the same API (`agent-tools.ts`), offered on
+  // `/mcp` and to the page on `/api/agent-tools`.
+  const [ownOrigin] = origins;
+  const tools = createAgentToolsHandler({
+    api,
+    origin: app.externalOrigin ?? ownOrigin ?? `http://127.0.0.1:${app.port}`,
+  });
+
   const hostAllowed = (req: Request) => {
     const header = req.headers.get("host") ?? "";
     const hostname = header.startsWith("[")
@@ -66,6 +76,9 @@ export async function serve(
   const handle = withHealth(
     async (req: Request) => {
       const url = new URL(req.url);
+      if (url.pathname === "/mcp") return tools.handleMcp(req);
+      const toolPage = await tools.handlePage(req);
+      if (toolPage) return toolPage;
       if (url.pathname.startsWith("/api/")) return api(req);
       if (serveClient && (req.method === "GET" || req.method === "HEAD")) {
         return serveClient(url.pathname);
@@ -89,6 +102,7 @@ export async function serve(
         development: { hmr: true, console: false },
         routes: {
           "/api/*": guarded,
+          "/mcp": guarded,
           [HEALTH_PATH]: guarded,
           "/*": (await import("../ui/index.html")).default,
         },
