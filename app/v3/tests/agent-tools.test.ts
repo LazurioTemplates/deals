@@ -597,6 +597,55 @@ describe("the draft", () => {
     }
   }, 60_000);
 
+  test("a record file changed outside its fields (a comment) is not shown as whole either", async () => {
+    const fixture = createFixtureRepo();
+    const store = createRepositoryDbStore({
+      mountRoot: fixture.mountRoot,
+      expect: { remote: fixture.origin, branch: "v3", within: fixture.moduleRoot },
+      intervalMs: 0,
+      writes: true,
+    });
+    try {
+      const { tools } = setup(true, "en", store);
+      // A comment in a company's file: the parsed record stays the same.
+      const file = join(fixture.mountRoot, "data", "companies", "C-0002.yaml");
+      appendFileSync(file, "# A comment nobody reviewed.\n");
+      const draft = await ok(tools, "get_draft", {});
+      expect(draft.complete).toBe(false);
+      expect(draft.records).toEqual([
+        expect.objectContaining({
+          path: "data/companies/C-0002.yaml",
+          reviewable: false,
+          fields: [],
+        }),
+      ]);
+      const refused = await mcpTool(
+        tools,
+        "publish_draft",
+        { expected_revision: draft.revision },
+        user,
+      );
+      expect(refused.structured.reason).toBe("draft_not_reviewable");
+      expect(String(refused.structured.message)).toContain("data/companies/C-0002.yaml");
+      expect((await store.draft()).status?.state).toBe("draft");
+
+      // A change of its fields through the App rewrites the file canonically:
+      // the comment is gone, and the draft is whole again.
+      git(fixture.mountRoot, ["checkout", "--", "data/companies/C-0002.yaml"]);
+      const company = await ok(tools, "get_company", { id: "C-0002" });
+      await ok(tools, "update_company", {
+        id: "C-0002",
+        base_revision: company.revision,
+        changes: { note: "Poznámka" },
+      });
+      const whole = await ok(tools, "get_draft", {});
+      expect(whole.complete).toBe(true);
+    } finally {
+      store.close();
+      fixture.cleanup();
+    }
+  }, 60_000);
+
   test("publish_draft publishes exactly the draft shown and is audited as a publication", async () => {
     const { tools, store, audits } = setup(true);
     await ok(tools, "create_company", { name: "Publikovaná s.r.o." });

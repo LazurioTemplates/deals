@@ -42,10 +42,12 @@ page's tools while the App is open in the browser).
    before and its value after, whole, as `get_draft` gives them; never only a
    count of changed fields. Say that it waits in "Koncept a publikování" /
    "Draft & publish". Keep the draft's `revision` you showed. When
-   `get_draft` says `complete: false`, the draft also changes a file that is
-   no record of Deals (its `reviewable: false` records): say which, and that
-   the person reviews and publishes this draft on that page themselves;
-   `publish_draft` refuses it.
+   `get_draft` says `complete: false`, the draft also holds a change outside
+   the fields of Deals' records (its `reviewable: false` entries: another
+   file, or a comment or the formatting of a record's file) that no tool
+   shows: say which files, and that the person reviews them in the data
+   repository and decides on that page themselves, publish or discard;
+   `publish_draft` refuses such a draft.
 6. **Publish only what they approved.** When the person says "Publikuj" /
    "Publish" for this draft, `publish_draft` with `expected_revision` the
    `revision` you showed in step 5, never one read afterwards: the App
@@ -53,8 +55,9 @@ page's tools while the App is open in the browser).
    draft changed since they saw it: `get_draft`, show the person every
    change in it again as in step 5 and publish only on their new word, with
    the new `revision`. A refusal with `draft_not_reviewable` means the draft
-   holds a change the tools cannot show: send the person to "Koncept a
-   publikování" / "Draft & publish" and do not try again.
+   holds a change the tools cannot show: name its files, leave the decision
+   to the person on "Koncept a publikování" / "Draft & publish" and do not
+   try again.
 
 ## Never
 

@@ -7,6 +7,7 @@ import {
   type ReviewInputChange,
   type ReviewSurfaceAdapter,
   structuralDiff,
+  toStableYaml,
 } from "@lazurio/repository-db";
 import { COLLECTION_NAMES, type CollectionName } from "../domain/collections.ts";
 import { formatAmount } from "../domain/money.ts";
@@ -145,6 +146,33 @@ export function recordAt(path: string): { collection: CollectionName; id: string
   }
 }
 
+/**
+ * Whether a record file's change is all in its parsed record: both texts are
+ * the canonical YAML the App writes (no comment, no other formatting) and the
+ * envelope around the record did not change. Otherwise part of the change is
+ * not in the record's fields, and nothing that shows the fields shows it.
+ */
+export function changeIsInRecord(
+  baselineText: string | undefined,
+  draftText: string | undefined,
+): boolean {
+  const canonical = (text: string | undefined) => {
+    if (text === undefined) return true;
+    try {
+      return toStableYaml(parseYaml(text)) === text;
+    } catch {
+      return false;
+    }
+  };
+  if (!canonical(baselineText) || !canonical(draftText)) return false;
+  if (baselineText === undefined || draftText === undefined) return true;
+  const envelope = (text: string) => {
+    const { record: _record, ...rest } = (parseYaml(text) ?? {}) as Record<string, unknown>;
+    return JSON.stringify(rest, Object.keys(rest).sort());
+  };
+  return envelope(baselineText) === envelope(draftText);
+}
+
 function recordOf(text: string | undefined): Record<string, unknown> | undefined {
   if (text === undefined) return undefined;
   try {
@@ -181,6 +209,8 @@ export function reviewResource(
   after: Record<string, unknown> | undefined,
   change: Pick<ReviewInputChange, "changeId" | "technicalRefs">,
   locale: Locale = "cs",
+  /** false when part of the change is outside the record's fields (`changeIsInRecord`). */
+  whole = true,
 ): ReviewableResource {
   const subject = describeRecord(collection, id, after ?? before, locale);
   // The audit fields change on every write; a reviewer sees the business ones.
@@ -215,10 +245,16 @@ export function reviewResource(
     fallback: { activeLevel: "resource_adapter", steps: [] },
     metadata: {
       typeLabel: subject.typeLabel,
-      record: {
-        before: (before ? withoutAudit(before) : null) as Json,
-        after: (after ? withoutAudit(after) : null) as Json,
-      },
+      // Only a change that is all in the record's fields: else its whole
+      // values would not show all of it.
+      ...(whole
+        ? {
+            record: {
+              before: (before ? withoutAudit(before) : null) as Json,
+              after: (after ? withoutAudit(after) : null) as Json,
+            },
+          }
+        : {}),
     },
   };
 }
@@ -251,6 +287,7 @@ export const dealsReviewAdapter = (locale: Locale = "cs"): ReviewSurfaceAdapter 
           recordOf(change.draftText),
           change,
           locale,
+          changeIsInRecord(change.baselineText, change.draftText),
         ),
       );
     }

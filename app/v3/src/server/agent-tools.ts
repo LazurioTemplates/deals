@@ -87,8 +87,8 @@ export const TOOL_DESCRIPTIONS = {
     "Checks the data by the rules across records. An error stops a publication, a warning does not.",
   ),
   get_draft: localized(
-    "Vrátí koncept: stav, revizi konceptu a každý změněný záznam s cestou pro discard_draft a se všemi změněnými poli, každé s celou hodnotou před a po. Před publikací ukaž člověku všechny tyto změny. complete: false znamená, že koncept obsahuje změnu souboru, který není záznamem Deals; tu vidí jen člověk na stránce Koncept a publikování a publish_draft takový koncept odmítne.",
-    "Returns the draft: its state, its revision and every changed record with the path for discard_draft and all its changed fields, each with its whole value before and after. Show the person all of these changes before a publication. complete: false means the draft changes a file that is no record of Deals; only the person sees it on the page Draft & publish, and publish_draft refuses such a draft.",
+    "Vrátí koncept: stav, revizi konceptu a každý změněný záznam s cestou pro discard_draft a se všemi změněnými poli, každé s celou hodnotou před a po. Před publikací ukaž člověku všechny tyto změny. complete: false znamená, že koncept obsahuje změnu mimo pole záznamů Deals (jiný soubor, komentář nebo formát souboru záznamu); tu nástroje neukážou, posuzuje ji člověk a publish_draft takový koncept odmítne.",
+    "Returns the draft: its state, its revision and every changed record with the path for discard_draft and all its changed fields, each with its whole value before and after. Show the person all of these changes before a publication. complete: false means the draft holds a change outside the fields of Deals' records (another file, a comment or the formatting of a record's file); the tools cannot show it, the person judges it, and publish_draft refuses such a draft.",
   ),
   create_deal: localized(
     "Založí obchodní případ jako koncept, s dalším id roku. Firma musí existovat; nic nepublikuje.",
@@ -799,7 +799,8 @@ export function createAgentTools(options: AgentToolsOptions): ToolRegistry {
               change: record.resource.changes[0]?.kind ?? null,
               summary: record.resource.changes[0]?.summary ?? null,
               // A file that is no record of Deals (a README, a file of
-              // another tool) has no whole values to show here.
+              // another tool), or a record file changed outside its fields (a
+              // comment, its formatting), has no whole values to show here.
               reviewable: full !== undefined,
               fields: full ? changedFields(full.before, full.after, locale) : [],
             };
@@ -1044,8 +1045,8 @@ export function createAgentTools(options: AgentToolsOptions): ToolRegistry {
               ok: false,
               reason: "draft_not_reviewable",
               message: say(
-                `Koncept obsahuje změny, které nástroje neumějí ukázat celé (${hidden.join(", ")}). Ať je člověk prohlédne a publikuje sám na stránce „Koncept a publikování“.`,
-                `The draft holds changes the tools cannot show whole (${hidden.join(", ")}). The person reviews and publishes it on the page "Draft & publish".`,
+                `Koncept obsahuje změny mimo pole záznamů Deals, které nástroje neukážou celé (${hidden.join(", ")}): jiný soubor, nebo komentář či formát souboru záznamu. Ať je člověk prohlédne v datovém repozitáři a sám rozhodne na stránce „Koncept a publikování“: publikovat, nebo zahodit.`,
+                `The draft holds changes outside the fields of Deals' records that the tools cannot show whole (${hidden.join(", ")}): another file, or a comment or the formatting of a record's file. The person reviews them in the data repository and decides on the page "Draft & publish": publish or discard.`,
               ),
               details: { paths: hidden },
             };
