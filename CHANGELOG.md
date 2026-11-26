@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+Work in progress towards 0.2.0: salespeople, pipeline views, quotes with a
+price list, a payment-plan forecast, statistics, commercial terms and a CSV
+import.
+
 ## 0.1.2 — 2026-11-26
 
 ### For whoever adopts it
