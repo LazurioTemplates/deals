@@ -21,7 +21,7 @@
 // `bun run validate:db` checks the result, and the person reviews and
 // publishes the change in the App („Koncept a publikování“).
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, posix } from "node:path";
 import { toStableYaml } from "@lazurio/repository-db";
 import { collections } from "../domain/collections.ts";
 import { nextSalespersonId } from "../domain/salesperson.ts";
@@ -88,7 +88,8 @@ export function planMigration(
     record: Record<string, unknown>,
   ) =>
     files.push({
-      path: join(collection, `${id}.yaml`),
+      // A path inside the directory, `/` on every system: also the record's key.
+      path: posix.join(collection, `${id}.yaml`),
       document: {
         schemaVersion: collections[collection].schemaVersion,
         id,
