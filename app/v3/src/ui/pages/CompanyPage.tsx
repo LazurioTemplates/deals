@@ -183,7 +183,7 @@ export function CompanyPage({
         actions={
           stored && canWrite ? (
             <>
-              <Button variant="primary" href={href({ page: "new-deal", company: stored.value.id })}>
+              <Button variant="primary" href={href({ page: "new-deal", company: stored.value.id, stage: null })}>
                 {t("Nový případ", "New deal")}
               </Button>
               <Button

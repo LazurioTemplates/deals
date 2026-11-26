@@ -91,6 +91,11 @@ h3 {
   font-size: var(--ds-type-meta-size);
 }
 
+.sidebar-nav {
+  display: grid;
+  gap: var(--ds-space-16);
+}
+
 .content-area {
   min-width: 0;
   padding: var(--ds-space-32) clamp(var(--ds-space-16), 4vw, var(--ds-space-48)) var(--ds-space-64);
@@ -521,10 +526,20 @@ h3 {
     border-bottom: var(--ds-size-border) solid var(--ds-color-line);
   }
 
-  .sidebar .ds-nav__list {
+  .sidebar-nav {
     display: flex;
     gap: var(--ds-space-4);
     overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .sidebar-nav .ds-nav__title {
+    display: none;
+  }
+
+  .sidebar .ds-nav__list {
+    display: flex;
+    gap: var(--ds-space-4);
   }
 
   .sidebar .ds-nav__link {
