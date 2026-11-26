@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.2 — 2026-11-26
+
 ### For whoever adopts it
 
 From the first adoption tried end to end, in an example Organization:
