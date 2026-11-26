@@ -1,0 +1,8 @@
+id: S-0002
+record:
+  active: true
+  email: petr@example.com
+  id: S-0002
+  name: Petr Vzorný
+  role: Obchodník
+schemaVersion: deals.salesperson.v1

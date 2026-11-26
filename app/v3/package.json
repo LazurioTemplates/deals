@@ -18,6 +18,7 @@
     "schema:check": "bun run src/cli/schema.ts --check",
     "validate:data": "bun run src/validate-data.ts seed/cs/empty seed/cs/sample seed/en/empty seed/en/sample",
     "validate:db": "bun run src/validate-data.ts ../../db/data",
+    "migrate": "bun run src/cli/migrate.ts",
     "check": "bun run typecheck && bun run lint && bun run schema:check && bun run validate:data && bun test"
   },
   "dependencies": {

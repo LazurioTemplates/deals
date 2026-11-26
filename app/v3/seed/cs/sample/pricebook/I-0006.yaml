@@ -1,0 +1,9 @@
+id: I-0006
+record:
+  active: true
+  id: I-0006
+  name: Doprava
+  sectionId: work
+  unit: km
+  unitPrice: 3500
+schemaVersion: deals.pricebook-item.v1

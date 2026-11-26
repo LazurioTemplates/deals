@@ -4,11 +4,12 @@ record:
   contactIds:
     - P-0005
   createdAt: 2026-10-20
+  dealTypeId: licence
   expectedClose: 2026-12-31
   id: D-2026-0005
-  owner: Alex Sample
+  ownerId: S-0001
   probability: 33
   stageId: proposal
   title: Till system for the second shop
-  value: 4750050
-schemaVersion: deals.deal.v1
+  value: 4290000
+schemaVersion: deals.deal.v2

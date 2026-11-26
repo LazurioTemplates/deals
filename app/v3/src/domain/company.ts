@@ -22,6 +22,12 @@ export const company = z.strictObject({
   dic: optionalText,
   address: address.optional(),
   website: optionalText,
+  paymentDueDays: z
+    .int()
+    .min(0)
+    .max(365)
+    .optional()
+    .describe("Days from an invoice to its due date for this company, else the settings'."),
   note: optionalText,
   revision: writeRevision,
   updatedAt: writtenAt,

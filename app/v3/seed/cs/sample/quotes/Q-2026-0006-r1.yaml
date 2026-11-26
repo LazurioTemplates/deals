@@ -1,0 +1,66 @@
+id: Q-2026-0006-r1
+record:
+  approvedOn: 2026-11-05
+  billingEntityId: trade
+  commercialTerms:
+    acceptedOn: 2026-11-05
+    choices:
+      deposit: standard
+      payments: standard
+      warranty: standard
+    customerScope: b2b
+    evidence: Podepsaná nabídka v e-mailu od zákazníka
+    termsUrl: https://example.com/terms
+    termsVersion: 2026-01
+  contactId: P-0009
+  currency: CZK
+  customer:
+    address:
+      city: Hradec Králové
+      country: Česká republika
+      postalCode: 500 02
+      street: Zdravá 9
+    companyId: C-0006
+    name: Smyšlená Klinika s.r.o.
+  dealId: D-2026-0012
+  id: Q-2026-0006-r1
+  issuedOn: 2026-10-20
+  lines:
+    - id: l1
+      name: Konferenční stůl
+      pricebookItemId: I-0003
+      quantity: 2
+      sectionId: items
+      unit: ks
+      unitPrice: 2490000
+    - id: l2
+      name: Montáž
+      pricebookItemId: I-0004
+      quantity: 10
+      sectionId: work
+      unit: h
+      unitPrice: 85000
+  number: Q-2026-0006
+  sections:
+    - id: items
+      label: Dodávka
+    - id: work
+      label: Práce
+    - id: service
+      label: Servis a podpora
+  sentOn: 2026-10-20
+  status: approved
+  terms:
+    payments: |-
+      ## Platby
+      - Záloha 50 % při objednávce
+      - Doplatek 50 % po předání
+
+      Splatnost faktur je 14 dní.
+    scope: Nabídka platí pro rozsah uvedený v položkách. Práce navíc účtujeme podle ceníku.
+    vatNote: Ceny jsou uvedeny bez DPH. DPH se účtuje podle platných předpisů.
+  title: Ordinace v přízemí
+  validUntil: 2026-11-19
+  vatRate: 2100
+  version: 1
+schemaVersion: deals.quote.v1

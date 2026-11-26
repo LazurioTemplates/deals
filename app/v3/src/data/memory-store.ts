@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { CollectionName, DataSet } from "../domain/collections.ts";
+import { COLLECTION_NAMES, type CollectionName, type DataSet } from "../domain/collections.ts";
 import { createRecordStore, type Put } from "./record-store.ts";
 import {
   type Entry,
@@ -48,10 +48,10 @@ export function createMemoryStore(seed: Partial<DataSet>): DealsStore {
     }
   };
   if (seed.settings) add("settings", [seed.settings]);
-  add("companies", seed.companies ?? []);
-  add("contacts", seed.contacts ?? []);
-  add("deals", seed.deals ?? []);
-  add("activities", seed.activities ?? []);
+  for (const collection of COLLECTION_NAMES) {
+    if (collection === "settings") continue;
+    add(collection, (seed[collection] as readonly unknown[] | undefined) ?? []);
+  }
   const draft = new Map<Key, unknown>(published);
   const listeners = new Set<(event: StoreEvent) => void>();
   const emit = (event: StoreEvent) => {
@@ -81,6 +81,10 @@ export function createMemoryStore(seed: Partial<DataSet>): DealsStore {
 
   // `value` carries this write's new `revision`, `updatedAt` and `updatedBy`.
   const put: Put = (collection, id, value) => {
+    if (value === null) {
+      draft.delete(recordKey(collection, id));
+      return "";
+    }
     const copy = structuredClone(value);
     draft.set(recordKey(collection, id), copy);
     return revisionOf(copy);

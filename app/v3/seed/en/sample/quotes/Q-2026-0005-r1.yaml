@@ -1,0 +1,80 @@
+id: Q-2026-0005-r1
+record:
+  approvedOn: 2026-10-18
+  billingEntityId: trade
+  commercialTerms:
+    acceptedOn: 2026-10-18
+    choices:
+      deposit: standard
+      payments: standard
+      warranty: standard
+    customerScope: b2b
+    evidence: The signed quote in the customer's e-mail
+    termsUrl: https://example.com/terms
+    termsVersion: 2026-01
+  contactId: P-0008
+  currency: CZK
+  customer:
+    address:
+      city: Pilsen
+      country: Czech Republic
+      postalCode: 301 00
+      street: 3 Brick Row
+    companyId: C-0005
+    name: Fictive Builders Ltd.
+  dealId: D-2026-0011
+  id: Q-2026-0005-r1
+  issuedOn: 2026-10-01
+  lines:
+    - id: l1
+      name: Office desk 160 × 80
+      pricebookItemId: I-0001
+      quantity: 24
+      sectionId: items
+      unit: pcs
+      unitPrice: 1290000
+    - id: l2
+      name: Office chair
+      pricebookItemId: I-0002
+      quantity: 24
+      sectionId: items
+      unit: pcs
+      unitPrice: 690000
+    - id: l3
+      name: Project day
+      pricebookItemId: I-0005
+      quantity: 2
+      sectionId: work
+      unit: day
+      unitPrice: 1200000
+    - id: l4
+      name: Transport
+      pricebookItemId: I-0006
+      quantity: 240
+      sectionId: work
+      unit: km
+      unitPrice: 3500
+  number: Q-2026-0005
+  sections:
+    - id: items
+      label: Delivery
+    - id: work
+      label: Work
+    - id: service
+      label: Service and support
+  sentOn: 2026-10-01
+  status: approved
+  terms:
+    payments: |-
+      ## Payments
+      - A deposit of 50 % with the order
+      - The remaining 50 % on handover
+
+      Invoices are due in 14 days.
+    scope: The quote covers the scope of its lines. Extra work is charged by the price list.
+    vatNote: Prices are without VAT. VAT is charged as the law requires.
+  title: Site offices
+  validUntil: 2026-10-31
+  vatRate: 2100
+  version: 1
+schemaVersion: deals.quote.v1

@@ -5,9 +5,27 @@ record:
   contactIds:
     - P-0005
   createdAt: 2026-07-01
+  dealTypeId: delivery
   id: D-2026-0010
-  owner: Alex Sample
+  ownerId: S-0001
+  paymentPlan:
+    payments:
+      - amount: 9675000
+        dueOn: 2026-09-29
+        id: p1
+        invoicedOn: 2026-09-15
+        label: Deposit
+        month: 2026-09
+        paidOn: 2026-09-26
+      - amount: 9675000
+        dueOn: 2026-11-03
+        id: p2
+        invoicedOn: 2026-10-20
+        label: Final payment
+        month: 2026-10
+        paidOn: 2026-11-02
+    status: planned
   stageId: won
   title: Shop fit-out
-  value: 18600000
-schemaVersion: deals.deal.v1
+  value: 19350000
+schemaVersion: deals.deal.v2

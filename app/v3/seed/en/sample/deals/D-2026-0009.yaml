@@ -4,11 +4,12 @@ record:
   contactIds:
     - P-0009
   createdAt: 2026-10-30
+  dealTypeId: delivery
   expectedClose: 2027-01-29
   id: D-2026-0009
-  owner: Jordan Example
+  ownerId: S-0002
   probability: 65
   stageId: proposal
   title: Reception and waiting room
   value: 7300010
-schemaVersion: deals.deal.v1
+schemaVersion: deals.deal.v2

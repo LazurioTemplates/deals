@@ -1,0 +1,58 @@
+id: Q-2026-0003-r1
+record:
+  billingEntityId: trade
+  commercialTerms:
+    customerScope: b2b
+    termsUrl: https://example.com/terms
+    termsVersion: 2026-01
+  contactId: P-0005
+  currency: CZK
+  customer:
+    address:
+      city: Olomouc
+      country: Česká republika
+      postalCode: 779 00
+      street: Chlebová 7
+    companyId: C-0003
+    name: Pokusná Pekárna s.r.o.
+  dealId: D-2026-0005
+  id: Q-2026-0003-r1
+  issuedOn: 2026-11-20
+  lines:
+    - id: l1
+      name: Licence pokladního systému
+      pricebookItemId: I-0008
+      quantity: 2
+      sectionId: items
+      unit: ks
+      unitPrice: 1890000
+    - id: l2
+      name: Montáž
+      pricebookItemId: I-0004
+      quantity: 6
+      sectionId: work
+      unit: h
+      unitPrice: 85000
+  number: Q-2026-0003
+  sections:
+    - id: items
+      label: Dodávka
+    - id: work
+      label: Práce
+    - id: service
+      label: Servis a podpora
+  status: draft
+  terms:
+    payments: |-
+      ## Platby
+      - Záloha 50 % při objednávce
+      - Doplatek 50 % po předání
+
+      Splatnost faktur je 14 dní.
+    scope: Nabídka platí pro rozsah uvedený v položkách. Práce navíc účtujeme podle ceníku.
+    vatNote: Ceny jsou uvedeny bez DPH. DPH se účtuje podle platných předpisů.
+  title: Pokladní systém pro druhou prodejnu
+  validUntil: 2026-12-20
+  vatRate: 2100
+  version: 1
+schemaVersion: deals.quote.v1

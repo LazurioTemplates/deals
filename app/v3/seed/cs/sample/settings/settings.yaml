@@ -1,7 +1,30 @@
 id: settings
 record:
   aresLookup: false
+  billingEntities:
+    - address:
+        city: Praha
+        country: Česko
+        postalCode: 110 00
+        street: Ukázková 12
+      bankAccount: 000000-0000000000/0000
+      email: office@example.com
+      id: trade
+      name: Vzorová obchodní s.r.o.
+      phone: +420 000 000 000
+      website: https://example.com
+    - email: services@example.com
+      id: services
+      name: Vzorové služby s.r.o.
+      website: https://example.com
   currency: CZK
+  dealTypes:
+    - id: delivery
+      label: Dodávka
+    - id: service
+      label: Služby
+    - id: licence
+      label: Licence
   lossReasons:
     - id: price
       label: Cena
@@ -11,9 +34,35 @@ record:
       label: Načasování
     - id: no-decision
       label: Bez rozhodnutí
-  owners:
-    - Jana Ukázková
-    - Petr Vzorný
+  paymentDueDays: 14
+  quotes:
+    sections:
+      - id: items
+        label: Dodávka
+      - id: work
+        label: Práce
+      - id: service
+        label: Servis a podpora
+    terms:
+      payments: |-
+        ## Platby
+        - Záloha 50 % při objednávce
+        - Doplatek 50 % po předání
+
+        Splatnost faktur je 14 dní.
+      scope: Nabídka platí pro rozsah uvedený v položkách. Práce navíc účtujeme podle ceníku.
+      vatNote: Ceny jsou uvedeny bez DPH. DPH se účtuje podle platných předpisů.
+    termsUrl: https://example.com/terms
+    termsVersion: 2026-01
+    units:
+      - ks
+      - h
+      - MD
+      - m
+      - km
+      - měs.
+    validityDays: 30
+    vatRate: 2100
   stages:
     - id: lead
       kind: open
@@ -39,4 +88,4 @@ record:
       kind: lost
       label: Prohráno
       probability: 0
-schemaVersion: deals.settings.v1
+schemaVersion: deals.settings.v2

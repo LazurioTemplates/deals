@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { rmSync } from "node:fs";
 import { posix } from "node:path";
 import {
   assertDataPath,
@@ -297,6 +298,12 @@ export function createRepositoryDbStore(options: RepositoryDbStoreOptions): Deal
                   );
                 }
                 remember(file);
+                if (value === null) {
+                  // A removal of a record: the draft shows the file as deleted.
+                  rmSync(file, { force: true });
+                  written.push(path);
+                  return "";
+                }
                 // `value` carries this write's new `revision`, `updatedAt` and `updatedBy`.
                 writeYamlFileAtomic(file, {
                   schemaVersion: collections[collection].schemaVersion,

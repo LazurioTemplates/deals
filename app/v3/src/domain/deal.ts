@@ -12,23 +12,28 @@ import {
 import { companyId } from "./company.ts";
 import { contactId } from "./contact.ts";
 import { money, probability } from "./money.ts";
+import { paymentPlan } from "./payment-plan.ts";
+import { salespersonId } from "./salesperson.ts";
 import { type Settings, type Stage, stageById } from "./settings.ts";
 
 /** A deal: one sale in the pipeline (`data/deals/<id>.yaml`), id `D-2026-0001`. */
 export const DEAL_ID = /^D-[0-9]{4}-[0-9]{4}$/;
 export const dealId = z.string().regex(DEAL_ID, { message: "expected D-2026-0001" });
 
-/** A quote of the neighbouring Quotes Module the deal names; its existence is not checked. */
-export const quoteRef = z.strictObject({ id: text });
-
 export const deal = z.strictObject({
   id: dealId,
   title: text,
   companyId,
   contactIds: z.array(contactId).optional(),
-  owner: text,
+  ownerId: salespersonId.describe("The salesperson who owns the deal („Obchodník“)."),
   stageId: slug,
-  value: money,
+  dealTypeId: slug.optional().describe("The type of the deal („Typ zakázky“) from the settings."),
+  billingEntityId: slug
+    .optional()
+    .describe("The entity that invoices it, from the settings; else the first one."),
+  value: money.describe(
+    "The value without VAT in haléře; while the deal has a quote, its primary quote's total.",
+  ),
   probability: probability
     .optional()
     .describe("The chance the deal is won when it differs from its stage's probability."),
@@ -41,7 +46,13 @@ export const deal = z.strictObject({
     .describe("The day the deal was won or lost; required in a won or lost stage, never open."),
   lossReasonId: slug.optional().describe("Why it was lost; required in the lost stage, else none."),
   lossNote: optionalText,
-  quoteRef: quoteRef.optional(),
+  primaryQuoteId: z
+    .string()
+    .optional()
+    .describe("The quote the value follows; else the approved one, else the latest revision."),
+  paymentPlan: paymentPlan
+    .optional()
+    .describe("How a won deal is invoiced month by month; only a won deal has one."),
   description: optionalText,
   revision: writeRevision,
   updatedAt: writtenAt,

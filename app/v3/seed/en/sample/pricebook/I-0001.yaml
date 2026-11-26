@@ -1,0 +1,10 @@
+id: I-0001
+record:
+  active: true
+  code: ST-160
+  id: I-0001
+  name: Office desk 160 × 80
+  sectionId: items
+  unit: pcs
+  unitPrice: 1290000
+schemaVersion: deals.pricebook-item.v1

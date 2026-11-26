@@ -1,16 +1,18 @@
 id: D-2026-0013
 record:
+  billingEntityId: services
   closedAt: 2026-09-30
   companyId: C-0002
   contactIds:
     - P-0003
     - P-0004
   createdAt: 2026-06-15
+  dealTypeId: service
   id: D-2026-0013
   lossNote: Konkurence nabídla o 15 % nižší cenu.
   lossReasonId: price
-  owner: Petr Vzorný
+  ownerId: S-0002
   stageId: lost
   title: Rámcová smlouva na přepravu
   value: 26000000
-schemaVersion: deals.deal.v1
+schemaVersion: deals.deal.v2

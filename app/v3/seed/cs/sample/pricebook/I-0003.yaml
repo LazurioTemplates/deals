@@ -1,0 +1,10 @@
+id: I-0003
+record:
+  active: true
+  code: KS-01
+  id: I-0003
+  name: Konferenční stůl
+  sectionId: items
+  unit: ks
+  unitPrice: 2490000
+schemaVersion: deals.pricebook-item.v1

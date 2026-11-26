@@ -1,6 +1,6 @@
 import type { DraftPanelInput } from "@lazurio/repository-db";
 import type { Activity } from "../domain/activity.ts";
-import type { DataSet } from "../domain/collections.ts";
+import type { DataSet, RecordCollection, RecordOf } from "../domain/collections.ts";
 import type { Company } from "../domain/company.ts";
 import type { Contact } from "../domain/contact.ts";
 import type { Deal } from "../domain/deal.ts";
@@ -48,6 +48,17 @@ export interface Save<T> {
  */
 export type DraftCard = DraftPanelInput;
 
+/**
+ * One change of a write of several records: a record saved from the revision
+ * it was edited from (`null` for a new one), or a record removed from the
+ * revision it was read at.
+ */
+export type Change =
+  | {
+      [C in RecordCollection]: { collection: C; value: RecordOf[C]; baseRevision: Revision | null };
+    }[RecordCollection]
+  | { collection: RecordCollection; remove: string; baseRevision: Revision };
+
 export type DiscardScope = { kind: "draft" } | { kind: "record"; path: string };
 
 export type StoreEvent =
@@ -89,6 +100,28 @@ export interface DealsStore {
   listActivities(): Promise<Stored<Activity>[]>;
   getActivity(id: string): Promise<Stored<Activity> | null>;
   saveActivity(value: Activity, baseRevision: Revision | null): Promise<Stored<Activity>>;
+
+  /** Every record of a collection, in the order of the collection. */
+  list<C extends RecordCollection>(collection: C): Promise<Stored<RecordOf[C]>[]>;
+  get<C extends RecordCollection>(collection: C, id: string): Promise<Stored<RecordOf[C]> | null>;
+  /** Save one record as a draft; refused with `record_changed` from a stale revision. */
+  save<C extends RecordCollection>(
+    collection: C,
+    value: RecordOf[C],
+    baseRevision: Revision | null,
+  ): Promise<Stored<RecordOf[C]>>;
+  /**
+   * Save and remove several records of any collections as one write: every
+   * revision is checked and the rules across records judged on the result
+   * before anything is written. Returns what each save stored, in order
+   * (`null` for a removal).
+   */
+  saveAll(changes: readonly Change[]): Promise<(Stored<unknown> | null)[]>;
+  /**
+   * Remove a record as a draft. A record another one still names (a company
+   * of a deal) is refused by the rules across records.
+   */
+  remove(collection: RecordCollection, id: string, baseRevision: Revision): Promise<void>;
 
   /**
    * Every record as one consistent read (draft included), without revisions:
@@ -184,6 +217,8 @@ type Reads =
   | "getDeal"
   | "listActivities"
   | "getActivity"
+  | "list"
+  | "get"
   | "readData"
   | "check"
   | "draft"
@@ -200,6 +235,9 @@ export const CHANGES: Readonly<Record<Exclude<keyof DealsStore, Reads>, true>> =
   saveContact: true,
   saveDeal: true,
   saveActivity: true,
+  save: true,
+  saveAll: true,
+  remove: true,
   publish: true,
   finishSend: true,
   discard: true,

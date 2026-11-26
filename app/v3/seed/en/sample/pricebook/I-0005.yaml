@@ -1,0 +1,9 @@
+id: I-0005
+record:
+  active: true
+  id: I-0005
+  name: Project day
+  sectionId: work
+  unit: day
+  unitPrice: 1200000
+schemaVersion: deals.pricebook-item.v1

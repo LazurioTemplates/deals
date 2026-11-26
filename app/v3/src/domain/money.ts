@@ -15,6 +15,54 @@ export const money = z
   .max(MAX_AMOUNT)
   .describe("An amount in minor units of the currency (haléře): 139000 = 1 390,00 Kč.");
 
+/** A share in basis points, 0–10000: `2100` is 21 %, `1250` is 12,5 %. */
+export const basisPoints = z
+  .int()
+  .min(0)
+  .max(10_000)
+  .describe("A share in basis points: 2100 = 21 %.");
+
+/**
+ * A quantity of a quote line: a positive number with at most three decimals
+ * (`2`, `1.5`, `0.125`). Arithmetic converts it to thousandths first
+ * (`quantityMilli`), so no total ever multiplies floating-point numbers.
+ */
+export const quantity = z
+  .number()
+  .positive()
+  .max(1_000_000_000)
+  .refine(hasAtMost3Decimals, { message: "at most three decimals" })
+  .describe("A quantity with at most three decimals: 1.5");
+
+function hasAtMost3Decimals(value: number): boolean {
+  return Math.abs(Math.round(value * 1000) - value * 1000) < 1e-6;
+}
+
+/** A quantity in whole thousandths: `1.5` → 1500. */
+export function quantityMilli(value: number): bigint {
+  return BigInt(Math.round(value * 1000));
+}
+
+/**
+ * The total of a line in whole haléře: unit price × quantity, less a discount
+ * in basis points, rounded half up once.
+ */
+export function lineAmount(unitPrice: number, qty: number, discountBp = 0): number {
+  const numerator = BigInt(unitPrice) * quantityMilli(qty) * BigInt(10_000 - discountBp);
+  return safe(roundDiv(numerator, 1000n * 10_000n));
+}
+
+/** A share of an amount in whole haléře, rounded half up: 21 % VAT of a total. */
+export function shareOf(amount: number, bp: number): number {
+  return safe(roundDiv(BigInt(amount) * BigInt(bp), 10_000n));
+}
+
+/** What share of a total an amount is, in basis points, rounded half up; 0 of 0. */
+export function basisPointsOf(amount: number, total: number): number {
+  if (total <= 0) return 0;
+  return safe(roundDiv(BigInt(amount) * 10_000n, BigInt(total)));
+}
+
 /** A probability in whole percent, 0–100. */
 export const probability = z.int().min(0).max(100).describe("A probability in whole percent.");
 

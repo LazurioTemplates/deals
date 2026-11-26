@@ -1,0 +1,66 @@
+id: Q-2026-0001-r1
+record:
+  billingEntityId: trade
+  commercialTerms:
+    customerScope: b2b
+    termsUrl: https://example.com/terms
+    termsVersion: 2026-01
+  contactId: P-0001
+  currency: CZK
+  customer:
+    address:
+      city: Brno
+      country: Česká republika
+      postalCode: 602 00
+      street: Ukázková 12
+    companyId: C-0001
+    name: Ukázka Nábytek s.r.o.
+  dealId: D-2026-0002
+  id: Q-2026-0001-r1
+  issuedOn: 2026-10-12
+  lines:
+    - id: l1
+      name: Kancelářský stůl 160 × 80
+      pricebookItemId: I-0001
+      quantity: 20
+      sectionId: items
+      unit: ks
+      unitPrice: 1290000
+    - id: l2
+      name: Kancelářská židle
+      pricebookItemId: I-0002
+      quantity: 20
+      sectionId: items
+      unit: ks
+      unitPrice: 690000
+    - id: l3
+      name: Montáž
+      pricebookItemId: I-0004
+      quantity: 16
+      sectionId: work
+      unit: h
+      unitPrice: 85000
+  number: Q-2026-0001
+  sections:
+    - id: items
+      label: Dodávka
+    - id: work
+      label: Práce
+    - id: service
+      label: Servis a podpora
+  sentOn: 2026-10-12
+  status: superseded
+  terms:
+    payments: |-
+      ## Platby
+      - Záloha 50 % při objednávce
+      - Doplatek 50 % po předání
+
+      Splatnost faktur je 14 dní.
+    scope: Nabídka platí pro rozsah uvedený v položkách. Práce navíc účtujeme podle ceníku.
+    vatNote: Ceny jsou uvedeny bez DPH. DPH se účtuje podle platných předpisů.
+  title: Kancelářský nábytek pro nové patro
+  validUntil: 2026-11-11
+  vatRate: 2100
+  version: 1
+schemaVersion: deals.quote.v1

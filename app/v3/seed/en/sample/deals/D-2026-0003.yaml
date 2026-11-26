@@ -4,10 +4,11 @@ record:
   contactIds:
     - P-0004
   createdAt: 2026-10-14
+  dealTypeId: licence
   expectedClose: 2027-02-26
   id: D-2026-0003
-  owner: Jordan Example
+  ownerId: S-0002
   stageId: qualified
   title: Annual warehouse system contract
   value: 80000000
-schemaVersion: deals.deal.v1
+schemaVersion: deals.deal.v2

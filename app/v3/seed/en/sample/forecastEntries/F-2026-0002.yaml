@@ -1,0 +1,11 @@
+id: F-2026-0002
+record:
+  amount: 2400000
+  billingEntityId: services
+  companyId: C-0004
+  dealTypeId: service
+  id: F-2026-0002
+  month: 2026-12
+  ownerId: S-0002
+  title: Service fee – December
+schemaVersion: deals.forecast-entry.v1
