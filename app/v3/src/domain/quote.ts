@@ -120,7 +120,7 @@ export const quote = z.strictObject({
     .describe("A reserve for changes outside the price („Rezerva na změny“), in haléře."),
   terms: quoteTerms.optional(),
   commercialTerms: commercialTerms.optional(),
-  note: optionalText,
+  note: optionalText.describe("An internal note; never printed on the quote."),
   sentOn: isoDate.optional().describe("The day it became active (was sent)."),
   approvedOn: isoDate.optional().describe("The day the customer approved it."),
   revision: writeRevision,

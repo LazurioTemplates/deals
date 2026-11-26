@@ -24,6 +24,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { join } from "node:path";
 import { toStableYaml } from "@lazurio/repository-db";
 import { collections } from "../domain/collections.ts";
+import { nextSalespersonId } from "../domain/salesperson.ts";
 import type { Locale } from "../i18n/locale.ts";
 
 type Doc = { schemaVersion: string; id: string; record: Record<string, unknown> };
@@ -81,7 +82,11 @@ export function planMigration(
   const now = options.now ?? new Date().toISOString();
   const stamp = options.stamp ?? true;
   const files: MigrationResult["files"] = [];
-  const write = (collection: keyof typeof collections, id: string, record: Record<string, unknown>) =>
+  const write = (
+    collection: keyof typeof collections,
+    id: string,
+    record: Record<string, unknown>,
+  ) =>
     files.push({
       path: join(collection, `${id}.yaml`),
       document: {
@@ -96,12 +101,12 @@ export function planMigration(
   const byName = new Map<string, string>(
     people.map((doc) => [String(doc.record.name), doc.id] as [string, string]),
   );
-  let next = people.length + 1;
+  const used = people.map((doc) => doc.id);
   const personFor = (name: string): string => {
     const found = byName.get(name);
     if (found) return found;
-    const id = `S-${String(next).padStart(4, "0")}`;
-    next += 1;
+    const id = nextSalespersonId(used);
+    used.push(id);
     byName.set(name, id);
     write("salespeople", id, { id, name, active: true });
     return id;
@@ -148,7 +153,11 @@ export function planMigration(
   const seen = new Set<string>();
   const unique = files
     .reverse()
-    .filter((file) => (seen.has(file.path) ? false : (seen.add(file.path), true)))
+    .filter((file) => {
+      if (seen.has(file.path)) return false;
+      seen.add(file.path);
+      return true;
+    })
     .reverse();
   return {
     files: unique,

@@ -180,6 +180,7 @@
                 "type": "number",
                 "exclusiveMinimum": 0,
                 "maximum": 1000000000,
+                "multipleOf": 0.001,
                 "description": "A quantity with at most three decimals: 1.5"
               },
               "unit": {
@@ -306,6 +307,7 @@
           "additionalProperties": false
         },
         "note": {
+          "description": "An internal note; never printed on the quote.",
           "type": "string",
           "minLength": 1
         },

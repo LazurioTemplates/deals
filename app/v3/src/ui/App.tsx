@@ -1,6 +1,6 @@
 import type { DraftPanelInput } from "@lazurio/repository-db";
 import { Alert } from "design-system/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import type { Activity } from "../domain/activity.ts";
 import type { DataSet } from "../domain/collections.ts";
 import type { Company } from "../domain/company.ts";
@@ -21,20 +21,32 @@ import { ContactPage } from "./pages/ContactPage.tsx";
 import { DealListPage } from "./pages/DealListPage.tsx";
 import { DealPage } from "./pages/DealPage.tsx";
 import { DraftPage } from "./pages/DraftPage.tsx";
-import { ForecastPage } from "./pages/ForecastPage.tsx";
-import { ImportPage } from "./pages/ImportPage.tsx";
 import { OverviewPage } from "./pages/OverviewPage.tsx";
 import { PricebookPage } from "./pages/PricebookPage.tsx";
 import { QuoteListPage } from "./pages/QuoteListPage.tsx";
-import { QuotePage } from "./pages/QuotePage.tsx";
-import { QuotePrintPage } from "./pages/QuotePrintPage.tsx";
 import { SalespeopleListPage } from "./pages/SalespeopleListPage.tsx";
 import { SalespersonPage } from "./pages/SalespersonPage.tsx";
 import { SettingsPage } from "./pages/SettingsPage.tsx";
-import { StatsPage } from "./pages/StatsPage.tsx";
 import { parseRoute, type Route } from "./routes.ts";
 import { type InstalledTools, installTools } from "./tools.ts";
 import { followWriteStatus, useCanWrite, WriteContext } from "./write.tsx";
+
+// The heavier pages load when they are first opened, so the App starts quickly.
+const ForecastPage = lazy(() =>
+  import("./pages/ForecastPage.tsx").then((module) => ({ default: module.ForecastPage })),
+);
+const ImportPage = lazy(() =>
+  import("./pages/ImportPage.tsx").then((module) => ({ default: module.ImportPage })),
+);
+const QuotePage = lazy(() =>
+  import("./pages/QuotePage.tsx").then((module) => ({ default: module.QuotePage })),
+);
+const QuotePrintPage = lazy(() =>
+  import("./pages/QuotePrintPage.tsx").then((module) => ({ default: module.QuotePrintPage })),
+);
+const StatsPage = lazy(() =>
+  import("./pages/StatsPage.tsx").then((module) => ({ default: module.StatsPage })),
+);
 
 /** Everything the pages read, loaded once and again whenever the data moves. */
 export interface AppData {
@@ -211,7 +223,11 @@ export function App() {
             {error.message}
           </Alert>
         ) : null}
-        {data ? <Page route={route} data={data} onChanged={changed} /> : null}
+        {data ? (
+          <Suspense fallback={<p className="muted">{t("Načítám…", "Loading…")}</p>}>
+            <Page route={route} data={data} onChanged={changed} />
+          </Suspense>
+        ) : null}
         {!data && !error ? <p className="muted">{t("Načítám…", "Loading…")}</p> : null}
       </Layout>
     </WriteContext.Provider>
@@ -254,7 +270,7 @@ function Page({
     case "overview":
       return <OverviewPage data={data} onChanged={onChanged} />;
     case "deals":
-      return <DealListPage data={data} tab={route.tab} />;
+      return <DealListPage data={data} tab={route.tab} onChanged={onChanged} />;
     case "new-deal":
       return (
         <DealPage

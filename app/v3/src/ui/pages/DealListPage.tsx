@@ -130,7 +130,7 @@ export function DealListPage({
     }
   }
 
-  const columns = useDealColumns({ data, lookups, canWrite, busy, moveTo, newQuote });
+  const columns = useDealColumns({ data, tab, lookups, canWrite, busy, moveTo, newQuote });
 
   const boardStages =
     tab === "all" ? settings.stages : settings.stages.filter((stage) => stage.kind === tab);
@@ -283,7 +283,8 @@ export function DealListPage({
           rows={shown}
           rowKey={(entry) => entry.value.id}
           onOpen={(entry) => navigate({ page: "deal", id: entry.value.id })}
-          storageKey="deals.columns.v1"
+          key={tab}
+          storageKey={`deals.columns.v1.${tab}`}
           defaultSort="stage"
           empty={t("Filtrům neodpovídá žádný případ.", "No deal matches the filters.")}
         />
@@ -342,6 +343,7 @@ function QuoteDot() {
 /** The columns of the table of deals. */
 function useDealColumns({
   data,
+  tab,
   lookups,
   canWrite,
   busy,
@@ -349,6 +351,7 @@ function useDealColumns({
   newQuote,
 }: {
   data: AppData;
+  tab: DealTab;
   lookups: Lookups;
   canWrite: boolean;
   busy: string | null;
@@ -486,5 +489,19 @@ function useDealColumns({
       render: (entry) => f.date(entry.value.createdAt),
     },
   ];
+  if (tab === "lost") {
+    const reasons = new Map(settings.lossReasons.map((reason) => [reason.id, reason.label]));
+    const reasonOf = (entry: Stored<Deal>) =>
+      entry.value.lossReasonId
+        ? (reasons.get(entry.value.lossReasonId) ?? entry.value.lossReasonId)
+        : "";
+    columns.splice(4, 0, {
+      id: "lossReason",
+      label: t("Důvod ztráty", "Loss reason"),
+      width: 160,
+      sortValue: reasonOf,
+      render: reasonOf,
+    });
+  }
   return columns;
 }

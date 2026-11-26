@@ -162,11 +162,11 @@ export function describeRecord(
     case "salespeople":
     case "pricebook": {
       const name = textOf("name");
-      const page = collection === "salespeople" ? "salespeople" : "pricebook";
       return {
         typeLabel,
         label: name ? `${name} (${id})` : id,
-        href: `#/${page}/${encodeURIComponent(id)}`,
+        href:
+          collection === "salespeople" ? `#/salespeople/${encodeURIComponent(id)}` : "#/pricebook",
       };
     }
     case "quotes": {

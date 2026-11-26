@@ -533,6 +533,10 @@ h3 {
     overscroll-behavior-x: contain;
   }
 
+  .sidebar-nav > .ds-nav {
+    flex: none;
+  }
+
   .sidebar-nav .ds-nav__title {
     display: none;
   }

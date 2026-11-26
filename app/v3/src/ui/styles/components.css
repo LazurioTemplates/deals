@@ -302,6 +302,7 @@
   font-size: var(--ds-type-title-size);
   font-weight: var(--ds-type-title-weight);
   font-variant-numeric: tabular-nums;
+  text-align: start;
 }
 
 .stat-tile-change {

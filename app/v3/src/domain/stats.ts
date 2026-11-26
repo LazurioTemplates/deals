@@ -165,8 +165,9 @@ export function bucketsOf(period: StatsPeriod, kind: "week" | "month"): Bucket[]
   while (start <= period.to) {
     const next =
       kind === "week" ? addDays(mondayOf(start), 7) : `${addMonths(monthOf(start), 1)}-01`;
-    const end = addDays(next, -1) < period.to ? addDays(next, -1) : period.to;
-    buckets.push({ from: start, to: end });
+    // Dates compare as text: `YYYY-MM-DD` sorts as it reads.
+    const last = addDays(next, -1);
+    buckets.push({ from: start, to: last.localeCompare(period.to) < 0 ? last : period.to });
     start = next;
   }
   return buckets;

@@ -119,7 +119,7 @@ export function forecastRows(data: DataSet, today: string): ForecastRow[] {
   for (const deal of data.deals) {
     if (!wonStages.has(deal.stageId)) continue;
     const plan = deal.paymentPlan;
-    if (!plan || plan.status !== "planned") continue;
+    if (plan?.status !== "planned") continue;
     const count = plan.payments.length;
     plan.payments.forEach((entry, index) => {
       rows.push({

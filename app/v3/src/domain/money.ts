@@ -31,12 +31,8 @@ export const quantity = z
   .number()
   .positive()
   .max(1_000_000_000)
-  .refine(hasAtMost3Decimals, { message: "at most three decimals" })
+  .multipleOf(0.001, { message: "at most three decimals" })
   .describe("A quantity with at most three decimals: 1.5");
-
-function hasAtMost3Decimals(value: number): boolean {
-  return Math.abs(Math.round(value * 1000) - value * 1000) < 1e-6;
-}
 
 /** A quantity in whole thousandths: `1.5` → 1500. */
 export function quantityMilli(value: number): bigint {
