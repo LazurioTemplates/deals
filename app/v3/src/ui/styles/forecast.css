@@ -1,0 +1,623 @@
+/* The forecast page, the payment plan editor and the overview's panels.
+   Layout only; colours, type, spacing and motion are the design system's
+   --ds-* tokens. */
+
+/* Filters and the year */
+.forecast-filters .ds-select-wrap,
+.forecast-year .ds-select-wrap {
+  display: block;
+}
+
+.forecast-filter {
+  flex: 0 1 220px;
+  min-width: 0;
+}
+
+.forecast-on-the-way {
+  margin: 0 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Months */
+.forecast-months {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--ds-space-8);
+  margin: 0 0 var(--ds-space-12);
+  padding: 0;
+  list-style: none;
+}
+
+.forecast-month-tile {
+  display: grid;
+  gap: var(--ds-space-4);
+  width: 100%;
+  min-height: 108px;
+  padding: var(--ds-space-12);
+  border: var(--ds-size-border) solid var(--ds-color-line);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color var(--ds-duration-fast) var(--ds-ease-out);
+}
+
+.forecast-month-tile.is-current {
+  border-color: var(--ds-color-accent);
+  box-shadow: inset 0 3px 0 var(--ds-color-accent);
+}
+
+.forecast-month-tile.is-empty .forecast-tile-amount {
+  color: var(--ds-color-ink-faint);
+}
+
+.forecast-month-tile.is-over {
+  border-color: var(--ds-color-accent);
+  background: var(--ds-color-accent-soft);
+}
+
+.forecast-tile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-4);
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-meta-size);
+}
+
+.forecast-tile-month {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forecast-tile-note {
+  display: inline-flex;
+  color: var(--ds-color-ink-muted);
+}
+
+.forecast-tile-amount {
+  overflow: hidden;
+  font-weight: var(--ds-type-label-weight);
+  text-align: start;
+  text-overflow: ellipsis;
+}
+
+.forecast-tile-progress {
+  display: flex;
+  gap: 2px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-color-surface-muted);
+}
+
+.forecast-tile-progress > span {
+  height: 100%;
+}
+
+.forecast-tile-progress .is-paid {
+  background: var(--ds-color-success);
+}
+
+.forecast-tile-progress .is-invoiced {
+  background: var(--ds-color-info);
+}
+
+.forecast-tile-progress .is-overdue {
+  background: var(--ds-color-danger);
+}
+
+.forecast-tile-meta {
+  display: grid;
+  color: var(--ds-color-ink-muted);
+}
+
+.forecast-tile-meta > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Quarters */
+.forecast-quarters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ds-space-8);
+  margin: 0 0 var(--ds-space-20);
+  padding: 0;
+  list-style: none;
+}
+
+.forecast-quarter {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 0 var(--ds-space-8);
+  padding: var(--ds-space-8) var(--ds-space-12);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-muted);
+}
+
+.forecast-quarter-name {
+  color: var(--ds-color-ink-muted);
+  font-weight: var(--ds-type-label-weight);
+}
+
+.forecast-quarter-amount {
+  font-weight: var(--ds-type-label-weight);
+}
+
+.forecast-quarter .small {
+  grid-column: 1 / -1;
+  text-align: right;
+}
+
+/* Unassigned */
+.forecast-unassigned {
+  margin-bottom: var(--ds-space-20);
+}
+
+.forecast-section-head p {
+  margin: 0 0 var(--ds-space-12);
+}
+
+.forecast-unassigned-list {
+  display: grid;
+  gap: var(--ds-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.forecast-unassigned-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--ds-space-12);
+  padding: var(--ds-space-8) var(--ds-space-12);
+  border: var(--ds-size-border) solid var(--ds-color-line);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-color-surface);
+}
+
+.forecast-unassigned-item[draggable="true"] {
+  cursor: grab;
+}
+
+.forecast-unassigned-item.is-dragging {
+  opacity: 0.5;
+}
+
+.forecast-unassigned-main {
+  display: grid;
+  min-width: 0;
+}
+
+.forecast-unassigned-main > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forecast-unassigned-value {
+  font-weight: var(--ds-type-label-weight);
+}
+
+/* Month panels */
+.forecast-panels {
+  display: grid;
+  gap: var(--ds-space-24);
+  margin-bottom: var(--ds-space-24);
+}
+
+.forecast-month {
+  display: grid;
+  gap: var(--ds-space-12);
+  min-width: 0;
+  scroll-margin-top: var(--ds-space-16);
+}
+
+.forecast-month-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-8) var(--ds-space-20);
+  padding-bottom: var(--ds-space-8);
+  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+}
+
+.forecast-month.is-current .forecast-month-head {
+  border-bottom-color: var(--ds-color-accent);
+}
+
+.forecast-month-name {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-8);
+  margin-right: auto;
+}
+
+.forecast-month-name h2 {
+  margin: 0;
+}
+
+.forecast-month-name h2::first-letter {
+  text-transform: uppercase;
+}
+
+.forecast-month-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-4) var(--ds-space-16);
+  margin: 0;
+}
+
+.forecast-month-figures div {
+  display: grid;
+}
+
+.forecast-month-figures dt {
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-meta-size);
+}
+
+.forecast-month-figures dd {
+  margin: 0;
+  font-weight: var(--ds-type-label-weight);
+  text-align: start;
+}
+
+.forecast-row-title {
+  display: grid;
+  min-width: 0;
+}
+
+.forecast-row-title > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forecast-row--overdue td {
+  background: var(--ds-color-danger-soft);
+}
+
+.forecast-row-actions {
+  display: inline-flex;
+  gap: var(--ds-space-2);
+}
+
+.forecast-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--ds-space-8);
+}
+
+.forecast-note--editing {
+  display: grid;
+}
+
+.forecast-note-text {
+  display: flex;
+  flex: 1 1 320px;
+  gap: var(--ds-space-8);
+  margin: 0;
+  padding: var(--ds-space-8) var(--ds-space-12);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-color-warning-soft);
+}
+
+.forecast-note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ds-space-8);
+}
+
+.forecast-note-actions .small {
+  margin-right: auto;
+}
+
+/* Summary */
+.forecast-summary {
+  margin-bottom: var(--ds-space-16);
+}
+
+.forecast-share {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-8);
+}
+
+.forecast-share-bar {
+  display: inline-block;
+  width: 56px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-color-surface-muted);
+}
+
+.forecast-share-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-color-accent);
+}
+
+.forecast-hint {
+  margin-top: var(--ds-space-8);
+}
+
+/* The payment plan editor */
+.plan-editor {
+  display: grid;
+  gap: var(--ds-space-12);
+  min-width: 0;
+}
+
+.plan-editor-mode,
+.plan-editor-quick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-8);
+}
+
+.plan-editor-count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-8);
+}
+
+.plan-editor-count .ds-select {
+  width: auto;
+  min-width: 72px;
+}
+
+.plan-editor-rows {
+  display: grid;
+  gap: var(--ds-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-editor-row {
+  display: grid;
+  grid-template-columns: 24px minmax(130px, 1fr) minmax(110px, 1fr) 96px minmax(130px, 1.2fr) 40px;
+  align-items: end;
+  gap: var(--ds-space-8);
+}
+
+.plan-editor-number {
+  padding-bottom: var(--ds-space-12);
+}
+
+.plan-editor-field {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-width: 0;
+}
+
+.plan-editor-field .ds-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.plan-editor-remove {
+  display: flex;
+  justify-content: center;
+  padding-bottom: var(--ds-space-4);
+}
+
+.plan-editor-settled {
+  grid-column: 2 / -1;
+}
+
+.plan-editor-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-8) var(--ds-space-24);
+  margin: 0;
+  padding: var(--ds-space-12);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-color-surface-muted);
+}
+
+.plan-editor-summary div {
+  display: grid;
+}
+
+.plan-editor-summary dt {
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-meta-size);
+}
+
+.plan-editor-summary dd {
+  margin: 0;
+  font-weight: var(--ds-type-label-weight);
+  text-align: start;
+}
+
+/* The overview */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--ds-space-16);
+}
+
+.overview-grid > * {
+  min-width: 0;
+}
+
+.overview-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ds-space-8);
+}
+
+.overview-list {
+  display: grid;
+  gap: var(--ds-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overview-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ds-space-12);
+  padding-bottom: var(--ds-space-8);
+  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+}
+
+.overview-list li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.overview-list-main {
+  display: grid;
+  min-width: 0;
+}
+
+.overview-list-main > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overview-list-side {
+  display: grid;
+  justify-items: end;
+  flex-shrink: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .forecast-month-tile:hover {
+    border-color: var(--ds-color-line-strong);
+  }
+
+  .forecast-month-tile.is-current:hover {
+    border-color: var(--ds-color-accent);
+  }
+}
+
+@media (max-width: 1100px) {
+  .forecast-months {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .forecast-months {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .forecast-quarters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .plan-editor-row {
+    grid-template-columns: 24px minmax(0, 1fr) minmax(0, 1fr) 40px;
+  }
+
+  .plan-editor-month {
+    grid-column: 2;
+  }
+
+  .plan-editor-label {
+    grid-column: 3;
+  }
+
+  .plan-editor-remove {
+    grid-column: 4;
+    grid-row: 1;
+  }
+
+  .plan-editor-share {
+    grid-column: 2;
+  }
+
+  .plan-editor-amount {
+    grid-column: 3 / 5;
+  }
+
+  .plan-editor-row {
+    padding-bottom: var(--ds-space-8);
+    border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+  }
+}
+
+@media (max-width: 480px) {
+  .forecast-months {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .forecast-filter {
+    flex: 1 1 100%;
+  }
+
+  .forecast-on-the-way {
+    margin-left: 0;
+  }
+
+  .forecast-unassigned-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .forecast-unassigned-item .ds-button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forecast-month-tile {
+    transition: none;
+  }
+}
+
+/* Figures in tiles read from the left, under their labels. */
+.forecast-page .stat-tile-value,
+.stats-page .stat-tile-value,
+.overview-page .stat-tile-value,
+.forecast-month-tile .forecast-tile-amount {
+  text-align: start;
+}
+
+@media (max-width: 480px) {
+  .forecast-page .stat-tile-value,
+  .stats-page .stat-tile-value,
+  .overview-page .stat-tile-value {
+    font-size: var(--ds-type-body-size);
+  }
+
+  .plan-editor-month {
+    grid-column: 2 / 4;
+  }
+
+  .plan-editor-share {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .plan-editor-amount {
+    grid-column: 3 / 5;
+    grid-row: 2;
+  }
+
+  .plan-editor-label {
+    grid-column: 2 / 5;
+    grid-row: 3;
+  }
+}

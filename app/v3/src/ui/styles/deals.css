@@ -1,0 +1,276 @@
+/* The deals pages' layout; colours, type and spacing come from the design system's --ds-* tokens. */
+
+.deal-list,
+.deal-page {
+  min-width: 0;
+}
+
+/* The list: search with its icon, the filters, the view toggle. */
+
+.deal-search {
+  position: relative;
+}
+
+.deal-search .ds-input {
+  width: 100%;
+  padding-inline-start: calc(var(--ds-space-12) + 20px);
+}
+
+.deal-search-icon {
+  position: absolute;
+  top: 50%;
+  left: var(--ds-space-12);
+  color: var(--ds-color-ink-faint);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.deal-list .filter-bar .ds-select-wrap {
+  flex: 0 1 220px;
+  min-width: 0;
+}
+
+.deal-list .filter-bar .view-toggle {
+  margin-inline-start: auto;
+}
+
+/* A row of the table: the title with the mark of a quote, the stage select. */
+
+.deal-title-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-8);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.deal-title-cell .data-table-link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deal-quote-dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-inline-start: var(--ds-space-4);
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-color-accent);
+  vertical-align: middle;
+}
+
+.deal-title-cell .deal-quote-dot {
+  margin-inline-start: 0;
+}
+
+.deal-stage-select .ds-select {
+  width: 100%;
+  min-height: var(--ds-size-control-sm, 32px);
+  padding-block: 0;
+  font-size: var(--ds-type-meta-size);
+}
+
+.deal-quote-link {
+  display: inline-flex;
+  text-decoration: none;
+}
+
+/* A card on the board. */
+
+.board-card .deal-card-title {
+  display: block;
+}
+
+.board-card .deal-card-meta {
+  align-items: baseline;
+}
+
+/* A deal's page: the value that follows a quote, the salesperson link. */
+
+.deal-owner-field {
+  display: grid;
+  gap: var(--ds-space-4);
+  min-width: 0;
+}
+
+.deal-value-quote {
+  min-width: 0;
+}
+
+.deal-value-amount {
+  display: flex;
+  align-items: center;
+  min-height: var(--ds-size-control-md, 40px);
+  font-weight: var(--ds-type-label-weight);
+  font-variant-numeric: tabular-nums;
+}
+
+.deal-side-card .panel-head {
+  margin-bottom: var(--ds-space-12);
+}
+
+.deal-side-card .panel-head h2 {
+  margin: 0;
+}
+
+/* The quotes of a deal. */
+
+.deal-quotes,
+.deal-payments {
+  display: grid;
+  gap: var(--ds-space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.deal-quote,
+.deal-payment {
+  display: grid;
+  gap: var(--ds-space-8);
+  min-width: 0;
+  padding-top: var(--ds-space-12);
+  border-top: var(--ds-size-border) solid var(--ds-color-line);
+}
+
+.deal-quote:first-child,
+.deal-payment:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.deal-quote-head,
+.deal-payment-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-4) var(--ds-space-8);
+  min-width: 0;
+}
+
+.deal-quote-number,
+.deal-payment-month {
+  font-weight: var(--ds-type-label-weight);
+}
+
+.deal-quote-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: var(--ds-space-8);
+  margin: 0;
+}
+
+.deal-quote-figures div {
+  display: grid;
+  gap: var(--ds-space-2, 2px);
+  min-width: 0;
+}
+
+.deal-quote-figures dt {
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-meta-size);
+}
+
+.deal-quote-figures dd {
+  margin: 0;
+  text-align: start;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.deal-quote-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* The payment plan of a won deal. */
+
+.deal-payment-amount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ds-space-8);
+}
+
+.deal-payment-due {
+  margin: 0;
+}
+
+.deal-payment-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-8) var(--ds-space-16);
+}
+
+/* The latest call, meeting and note above the activities. */
+
+.activity-strip {
+  display: grid;
+  gap: var(--ds-space-4);
+  margin: 0 0 var(--ds-space-16);
+  padding: var(--ds-space-8) var(--ds-space-12);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-color-surface-muted);
+}
+
+.activity-strip div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ds-space-8);
+  min-width: 0;
+  font-size: var(--ds-type-meta-size);
+}
+
+.activity-strip dt {
+  color: var(--ds-color-ink-muted);
+}
+
+.activity-strip dd {
+  margin: 0;
+  font-weight: var(--ds-type-label-weight);
+  font-variant-numeric: tabular-nums;
+}
+
+.activity-strip .is-empty dd {
+  color: var(--ds-color-ink-faint);
+  font-weight: inherit;
+}
+
+/* Closing a deal as won: the value and the day side by side, the plan below. */
+
+.close-deal-form {
+  display: grid;
+  gap: var(--ds-space-16);
+}
+
+.close-deal-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--ds-space-16);
+}
+
+.close-deal-plan {
+  display: grid;
+  gap: var(--ds-space-8);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.close-deal-form > p {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .deal-list .filter-bar .ds-select-wrap {
+    flex: 1 1 100%;
+  }
+
+  .deal-list .filter-bar .view-toggle {
+    margin-inline-start: 0;
+  }
+}

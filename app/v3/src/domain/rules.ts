@@ -1,6 +1,8 @@
 import type { Locale, Localized } from "../i18n/locale.ts";
 import type { DataSet } from "./collections.ts";
 import { isValidIco } from "./company.ts";
+import { type PaymentPlan, plannedTotal } from "./payment-plan.ts";
+import { primaryQuote, quoteRevisionId, quoteTotals } from "./quote.ts";
 import { SETTINGS_ID } from "./settings.ts";
 
 /**
@@ -149,6 +151,63 @@ export function checkRulesLocalized(
         `a deal names the loss reason ${id}; it cannot be removed`,
       );
     }
+    const uniqueIds = (
+      values: readonly { id: string }[] | undefined,
+      code: string,
+      cs: string,
+      en: string,
+    ) => {
+      const list = (values ?? []).map((entry) => entry.id);
+      if (new Set(list).size !== list.length) error(settingsRecord, code, cs, en);
+      return new Set(list);
+    };
+    const typeIds = uniqueIds(
+      settings.dealTypes,
+      "deal_type_duplicate_id",
+      "typ zakázky má stejné id dvakrát",
+      "two deal types have the same id",
+    );
+    const entityIds = uniqueIds(
+      settings.billingEntities,
+      "billing_entity_duplicate_id",
+      "fakturační firma má stejné id dvakrát",
+      "two billing entities have the same id",
+    );
+    uniqueIds(
+      settings.quotes.sections,
+      "quote_section_duplicate_id",
+      "sekce nabídky má stejné id dvakrát",
+      "two quote sections have the same id",
+    );
+    // A deal type or an entity something names cannot be taken out of the settings.
+    const named = (
+      pick: (entry: { dealTypeId?: string; billingEntityId?: string }) => string | undefined,
+    ) =>
+      new Set(
+        [...data.deals, ...data.forecastEntries, ...data.quotes]
+          .map((entry) => pick(entry as { dealTypeId?: string; billingEntityId?: string }))
+          .filter((id): id is string => id !== undefined),
+      );
+    for (const id of [...named((entry) => entry.dealTypeId)]
+      .filter((id) => !typeIds.has(id))
+      .sort()) {
+      error(
+        settingsRecord,
+        "deal_type_in_use",
+        `typ zakázky ${id} se používá, nejde ho odebrat`,
+        `the deal type ${id} is in use; it cannot be removed`,
+      );
+    }
+    for (const id of [...named((entry) => entry.billingEntityId)]
+      .filter((id) => !entityIds.has(id))
+      .sort()) {
+      error(
+        settingsRecord,
+        "billing_entity_in_use",
+        `fakturační firma ${id} se používá, nejde ji odebrat`,
+        `the billing entity ${id} is in use; it cannot be removed`,
+      );
+    }
   }
 
   const byIco = new Map<string, string[]>();
@@ -191,7 +250,14 @@ export function checkRulesLocalized(
     }
   }
 
-  const owners = settings?.owners ?? [];
+  const salespeople = new Map(data.salespeople.map((entry) => [entry.id, entry]));
+  const quotesById = new Map(data.quotes.map((entry) => [entry.id, entry]));
+  const typeKnown = (id: string | undefined) =>
+    id === undefined || !settings || (settings.dealTypes ?? []).some((entry) => entry.id === id);
+  const entityKnown = (id: string | undefined) =>
+    id === undefined ||
+    !settings ||
+    (settings.billingEntities ?? []).some((entry) => entry.id === id);
   for (const deal of data.deals) {
     const record = `deals/${deal.id}`;
     if (!companies.has(deal.companyId)) {
@@ -220,14 +286,52 @@ export function checkRulesLocalized(
         );
       }
     }
-    if (owners.length > 0 && !owners.includes(deal.owner)) {
-      warning(
+    const owner = salespeople.get(deal.ownerId);
+    if (!owner) {
+      error(
         record,
-        "owner_unknown",
-        `obchodník ${deal.owner} není v seznamu obchodníků`,
-        `the owner ${deal.owner} is not one of the salespeople`,
+        "unknown_salesperson",
+        `obchodník ${deal.ownerId} neexistuje`,
+        `the salesperson ${deal.ownerId} does not exist`,
       );
     }
+    if (!typeKnown(deal.dealTypeId)) {
+      error(
+        record,
+        "unknown_deal_type",
+        `typ zakázky ${deal.dealTypeId} neexistuje`,
+        `the deal type ${deal.dealTypeId} does not exist`,
+      );
+    }
+    if (!entityKnown(deal.billingEntityId)) {
+      error(
+        record,
+        "unknown_billing_entity",
+        `fakturační firma ${deal.billingEntityId} neexistuje`,
+        `the billing entity ${deal.billingEntityId} does not exist`,
+      );
+    }
+    if (deal.primaryQuoteId !== undefined) {
+      const named = quotesById.get(deal.primaryQuoteId);
+      if (!named || named.dealId !== deal.id) {
+        error(
+          record,
+          "unknown_primary_quote",
+          `nabídka ${deal.primaryQuoteId} nepatří k tomuto případu`,
+          `the quote ${deal.primaryQuoteId} does not belong to this deal`,
+        );
+      }
+    }
+    const primary = primaryQuote(deal, data.quotes);
+    if (primary && primary.lines.length > 0 && quoteTotals(primary).subtotal !== deal.value) {
+      warning(
+        record,
+        "value_differs_from_quote",
+        `hodnota případu se liší od nabídky ${primary.id}`,
+        `the value of the deal differs from the quote ${primary.id}`,
+      );
+    }
+    if (deal.paymentPlan) checkPlan(record, deal.paymentPlan, deal.value, error);
     if (deal.closedAt !== undefined && deal.closedAt < deal.createdAt) {
       error(
         record,
@@ -271,15 +375,15 @@ export function checkRulesLocalized(
         warning(
           record,
           "expected_close_missing",
-          "otevřený případ nemá očekávané datum uzavření; ve forecastu je mezi případy bez data",
-          "an open deal has no expected closing date; the forecast counts it without a date",
+          "otevřený případ nemá očekávané datum uzavření",
+          "an open deal has no expected closing date",
         );
       } else if (options.today !== undefined && deal.expectedClose < options.today) {
         warning(
           record,
           "expected_close_past",
-          `očekávané datum uzavření ${deal.expectedClose} už minulo; ve forecastu je mezi případy bez data`,
-          `the expected closing date ${deal.expectedClose} has passed; the forecast counts it without a date`,
+          `očekávané datum uzavření ${deal.expectedClose} už minulo`,
+          `the expected closing date ${deal.expectedClose} has passed`,
         );
       }
     } else if (deal.closedAt === undefined) {
@@ -298,6 +402,22 @@ export function checkRulesLocalized(
         "won_without_value",
         "vyhraný případ musí mít hodnotu větší než nula",
         "a won deal must have a value above zero",
+      );
+    }
+    if (stage.kind !== "won" && deal.paymentPlan !== undefined) {
+      error(
+        record,
+        "plan_outside_won",
+        "plán plateb má jen vyhraný případ",
+        "only a won deal has a payment plan",
+      );
+    }
+    if (stage.kind === "open" && owner && !owner.active) {
+      warning(
+        record,
+        "salesperson_inactive",
+        `obchodník ${owner.name} už není aktivní`,
+        `the salesperson ${owner.name} is no longer active`,
       );
     }
     if (stage.kind === "lost" && deal.lossReasonId === undefined) {
@@ -348,7 +468,246 @@ export function checkRulesLocalized(
       );
     }
   }
+  const approvedByDeal = new Map<string, string[]>();
+  for (const entry of data.quotes) {
+    const record = `quotes/${entry.id}`;
+    if (entry.id !== quoteRevisionId(entry.number, entry.version)) {
+      error(
+        record,
+        "quote_id_mismatch",
+        `id nabídky musí být ${quoteRevisionId(entry.number, entry.version)}`,
+        `the id of the quote must be ${quoteRevisionId(entry.number, entry.version)}`,
+      );
+    }
+    if (!deals.has(entry.dealId)) {
+      error(
+        record,
+        "unknown_deal",
+        `obchodní případ ${entry.dealId} neexistuje`,
+        `the deal ${entry.dealId} does not exist`,
+      );
+    }
+    if (entry.contactId !== undefined && !contacts.has(entry.contactId)) {
+      error(
+        record,
+        "unknown_contact",
+        `kontakt ${entry.contactId} neexistuje`,
+        `the contact ${entry.contactId} does not exist`,
+      );
+    }
+    if (entry.customer.companyId !== undefined && !companies.has(entry.customer.companyId)) {
+      error(
+        record,
+        "unknown_company",
+        `firma ${entry.customer.companyId} neexistuje`,
+        `the company ${entry.customer.companyId} does not exist`,
+      );
+    }
+    if (!entityKnown(entry.billingEntityId)) {
+      error(
+        record,
+        "unknown_billing_entity",
+        `fakturační firma ${entry.billingEntityId} neexistuje`,
+        `the billing entity ${entry.billingEntityId} does not exist`,
+      );
+    }
+    if (entry.validUntil !== undefined && entry.validUntil < entry.issuedOn) {
+      error(
+        record,
+        "valid_before_issued",
+        "nabídka platí jen do dne před vystavením",
+        "the quote is valid only until before it was issued",
+      );
+    }
+    const sectionIds = entry.sections.map((section) => section.id);
+    if (new Set(sectionIds).size !== sectionIds.length) {
+      error(
+        record,
+        "quote_section_duplicate_id",
+        "sekce nabídky má stejné id dvakrát",
+        "two sections of the quote have the same id",
+      );
+    }
+    const lineIds = entry.lines.map((line) => line.id);
+    if (new Set(lineIds).size !== lineIds.length) {
+      error(
+        record,
+        "quote_line_duplicate_id",
+        "položka nabídky má stejné id dvakrát",
+        "two lines of the quote have the same id",
+      );
+    }
+    for (const line of entry.lines) {
+      if (!sectionIds.includes(line.sectionId)) {
+        error(
+          record,
+          "unknown_quote_section",
+          `položka ${line.name} je v sekci ${line.sectionId}, kterou nabídka nemá`,
+          `the line ${line.name} is in the section ${line.sectionId}, which the quote does not have`,
+        );
+      }
+    }
+    if (entry.status === "approved") {
+      approvedByDeal.set(entry.dealId, [...(approvedByDeal.get(entry.dealId) ?? []), entry.id]);
+      if (entry.commercialTerms && !entry.commercialTerms.evidence) {
+        warning(
+          record,
+          "terms_without_evidence",
+          "schválená nabídka nemá doklad o přijetí obchodních podmínek",
+          "an approved quote has no evidence that its commercial terms were accepted",
+        );
+      }
+    }
+  }
+  for (const [dealId, ids] of approvedByDeal) {
+    if (ids.length < 2) continue;
+    warning(
+      `deals/${dealId}`,
+      "several_approved_quotes",
+      `případ má víc schválených nabídek: ${ids.join(", ")}`,
+      `the deal has several approved quotes: ${ids.join(", ")}`,
+    );
+  }
+
+  const sections = new Set((settings?.quotes.sections ?? []).map((section) => section.id));
+  for (const item of data.pricebook) {
+    if (settings && item.sectionId !== undefined && !sections.has(item.sectionId)) {
+      warning(
+        `pricebook/${item.id}`,
+        "unknown_quote_section",
+        `sekce ${item.sectionId} v nastavení nabídek není`,
+        `the quote settings have no section ${item.sectionId}`,
+      );
+    }
+  }
+
+  for (const entry of data.forecastEntries) {
+    const record = `forecastEntries/${entry.id}`;
+    const unknown = (code: string, cs: string, en: string) => error(record, code, cs, en);
+    if (entry.companyId !== undefined && !companies.has(entry.companyId)) {
+      unknown(
+        "unknown_company",
+        `firma ${entry.companyId} neexistuje`,
+        `the company ${entry.companyId} does not exist`,
+      );
+    }
+    if (entry.ownerId !== undefined && !salespeople.has(entry.ownerId)) {
+      unknown(
+        "unknown_salesperson",
+        `obchodník ${entry.ownerId} neexistuje`,
+        `the salesperson ${entry.ownerId} does not exist`,
+      );
+    }
+    if (entry.dealId !== undefined && !deals.has(entry.dealId)) {
+      unknown(
+        "unknown_deal",
+        `obchodní případ ${entry.dealId} neexistuje`,
+        `the deal ${entry.dealId} does not exist`,
+      );
+    }
+    if (!typeKnown(entry.dealTypeId)) {
+      unknown(
+        "unknown_deal_type",
+        `typ zakázky ${entry.dealTypeId} neexistuje`,
+        `the deal type ${entry.dealTypeId} does not exist`,
+      );
+    }
+    if (!entityKnown(entry.billingEntityId)) {
+      unknown(
+        "unknown_billing_entity",
+        `fakturační firma ${entry.billingEntityId} neexistuje`,
+        `the billing entity ${entry.billingEntityId} does not exist`,
+      );
+    }
+    checkPaymentDates(record, entry, error);
+  }
   return issues;
+}
+
+type Report = (record: string, code: string, cs: string, en: string) => void;
+
+/** A due date needs an invoice; a payment is paid no earlier than invoiced. */
+function checkPaymentDates(
+  record: string,
+  value: {
+    invoicedOn?: string | undefined;
+    dueOn?: string | undefined;
+    paidOn?: string | undefined;
+  },
+  error: Report,
+  label = "",
+): void {
+  if (value.dueOn !== undefined && value.invoicedOn === undefined) {
+    error(
+      record,
+      "due_without_invoice",
+      `${label}splatnost má jen vystavená faktura`,
+      `${label}only an issued invoice has a due date`,
+    );
+  }
+  if (
+    value.dueOn !== undefined &&
+    value.invoicedOn !== undefined &&
+    value.dueOn < value.invoicedOn
+  ) {
+    error(
+      record,
+      "due_before_invoice",
+      `${label}splatnost je dřív než vystavení faktury`,
+      `${label}the due date is before the invoice`,
+    );
+  }
+  if (
+    value.paidOn !== undefined &&
+    value.invoicedOn !== undefined &&
+    value.paidOn < value.invoicedOn
+  ) {
+    error(
+      record,
+      "paid_before_invoice",
+      `${label}platba je dřív než vystavení faktury`,
+      `${label}the payment is before the invoice`,
+    );
+  }
+}
+
+/** A planned payment plan sums exactly to the deal's value; an unassigned one plans nothing. */
+function checkPlan(record: string, plan: PaymentPlan, value: number, error: Report): void {
+  const ids = plan.payments.map((entry) => entry.id);
+  if (new Set(ids).size !== ids.length) {
+    error(
+      record,
+      "payment_duplicate_id",
+      "platba má stejné id dvakrát",
+      "two payments have the same id",
+    );
+  }
+  if (plan.status === "unassigned" && plan.payments.length > 0) {
+    error(
+      record,
+      "unassigned_with_payments",
+      "nezařazený plán nemá platby",
+      "an unassigned plan has no payments",
+    );
+  }
+  if (plan.status === "planned") {
+    if (plan.payments.length === 0) {
+      error(
+        record,
+        "plan_without_payments",
+        "plán plateb nemá žádnou platbu",
+        "the payment plan has no payment",
+      );
+    } else if (plannedTotal(plan) !== value) {
+      error(
+        record,
+        "plan_sum",
+        "platby plánu se nesčítají na hodnotu případu",
+        "the payments of the plan do not add up to the value of the deal",
+      );
+    }
+  }
+  for (const entry of plan.payments) checkPaymentDates(record, entry, error, `${entry.id}: `);
 }
 
 /** The issues of the data in one language. */

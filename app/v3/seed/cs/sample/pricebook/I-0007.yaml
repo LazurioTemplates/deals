@@ -1,0 +1,9 @@
+id: I-0007
+record:
+  active: true
+  id: I-0007
+  name: Roční podpora
+  sectionId: service
+  unit: měs.
+  unitPrice: 450000
+schemaVersion: deals.pricebook-item.v1

@@ -1,0 +1,80 @@
+id: Q-2026-0005-r1
+record:
+  approvedOn: 2026-10-18
+  billingEntityId: trade
+  commercialTerms:
+    acceptedOn: 2026-10-18
+    choices:
+      deposit: standard
+      payments: standard
+      warranty: standard
+    customerScope: b2b
+    evidence: Podepsaná nabídka v e-mailu od zákazníka
+    termsUrl: https://example.com/terms
+    termsVersion: 2026-01
+  contactId: P-0008
+  currency: CZK
+  customer:
+    address:
+      city: Plzeň
+      country: Česká republika
+      postalCode: 301 00
+      street: Cihlová 3
+    companyId: C-0005
+    name: Fiktivní Stavby s.r.o.
+  dealId: D-2026-0011
+  id: Q-2026-0005-r1
+  issuedOn: 2026-10-01
+  lines:
+    - id: l1
+      name: Kancelářský stůl 160 × 80
+      pricebookItemId: I-0001
+      quantity: 24
+      sectionId: items
+      unit: ks
+      unitPrice: 1290000
+    - id: l2
+      name: Kancelářská židle
+      pricebookItemId: I-0002
+      quantity: 24
+      sectionId: items
+      unit: ks
+      unitPrice: 690000
+    - id: l3
+      name: Projektový den
+      pricebookItemId: I-0005
+      quantity: 2
+      sectionId: work
+      unit: MD
+      unitPrice: 1200000
+    - id: l4
+      name: Doprava
+      pricebookItemId: I-0006
+      quantity: 240
+      sectionId: work
+      unit: km
+      unitPrice: 3500
+  number: Q-2026-0005
+  sections:
+    - id: items
+      label: Dodávka
+    - id: work
+      label: Práce
+    - id: service
+      label: Servis a podpora
+  sentOn: 2026-10-01
+  status: approved
+  terms:
+    payments: |-
+      ## Platby
+      - Záloha 50 % při objednávce
+      - Doplatek 50 % po předání
+
+      Splatnost faktur je 14 dní.
+    scope: Nabídka platí pro rozsah uvedený v položkách. Práce navíc účtujeme podle ceníku.
+    vatNote: Ceny jsou uvedeny bez DPH. DPH se účtuje podle platných předpisů.
+  title: Kanceláře na stavbě
+  validUntil: 2026-10-31
+  vatRate: 2100
+  version: 1
+schemaVersion: deals.quote.v1

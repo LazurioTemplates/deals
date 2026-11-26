@@ -1,0 +1,66 @@
+id: Q-2026-0006-r1
+record:
+  approvedOn: 2026-11-05
+  billingEntityId: trade
+  commercialTerms:
+    acceptedOn: 2026-11-05
+    choices:
+      deposit: standard
+      payments: standard
+      warranty: standard
+    customerScope: b2b
+    evidence: The signed quote in the customer's e-mail
+    termsUrl: https://example.com/terms
+    termsVersion: 2026-01
+  contactId: P-0009
+  currency: CZK
+  customer:
+    address:
+      city: Hradec Kralove
+      country: Czech Republic
+      postalCode: 500 02
+      street: 9 Health Square
+    companyId: C-0006
+    name: Invented Clinic Ltd.
+  dealId: D-2026-0012
+  id: Q-2026-0006-r1
+  issuedOn: 2026-10-20
+  lines:
+    - id: l1
+      name: Conference table
+      pricebookItemId: I-0003
+      quantity: 2
+      sectionId: items
+      unit: pcs
+      unitPrice: 2490000
+    - id: l2
+      name: Assembly
+      pricebookItemId: I-0004
+      quantity: 10
+      sectionId: work
+      unit: h
+      unitPrice: 85000
+  number: Q-2026-0006
+  sections:
+    - id: items
+      label: Delivery
+    - id: work
+      label: Work
+    - id: service
+      label: Service and support
+  sentOn: 2026-10-20
+  status: approved
+  terms:
+    payments: |-
+      ## Payments
+      - A deposit of 50 % with the order
+      - The remaining 50 % on handover
+
+      Invoices are due in 14 days.
+    scope: The quote covers the scope of its lines. Extra work is charged by the price list.
+    vatNote: Prices are without VAT. VAT is charged as the law requires.
+  title: Ground floor surgery
+  validUntil: 2026-11-19
+  vatRate: 2100
+  version: 1
+schemaVersion: deals.quote.v1

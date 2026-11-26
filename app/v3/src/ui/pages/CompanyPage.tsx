@@ -7,7 +7,8 @@ import type { AppData } from "../App.tsx";
 import { ApiError, api, type Stored } from "../api.ts";
 import { Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
 import { EditNotices, formLocked, isRecordChanged, useRecordForm } from "../edit.tsx";
-import { useFormat, useLocale, useT } from "../i18n.tsx";
+import { DAYS, useFormat, useLocale, useT } from "../i18n.tsx";
+import { useLookups } from "../lookups.ts";
 import { href, navigate } from "../routes.ts";
 import { useCanWrite } from "../write.tsx";
 
@@ -20,6 +21,8 @@ interface CompanyForm {
   postalCode: string;
   country: string;
   website: string;
+  /** The company's own days to pay an invoice; empty for the settings'. */
+  dueDays: string;
   note: string;
 }
 
@@ -40,8 +43,16 @@ export function companyFormOf(company: Company | undefined, country: string): Co
     postalCode: company?.address?.postalCode ?? "",
     country: company?.address?.country ?? (company ? "" : country),
     website: company?.website ?? "",
+    dueDays: company?.paymentDueDays === undefined ? "" : String(company.paymentDueDays),
     note: company?.note ?? "",
   };
+}
+
+/** The company's due days as written: `null` while it is no whole number from 0 to 365. */
+export function dueDaysOf(text: string): number | undefined | null {
+  if (text.trim() === "") return undefined;
+  const value = Number(text.trim());
+  return Number.isInteger(value) && value >= 0 && value <= 365 ? value : null;
 }
 
 /**
@@ -58,12 +69,14 @@ export function submitCompany(
       trimmed(form[field.key]) ? [[field.key, trimmed(form[field.key])]] : [],
     ),
   );
+  const dueDays = dueDaysOf(form.dueDays);
   const record = {
     name: trimmed(form.name),
     ...(trimmed(form.ico) ? { ico: trimmed(form.ico).replace(/\s/g, "") } : {}),
     ...(trimmed(form.dic) ? { dic: trimmed(form.dic) } : {}),
     ...(Object.keys(address).length > 0 ? { address } : {}),
     ...(trimmed(form.website) ? { website: trimmed(form.website) } : {}),
+    ...(typeof dueDays === "number" ? { paymentDueDays: dueDays } : {}),
     ...(trimmed(form.note) ? { note: trimmed(form.note) } : {}),
   };
   return base
@@ -86,6 +99,7 @@ export function CompanyPage({
   const canWrite = useCanWrite();
   const settings = data.settings.value;
   const f = useFormat(settings.currency);
+  const lookups = useLookups(data);
   const current = id ? data.companies.find((entry) => entry.value.id === id) : undefined;
   // The form keeps the company it came from: a reload of the data never
   // replaces what the person is typing, and the save sends that revision.
@@ -103,6 +117,7 @@ export function CompanyPage({
   );
   const [error, setError] = useState<unknown>(null);
   const errors = fieldErrors(error);
+  const dueDays = dueDaysOf(form.dueDays);
   if (id && !stored) {
     return (
       <section>
@@ -183,7 +198,10 @@ export function CompanyPage({
         actions={
           stored && canWrite ? (
             <>
-              <Button variant="primary" href={href({ page: "new-deal", company: stored.value.id })}>
+              <Button
+                variant="primary"
+                href={href({ page: "new-deal", company: stored.value.id, stage: null })}
+              >
                 {t("Nový případ", "New deal")}
               </Button>
               <Button
@@ -251,6 +269,27 @@ export function CompanyPage({
                     onChange={(event) => update({ dic: event.target.value })}
                   />
                 </Field>
+                <Field
+                  label={t("Splatnost faktur ve dnech", "Invoices due in days")}
+                  hint={t(
+                    `Prázdné = podle nastavení (${t.count(settings.paymentDueDays, DAYS)}).`,
+                    `Empty = as in the settings (${t.count(settings.paymentDueDays, DAYS)}).`,
+                  )}
+                  error={
+                    errors.paymentDueDays ??
+                    (dueDays === null
+                      ? t("Celé číslo od 0 do 365.", "A whole number from 0 to 365.")
+                      : undefined)
+                  }
+                >
+                  <input
+                    value={form.dueDays}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder={String(settings.paymentDueDays)}
+                    onChange={(event) => update({ dueDays: event.target.value })}
+                  />
+                </Field>
                 <Field label={t("Web", "Website")} error={errors.website}>
                   <input
                     value={form.website}
@@ -282,7 +321,12 @@ export function CompanyPage({
             </article>
             {canWrite ? (
               <div className="form-actions">
-                <Button variant="primary" type="submit" busy={busy} disabled={!form.name.trim()}>
+                <Button
+                  variant="primary"
+                  type="submit"
+                  busy={busy}
+                  disabled={!form.name.trim() || dueDays === null}
+                >
                   {stored
                     ? t("Uložit do konceptu", "Save to the draft")
                     : t("Založit firmu", "Create the company")}
@@ -304,6 +348,9 @@ export function CompanyPage({
                       <a href={href({ page: "deal", id: entry.value.id })}>{entry.value.title}</a>
                       <span className="related-meta">
                         <StageChip stage={stageById(settings, entry.value.stageId)} />
+                        <span className="muted small">
+                          {lookups.salespersonName(entry.value.ownerId)}
+                        </span>
                         <span className="num small">{f.money(entry.value.value)}</span>
                       </span>
                     </li>

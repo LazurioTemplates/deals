@@ -33,16 +33,27 @@ const READ_TOOLS = [
   "get_deal",
   "get_draft",
   "get_forecast",
+  "get_quote",
   "get_settings",
   "get_stats",
+  "list_pricebook",
+  "list_quotes",
+  "list_salespeople",
 ];
 const WRITE_TOOLS = [
   "add_activity",
   "create_company",
   "create_contact",
   "create_deal",
+  "create_forecast_entry",
+  "create_quote",
   "discard_draft",
+  "mark_payment",
   "move_deal_stage",
+  "plan_payments",
+  "revise_quote",
+  "save_quote",
+  "set_quote_status",
   "update_company",
   "update_contact",
   "update_deal",
@@ -137,7 +148,7 @@ describe("who sees which tools", () => {
 });
 
 describe("reading tools", () => {
-  test("get_settings gives the stages, the loss reasons and the salespeople", async () => {
+  test("get_settings gives the stages, the loss reasons, the deal types and the quote defaults", async () => {
     const { tools } = setup(true);
     const settings = await ok(tools, "get_settings", {});
     expect(settings.currency).toBe("CZK");
@@ -155,7 +166,44 @@ describe("reading tools", () => {
       "timing",
       "no-decision",
     ]);
-    expect(settings.owners).toEqual(["Jana Ukázková", "Petr Vzorný"]);
+    expect((settings.deal_types as { id: string }[]).map((type) => type.id)).toEqual([
+      "delivery",
+      "service",
+      "licence",
+    ]);
+    expect(settings.billing_entities).toEqual([
+      { id: "trade", name: "Vzorová obchodní s.r.o." },
+      { id: "services", name: "Vzorové služby s.r.o." },
+    ]);
+    expect(settings.quote_defaults).toMatchObject({ vat_rate: 2100, validity_days: 30 });
+    expect(settings.payment_due_days).toBe(14);
+    expect(settings).not.toHaveProperty("owners");
+  });
+
+  test("list_salespeople and list_pricebook give the ids a deal and a quote name", async () => {
+    const { tools } = setup(true);
+    const people = (await ok(tools, "list_salespeople", {})).salespeople as {
+      id: string;
+      name: string;
+      active: boolean;
+    }[];
+    expect(people.map((person) => [person.id, person.name, person.active])).toEqual([
+      ["S-0001", "Jana Ukázková", true],
+      ["S-0003", "Karel Příkladný", false],
+      ["S-0002", "Petr Vzorný", true],
+    ]);
+    const active = (await ok(tools, "list_salespeople", { active_only: true, search: "petr" }))
+      .salespeople as { id: string }[];
+    expect(active.map((person) => person.id)).toEqual(["S-0002"]);
+    const items = (await ok(tools, "list_pricebook", { search: "stůl 160" })).items as {
+      id: string;
+      unit_price: number;
+      section_id: string;
+    }[];
+    expect(items).toEqual([
+      expect.objectContaining({ id: "I-0001", unit_price: 1_290_000, section_id: "items" }),
+    ]);
+    expect(((await ok(tools, "list_pricebook", {})).items as unknown[]).length).toBe(8);
   });
 
   test("find_deals filters by state, stage, company, owner and words", async () => {
@@ -174,13 +222,28 @@ describe("reading tools", () => {
       "D-2026-0004",
       "D-2026-0003",
     ]);
-    expect(await ids({ owner: "petr vzorný", status: "open" })).toEqual([
+    expect(await ids({ owner_id: "S-0002", status: "open" })).toEqual([
       "D-2026-0009",
       "D-2026-0007",
       "D-2026-0004",
       "D-2026-0003",
     ]);
     expect(await ids({ search: "nábytek patro" })).toEqual(["D-2026-0002"]);
+    expect(await ids({ deal_type_id: "service" })).toEqual([
+      "D-2026-0013",
+      "D-2026-0007",
+      "D-2026-0006",
+    ]);
+    const [won] = (await ok(tools, "find_deals", { status: "won" })).deals as {
+      owner_id: string;
+      owner: string;
+      payment_plan: string;
+    }[];
+    expect(won).toMatchObject({
+      owner_id: "S-0002",
+      owner: "Petr Vzorný",
+      payment_plan: "unassigned",
+    });
     const [newest] = (await ok(tools, "find_deals", { status: "lost" })).deals as {
       created_at: string;
       closed_at: string;
@@ -201,7 +264,13 @@ describe("reading tools", () => {
   test("get_deal, get_company and get_contact give the record, its revision and what belongs to it", async () => {
     const { tools } = setup(true);
     const deal = await ok(tools, "get_deal", { id: "D-2026-0004" });
-    expect(deal.deal).toMatchObject({ title: "Chladicí vozy do flotily", value: 21_999_990 });
+    expect(deal.deal).toMatchObject({ title: "Chladicí vozy do flotily", value: 24_000_000 });
+    expect((deal.owner as { name: string }).name).toBe("Petr Vzorný");
+    expect(deal.quotes).toEqual([
+      expect.objectContaining({ id: "Q-2026-0002-r1", status: "active", subtotal: 24_000_000 }),
+    ]);
+    expect(deal.primary_quote_id).toBe("Q-2026-0002-r1");
+    expect(deal.payment_plan).toBeNull();
     expect(String(deal.revision).length).toBeGreaterThan(0);
     expect((deal.company as { name: string }).name).toBe("Vzorová Logistika a.s.");
     expect((deal.contacts as { id: string }[]).map((contact) => contact.id)).toEqual([
@@ -241,14 +310,39 @@ describe("reading tools", () => {
   test("get_forecast, get_stats and check_data give the numbers counted by hand", async () => {
     const { tools } = setup(true);
     const forecast = await ok(tools, "get_forecast", {});
-    expect(forecast.total).toEqual({ count: 9, value: 237_150_050, weighted: 80_262_519 });
-    expect(forecast.noDate).toEqual({ count: 2, value: 61_000_000, weighted: 13_900_000 });
+    expect(forecast.total).toMatchObject({
+      forecast: 56_456_000,
+      paid: 21_750_000,
+      overdue: 17_078_000,
+      count: 7,
+    });
+    expect((forecast.unassigned as { dealId: string }[]).map((deal) => deal.dealId)).toEqual([
+      "D-2026-0012",
+    ]);
+    const overdue = (forecast.rows as { key: string; state: string }[])
+      .filter((row) => row.state === "overdue")
+      .map((row) => row.key);
+    expect(overdue).toEqual(["deals/D-2026-0011#p1", "forecastEntries/F-2026-0003"]);
+    const next = await ok(tools, "get_forecast", { year: 2027, owner_id: "S-0001" });
+    expect(next.total).toMatchObject({ forecast: 20_304_000, count: 1 });
+    const services = await ok(tools, "get_forecast", {
+      deal_type_id: "service",
+      billing_entity_id: "services",
+    });
+    expect(services.total).toMatchObject({ forecast: 6_650_000 });
     const stats = await ok(tools, "get_stats", { from: "2026-09-01", to: "2026-11-30" });
     expect(stats).toMatchObject({
       conversionBasisPoints: 6000,
-      averageWonValue: 23_516_667,
+      averageWonValue: 25_313_333,
       averageCycleDays: 71,
+      previousPeriod: { from: "2026-06-02", to: "2026-08-31" },
     });
+    const petr = await ok(tools, "get_stats", {
+      from: "2026-09-01",
+      to: "2026-11-30",
+      owner_id: "S-0002",
+    });
+    expect(petr.conversionBasisPoints).toBe(5000);
     const fallback = await ok(tools, "get_stats", {});
     expect(fallback.period).toEqual({ from: "2026-08-28", to: TODAY });
     const checked = await ok(tools, "check_data", {});
@@ -257,6 +351,41 @@ describe("reading tools", () => {
       "expected_close_missing",
       "expected_close_past",
     ]);
+  });
+
+  test("list_quotes and get_quote give the quotes with their amounts and revisions", async () => {
+    const { tools } = setup(true);
+    const all = (await ok(tools, "list_quotes", {})).quotes as { id: string }[];
+    expect(all).toHaveLength(7);
+    const latest = (await ok(tools, "list_quotes", { deal_id: "D-2026-0002", latest_only: true }))
+      .quotes as { id: string; subtotal: number; vat: number; total: number }[];
+    expect(latest).toEqual([
+      expect.objectContaining({
+        id: "Q-2026-0001-r2",
+        subtotal: 39_400_000,
+        vat: 8_274_000,
+        total: 47_674_000,
+      }),
+    ]);
+    const approved = (await ok(tools, "list_quotes", { status: "approved" })).quotes as {
+      id: string;
+    }[];
+    expect(approved.map((entry) => entry.id)).toEqual([
+      "Q-2026-0006-r1",
+      "Q-2026-0005-r1",
+      "Q-2026-0004-r1",
+    ]);
+    const quote = await ok(tools, "get_quote", { id: "Q-2026-0001-r1" });
+    expect(quote.quote).toMatchObject({ status: "superseded", version: 1 });
+    expect(String(quote.revision).length).toBeGreaterThan(0);
+    expect(quote.totals).toMatchObject({ subtotal: 40_960_000 });
+    expect(quote.revisions).toEqual([
+      { id: "Q-2026-0001-r2", version: 2, status: "active", issued_on: "2026-11-02" },
+      { id: "Q-2026-0001-r1", version: 1, status: "superseded", issued_on: "2026-10-12" },
+    ]);
+    expect(quote.deal).toMatchObject({ id: "D-2026-0002", value: 39_400_000, primary: false });
+    const missing = await mcpTool(tools, "get_quote", { id: "Q-2026-0404-r1" }, user);
+    expect(missing.structured.reason).toBe("not_found");
   });
 });
 
@@ -279,7 +408,8 @@ describe("writing tools", () => {
       title: "Vybavení showroomu",
       company_id: "C-0007",
       contact_ids: ["P-0011"],
-      owner: "Jana Ukázková",
+      owner_id: "S-0001",
+      deal_type_id: "delivery",
       value: 12_500_000,
       expected_close: "2027-02-15",
     });
@@ -290,16 +420,21 @@ describe("writing tools", () => {
         createdAt: TODAY,
         contactIds: ["P-0011"],
         expectedClose: "2027-02-15",
+        ownerId: "S-0001",
+        dealTypeId: "delivery",
       },
     });
-    // The date the message gave puts the deal into its month of the forecast,
-    // not among the deals without a date (lead counts 10 %).
+    // An open deal is no part of the forecast: it counts once it is won and planned.
     const forecast = await ok(tools, "get_forecast", {});
-    expect(forecast.noDate).toEqual({ count: 2, value: 61_000_000, weighted: 13_900_000 });
-    const february = (forecast.months as { month: string; count: number; value: number }[]).find(
-      (month) => month.month === "2027-02",
+    expect((forecast.total as { forecast: number }).forecast).toBe(56_456_000);
+    // A salesperson who does not exist is refused by the rules.
+    const nobody = await mcpTool(
+      tools,
+      "create_deal",
+      { title: "Bez obchodníka", company_id: "C-0007", owner_id: "S-0404", value: 1 },
+      user,
     );
-    expect(february).toMatchObject({ count: 2, value: 92_500_000 });
+    expect(nobody.structured.reason).toBe("invalid_record");
     const activity = await ok(tools, "add_activity", {
       deal_id: "D-2026-0015",
       type: "call",
@@ -386,15 +521,31 @@ describe("writing tools", () => {
     const updated = await ok(tools, "update_deal", {
       id: "D-2026-0004",
       base_revision: opened.revision,
-      changes: { value: 23_000_000, probability: null, quote_id: "NAB-2026-0099" },
+      changes: { probability: null, owner_id: "S-0001", deal_type_id: "service" },
     });
     expect(updated.record).toMatchObject({
       title: "Chladicí vozy do flotily",
       stageId: "negotiation",
-      value: 23_000_000,
-      quoteRef: { id: "NAB-2026-0099" },
+      ownerId: "S-0001",
+      dealTypeId: "service",
     });
     expect(updated.record).not.toHaveProperty("probability");
+    // While the deal has a quote with lines, its value follows the quote.
+    const followed = await ok(tools, "update_deal", {
+      id: "D-2026-0004",
+      base_revision: updated.revision,
+      changes: { value: 23_000_000 },
+    });
+    expect(followed.record).toMatchObject({ value: 24_000_000 });
+    // A deal without a quote keeps the value it is given.
+    const plain = await ok(tools, "get_deal", { id: "D-2026-0003" });
+    const valued = await ok(tools, "update_deal", {
+      id: "D-2026-0003",
+      base_revision: plain.revision,
+      changes: { value: 81_000_000, deal_type_id: null },
+    });
+    expect(valued.record).toMatchObject({ value: 81_000_000 });
+    expect(valued.record).not.toHaveProperty("dealTypeId");
     const company = await ok(tools, "get_company", { id: "C-0001" });
     const moved = await ok(tools, "update_company", {
       id: "C-0001",
@@ -461,6 +612,333 @@ describe("writing tools", () => {
   });
 });
 
+describe("quotes, payment plans and the forecast", () => {
+  test("a quote from the price list as a draft; the deal's value follows it", async () => {
+    const { tools, store } = setup(true);
+    // An item the price list does not sell is refused: a price is never made up.
+    const unknown = await mcpTool(
+      tools,
+      "create_quote",
+      { deal_id: "D-2026-0001", items: [{ pricebook_item_id: "I-0404" }] },
+      user,
+    );
+    expect(unknown.structured.reason).toBe("invalid_input");
+    const created = await ok(tools, "create_quote", {
+      deal_id: "D-2026-0001",
+      items: [
+        { pricebook_item_id: "I-0001", quantity: 4, discount: 1000 },
+        { pricebook_item_id: "I-0004", quantity: 6 },
+      ],
+    });
+    // 4 desks of 12 900 Kč less 10 % = 46 440 Kč; 6 h of 850 Kč = 5 100 Kč.
+    expect(created).toMatchObject({
+      id: "Q-2026-0007-r1",
+      record: { status: "draft", version: 1, dealId: "D-2026-0001" },
+      totals: { subtotal: 5_154_000, vat: 1_082_340, total: 6_236_340 },
+    });
+    expect((await store.getDeal("D-2026-0001"))?.value.value).toBe(5_154_000);
+    // A line the person priced, saved whole from its revision.
+    const record = created.record as { lines: object[] };
+    const saved = await ok(tools, "save_quote", {
+      base_revision: created.revision,
+      record: {
+        ...record,
+        lines: [
+          ...record.lines,
+          {
+            id: "l3",
+            sectionId: "work",
+            name: "Doprava po Brně",
+            quantity: 1,
+            unit: "km",
+            unitPrice: 60_000,
+          },
+        ],
+      },
+    });
+    expect(saved.totals).toMatchObject({ subtotal: 5_214_000 });
+    const stale = await mcpTool(
+      tools,
+      "save_quote",
+      { base_revision: created.revision, record },
+      user,
+    );
+    expect(stale.structured).toMatchObject({
+      reason: "record_changed",
+      current_revision: saved.revision,
+    });
+    // Marked sent only on the person's word, then revised and approved.
+    const sent = await ok(tools, "set_quote_status", {
+      id: "Q-2026-0007-r1",
+      base_revision: saved.revision,
+      status: "active",
+    });
+    expect(sent.record).toMatchObject({ status: "active", sentOn: TODAY });
+    const revised = await ok(tools, "revise_quote", { id: "Q-2026-0007-r1" });
+    expect(revised).toMatchObject({
+      id: "Q-2026-0007-r2",
+      record: { status: "draft", version: 2 },
+    });
+    expect((await store.get("quotes", "Q-2026-0007-r1"))?.value.status).toBe("superseded");
+    const approved = await ok(tools, "set_quote_status", {
+      id: "Q-2026-0007-r2",
+      base_revision: revised.revision,
+      status: "approved",
+    });
+    expect(approved.record).toMatchObject({ approvedOn: TODAY });
+    expect((await store.getDeal("D-2026-0001"))?.value.primaryQuoteId).toBe("Q-2026-0007-r2");
+    // Everything is a draft, nothing published.
+    expect((await store.draft()).status?.state).toBe("draft");
+  });
+
+  test("winning plans the payments, or leaves the deal unassigned until plan_payments", async () => {
+    const { tools } = setup(true);
+    const opened = await ok(tools, "get_deal", { id: "D-2026-0006" });
+    // Payments belong to won only.
+    const early = await mcpTool(
+      tools,
+      "move_deal_stage",
+      {
+        id: "D-2026-0006",
+        base_revision: opened.revision,
+        stage_id: "negotiation",
+        payments: [{ month: "2026-12", amount: 1 }],
+      },
+      user,
+    );
+    expect(early.structured.reason).toBe("invalid_input");
+    // A plan that does not add up to the value is refused by the rules.
+    const wrong = await mcpTool(
+      tools,
+      "move_deal_stage",
+      {
+        id: "D-2026-0006",
+        base_revision: opened.revision,
+        stage_id: "won",
+        value: 15_600_000,
+        closed_at: TODAY,
+        payments: [{ month: "2026-12", amount: 1 }],
+      },
+      user,
+    );
+    expect(wrong.structured.reason).toBe("invalid_record");
+    const won = await ok(tools, "move_deal_stage", {
+      id: "D-2026-0006",
+      base_revision: opened.revision,
+      stage_id: "won",
+      value: 15_600_000,
+      closed_at: TODAY,
+      payments: [
+        { month: "2026-12", amount: 7_800_000, label: "Záloha" },
+        { month: "2027-01", amount: 7_800_000 },
+      ],
+    });
+    expect(won.record).toMatchObject({
+      paymentPlan: {
+        status: "planned",
+        payments: [
+          { id: "p1", month: "2026-12", amount: 7_800_000, label: "Záloha" },
+          { id: "p2", month: "2027-01", amount: 7_800_000 },
+        ],
+      },
+    });
+    // Without payments a won deal waits unassigned; plan_payments plans it.
+    const second = await ok(tools, "get_deal", { id: "D-2026-0009" });
+    const plain = await ok(tools, "move_deal_stage", {
+      id: "D-2026-0009",
+      base_revision: second.revision,
+      stage_id: "won",
+      value: 7_300_010,
+      closed_at: TODAY,
+    });
+    expect(plain.record).toMatchObject({ paymentPlan: { status: "unassigned", payments: [] } });
+    for (const input of [
+      { payments: [{ month: "2026-12", amount: 1 }], unassigned: true },
+      { first_month: "2026-12", count: 2, shares: [5000, 5000] },
+      { count: 2 },
+      { first_month: "2026-12", shares: [5000, 4000] },
+      {},
+    ]) {
+      const refused = await mcpTool(
+        tools,
+        "plan_payments",
+        { deal_id: "D-2026-0009", base_revision: plain.revision, ...input },
+        user,
+      );
+      expect({ input, reason: refused.structured.reason }).toEqual({
+        input,
+        reason: "invalid_input",
+      });
+    }
+    // Three equal shares (33,34 %, 33,33 %, 33,33 %) of 73 000,10 Kč: 7 300 010 × 3334
+    // / 10 000 = 2 433 823,33 → 2 433 823; × 3333 → 2 433 093,33 → 2 433 093; the
+    // last takes the rest, 2 433 094.
+    const thirds = await ok(tools, "plan_payments", {
+      deal_id: "D-2026-0009",
+      base_revision: plain.revision,
+      first_month: "2026-12",
+      count: 3,
+      reverse_charge: true,
+    });
+    expect(thirds.record).toMatchObject({
+      paymentPlan: {
+        status: "planned",
+        reverseCharge: true,
+        payments: [
+          { id: "p1", month: "2026-12", amount: 2_433_823 },
+          { id: "p2", month: "2027-01", amount: 2_433_093 },
+          { id: "p3", month: "2027-02", amount: 2_433_094 },
+        ],
+      },
+    });
+    const forecast = await ok(tools, "get_forecast", {});
+    expect((forecast.total as { forecast: number }).forecast).toBe(
+      56_456_000 + 7_800_000 + 2_433_823,
+    );
+    expect((forecast.unassigned as { dealId: string }[]).map((deal) => deal.dealId)).toEqual([
+      "D-2026-0012",
+    ]);
+    // Back among the unassigned.
+    const back = await ok(tools, "plan_payments", {
+      deal_id: "D-2026-0009",
+      base_revision: thirds.revision,
+      unassigned: true,
+    });
+    expect(back.record).toMatchObject({ paymentPlan: { status: "unassigned", payments: [] } });
+  });
+
+  test("mark_payment invoices, pays and takes back; an invoiced payment stays in a new plan", async () => {
+    const { tools } = setup(true);
+    const deal = await ok(tools, "get_deal", { id: "D-2026-0011" });
+    for (const input of [
+      { deal_id: "D-2026-0011", invoiced_on: TODAY },
+      { deal_id: "D-2026-0011", payment_id: "p2", entry_id: "F-2026-0002", invoiced_on: TODAY },
+      { deal_id: "D-2026-0011", payment_id: "p2" },
+    ]) {
+      const refused = await mcpTool(
+        tools,
+        "mark_payment",
+        { base_revision: deal.revision, ...input },
+        user,
+      );
+      expect({ input, reason: refused.structured.reason }).toEqual({
+        input,
+        reason: "invalid_input",
+      });
+    }
+    const paid = await ok(tools, "mark_payment", {
+      deal_id: "D-2026-0011",
+      payment_id: "p1",
+      base_revision: deal.revision,
+      paid_on: TODAY,
+    });
+    const first = (paid.record as { paymentPlan: { payments: object[] } }).paymentPlan.payments[0];
+    expect(first).toMatchObject({ invoicedOn: "2026-10-21", dueOn: "2026-11-04", paidOn: TODAY });
+    const overdue = await ok(tools, "get_forecast", {});
+    expect((overdue.total as { overdue: number }).overdue).toBe(1_850_000);
+    // A new plan must keep the invoiced payment as it is.
+    const dropped = await mcpTool(
+      tools,
+      "plan_payments",
+      {
+        deal_id: "D-2026-0011",
+        base_revision: paid.revision,
+        payments: [{ month: "2026-12", amount: 50_760_000 }],
+      },
+      user,
+    );
+    expect(dropped.structured.reason).toBe("invalid_input");
+    expect(String(dropped.structured.message)).toContain("p1");
+    const split = await mcpTool(
+      tools,
+      "plan_payments",
+      { deal_id: "D-2026-0011", base_revision: paid.revision, first_month: "2027-01", count: 2 },
+      user,
+    );
+    expect(split.structured.reason).toBe("invalid_input");
+    const kept = await ok(tools, "plan_payments", {
+      deal_id: "D-2026-0011",
+      base_revision: paid.revision,
+      payments: [
+        { id: "p1", month: "2026-10", amount: 15_228_000 },
+        { month: "2027-01", amount: 35_532_000, label: "Doplatek" },
+      ],
+    });
+    const payments = (kept.record as { paymentPlan: { payments: object[] } }).paymentPlan.payments;
+    expect(payments).toEqual([
+      {
+        id: "p1",
+        month: "2026-10",
+        amount: 15_228_000,
+        // Not restated, its label stays.
+        label: "Záloha",
+        invoicedOn: "2026-10-21",
+        dueOn: "2026-11-04",
+        paidOn: TODAY,
+      },
+      { id: "p4", month: "2027-01", amount: 35_532_000, label: "Doplatek" },
+    ]);
+    // Taken back: the invoice, the due date and the payment go.
+    const back = await ok(tools, "mark_payment", {
+      deal_id: "D-2026-0011",
+      payment_id: "p1",
+      base_revision: kept.revision,
+      invoiced_on: null,
+    });
+    expect(
+      (back.record as { paymentPlan: { payments: object[] } }).paymentPlan.payments[0],
+    ).toEqual({
+      id: "p1",
+      month: "2026-10",
+      amount: 15_228_000,
+      label: "Záloha",
+    });
+    const planned = await ok(tools, "get_forecast", {});
+    expect(
+      (planned.rows as { key: string; state: string }[]).find(
+        (entry) => entry.key === "deals/D-2026-0011#p1",
+      )?.state,
+    ).toBe("planned");
+  });
+
+  test("create_forecast_entry adds a manual row, and mark_payment pays it", async () => {
+    const { tools, store } = setup(true);
+    const created = await ok(tools, "create_forecast_entry", {
+      month: "2027-01",
+      title: "Servisní paušál – leden",
+      amount: 2_400_000,
+      company_id: "C-0004",
+      owner_id: "S-0002",
+      deal_type_id: "service",
+      billing_entity_id: "services",
+    });
+    expect(created).toMatchObject({
+      id: "F-2027-0001",
+      record: { ownerId: "S-0002", dealTypeId: "service", billingEntityId: "services" },
+    });
+    const next = await ok(tools, "get_forecast", { year: 2027, owner_id: "S-0002" });
+    expect(next.total).toMatchObject({ forecast: 2_400_000, count: 1 });
+    const paid = await ok(tools, "mark_payment", {
+      entry_id: "F-2027-0001",
+      base_revision: created.revision,
+      paid_on: "2027-01-20",
+    });
+    expect(paid.record).toMatchObject({
+      invoicedOn: "2027-01-20",
+      dueOn: "2027-02-03",
+      paidOn: "2027-01-20",
+    });
+    const refused = await mcpTool(
+      tools,
+      "create_forecast_entry",
+      { month: "2027-01", title: "X", amount: 1, owner_id: "S-0404" },
+      user,
+    );
+    expect(refused.structured.reason).toBe("invalid_record");
+    expect((await store.draft()).status?.state).toBe("draft");
+  });
+});
+
 describe("the draft", () => {
   test("discard_draft returns one record or the whole draft", async () => {
     const { tools, store } = setup(true);
@@ -502,7 +980,7 @@ describe("the draft", () => {
     await ok(tools, "update_deal", {
       id: "D-2026-0004",
       base_revision: deal.revision,
-      changes: { title: "Nový název", value: 1_234_500, contact_ids: ["P-0004", "P-0001"] },
+      changes: { title: "Nový název", owner_id: "S-0001", contact_ids: ["P-0004", "P-0001"] },
     });
     const draft = await ok(tools, "get_draft", {});
     const records = draft.records as {
@@ -528,12 +1006,15 @@ describe("the draft", () => {
     // The long note is whole, never shortened.
     expect(companyFields?.find((field) => field.field === "note")?.after).toBe(note);
     const dealFields = records.find((record) => record.path.includes("D-2026-0004"))?.fields;
-    expect(dealFields?.map((field) => field.field)).toEqual(["contactIds", "title", "value"]);
+    expect(dealFields?.map((field) => field.field)).toEqual(["contactIds", "ownerId", "title"]);
     expect(dealFields?.find((field) => field.field === "contactIds")?.after).toEqual([
       "P-0004",
       "P-0001",
     ]);
-    expect(dealFields?.find((field) => field.field === "value")?.after).toBe(1_234_500);
+    expect(dealFields?.find((field) => field.field === "ownerId")).toMatchObject({
+      before: "S-0002",
+      after: "S-0001",
+    });
     // No audit field is shown as a change.
     for (const record of records) {
       for (const field of record.fields) {
@@ -679,7 +1160,7 @@ describe("the draft", () => {
     await ok(tools, "create_deal", {
       title: "Případ",
       company_id: "C-0007",
-      owner: "Jana Ukázková",
+      owner_id: "S-0001",
       value: 100,
     });
     const draft = await ok(tools, "get_draft", {});

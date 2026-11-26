@@ -1,0 +1,10 @@
+id: I-0002
+record:
+  active: true
+  code: ZI-01
+  id: I-0002
+  name: Kancelářská židle
+  sectionId: items
+  unit: ks
+  unitPrice: 690000
+schemaVersion: deals.pricebook-item.v1

@@ -9,8 +9,11 @@ and the [Module Standard](https://github.com/Lazurio/LazurioPlatform/blob/main/d
 The brief names the **release** (tag and full commit, as the Marketplace
 registry records them), the **target Organization**, the **start** (`empty`:
 the settings with a ready pipeline and loss reasons, no records; `sample`:
-fictional companies, contacts, deals across the pipeline and activities) and the
-**language** of the start (`cs` or `en`). When the brief does not name the
+fictional salespeople, companies, contacts, deals across the pipeline,
+activities, a price list, quotes, payment plans and forecast rows) and the
+**language** of the start (`cs` or `en`). An Organization that already runs
+Deals 0.1.x takes 0.2.0 as an update, not as an adoption: see "Taking 0.2.0"
+at the end. When the brief does not name the
 language, take the person's (the `locale` of the Folder's profile, the
 language you speak with them); when it does not name the start, ask.
 
@@ -167,11 +170,17 @@ Show the person, in their language and in a few lines:
   when the person is the only one who could, whom they will ask;
 - the start and its language;
 - for the `empty` start: the stages of the Organization's pipeline and their
-  probabilities, its loss reasons, its salespeople, its currency and whether
+  probabilities, its loss reasons, its salespeople (names, and who is still
+  active), its deal types, the entity or entities that issue its quotes and
+  invoices (name, IČO, DIČ, address, bank account), what a new quote starts
+  with (VAT rate, validity, sections, units, the version and address of its
+  commercial terms), the days an invoice is due, its currency and whether
   the App may look companies up in ARES. Take them from the person; whatever
   they do not change stays as the start has it (four open stages, won and
-  lost, four reasons, CZK, ARES off), and they change it later under
-  Nastavení / Settings;
+  lost, four reasons, three deal types, one placeholder entity, 21 % VAT, 30
+  days, 14 days to pay, CZK, ARES off), and they change it later under
+  Nastavení / Settings and Obchodníci / Salespeople; the price list starts
+  empty and is filled in Ceník / Price list or by a CSV import;
 - the pull requests that will wait for them.
 
 Go on only after the person confirms this plan.
@@ -272,12 +281,17 @@ In a worktree of `<Org>/<slug>-data`, on a branch from `v3`:
   create` wrote them and take `schema`, `layout`, `generated_manifest` and
   `validate` from the template;
 - copy the start into `data/`: `app/v3/seed/<cs|en>/<empty|sample>/` of the
-  release becomes `data/` (`settings/`, `companies/`, `contacts/`, `deals/`,
-  `activities/`);
+  release becomes `data/`, a directory per collection (`settings/`,
+  `salespeople/`, `companies/`, `contacts/`, `deals/`, `activities/`,
+  `pricebook/`, `quotes/`, `forecastEntries/`, `forecastNotes/`);
 - for the `empty` start, put what the person said into
   `data/settings/settings.yaml`: the stages (exactly one `won` with 100 and
-  one `lost` with 0, at least one `open`), the loss reasons, the `owners`, the
-  `currency` and `aresLookup`;
+  one `lost` with 0, at least one `open`), the loss reasons, the `dealTypes`,
+  the `billingEntities` (the first is the default), the `quotes` defaults,
+  `paymentDueDays`, the `currency` and `aresLookup`; and one
+  `data/salespeople/S-0001.yaml` … per salesperson (`id`, `name`, `active`,
+  and `role`, `email`, `phone` when given), in the envelope
+  `schemaVersion: deals.salesperson.v1`;
 - run `bun scripts/validate.ts` there and, with the Module's worktree pointing
   `db/` at this branch, `bun run validate:db` in `app/v3` (the rules across
   records); push and open a pull request into `v3`.
@@ -285,8 +299,9 @@ In a worktree of `<Org>/<slug>-data`, on a branch from `v3`:
 ## 6. After the person merges
 
 - `lazurio module start <Org>/<slug>`, then open the App by its `runtime.url`
-  and check the main path: a new company, a new deal of it, its move through
-  the stages to won, the forecast and the statistics, all saved as a draft.
+  and check the main path: a new company, a new deal of it, a quote from the
+  price list, the deal's move through the stages to won with its payment
+  plan, the forecast and the statistics, all saved as a draft.
   Publishing that draft is a Publication into the Organization's data: only on
   the person's instruction, otherwise return it in "Koncept a publikování".
 - **Last step: access of Teams.** Set or confirm which Teams reach the Module
@@ -302,3 +317,66 @@ last step that stays open until they do it, the access of Teams in Přehled
 Organizace (section 6), the
 settings still left as the start had them, and any request prepared for
 someone with more rights.
+
+## Taking 0.2.0
+
+0.2.0 changes the shape of the data: the salespeople become records, a deal
+names its salesperson by id and carries its payment plan, and the price list,
+the quotes and the manual forecast rows are new collections
+([`data.md`](data.md), "The migration from 0.1.x"). The App of 0.2.0 does not
+read 0.1 data, and the App of 0.1 does not read 0.2.0 data, so an
+Organization that runs 0.1.x takes the release and migrates its data in one
+step the person decides. The agent prepares; the person reviews and
+publishes.
+
+1. **The Module.** Merge the release's tag as for every release
+   ([`extending.md`](extending.md), "Taking a template release"), run
+   `bun install --frozen-lockfile && bun run check && bun run build` in
+   `app/v3`, push and open the pull request. Do not merge it yet.
+2. **The data checkout.** Work in the worktree of that pull request, with its
+   `db/` a checkout of `<Org>/<slug>-data` on branch `v3` without a draft
+   (publish or return any draft first, in the App, on the person's word).
+   Copy the release's `templates/data-repo/schemas/` (five new files, three
+   changed) and `templates/data-repo/scripts/validate.ts` into `db/`, so the
+   data repository validates 0.2.0 records when they are published.
+3. **The migration.** In `app/v3` of the worktree:
+
+   ```bash
+   bun run migrate ../../db/data --lang <cs|en>           # says what it would change
+   bun run migrate ../../db/data --lang <cs|en> --write
+   bun run validate:db
+   (cd ../../db && bun scripts/validate.ts)
+   ```
+
+   It turns every salesperson name of the settings and of the deals into a
+   salesperson record, gives the settings what a new quote starts with, keeps
+   a 0.1 quote reference as a line of the deal's description and leaves every
+   won deal unassigned in the forecast. Both checks must pass; an error is
+   fixed with the person, never by deleting a record.
+4. **Review in the App.** Start the worktree's App on a free loopback port
+   (`LAZURIO_RUNTIME_LISTENER_APP_HOST=127.0.0.1 LAZURIO_RUNTIME_LISTENER_APP_PORT=<port> bun run dev`)
+   and open „Koncept a publikování“ / „Draft & publish“ with the person: the
+   migrated records with every changed field, and the schemas and the
+   validator as files outside the records, which the person looks at in the
+   data checkout. Tell them what to check: the salespeople it created (a name
+   written two ways became two salespeople; a deal without one went to
+   „Nepřiřazeno“ / „Unassigned“) and the won deals that wait for a payment
+   plan. A correction (merging a duplicate salesperson by moving its deals)
+   is a change in the same draft.
+5. **Publish and merge together, on the person's word.** The person
+   publishes the draft on that page; the tools cannot, because it holds
+   files outside the records. Right after it, the person merges the Module's
+   pull request and `lazurio module start <Org>/<slug>` runs the App of
+   0.2.0, so the running App and the data never stay on different versions
+   for long. Say so before the publication.
+6. **After it, in the App.** The person sets who left to inactive under
+   Obchodníci / Salespeople, adds the deal types, the billing entities and
+   the quote defaults under Nastavení / Settings, fills the price list
+   (Ceník / Price list, or a CSV import) and plans the payments of the won
+   deals that should count in the forecast (Forecast, „Nezařazené“ /
+   „Unassigned“). Each of those is a draft, published only on the person's
+   instruction.
+
+Never run the migration on the data of another Organization, never publish its
+result without the person's review, and never merge the Module's pull request
+while the data are still 0.1.

@@ -1,0 +1,13 @@
+id: F-2026-0003
+record:
+  amount: 1850000
+  billingEntityId: services
+  companyId: C-0001
+  dealTypeId: service
+  dueOn: 2026-10-19
+  id: F-2026-0003
+  invoicedOn: 2026-10-05
+  month: 2026-10
+  ownerId: S-0001
+  title: Consulting outside the pipeline
+schemaVersion: deals.forecast-entry.v1

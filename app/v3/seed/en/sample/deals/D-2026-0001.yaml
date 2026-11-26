@@ -4,10 +4,11 @@ record:
   contactIds:
     - P-0002
   createdAt: 2026-10-05
+  dealTypeId: delivery
   expectedClose: 2027-01-29
   id: D-2026-0001
-  owner: Alex Sample
+  ownerId: S-0001
   stageId: lead
   title: Meeting room furniture
   value: 12000000
-schemaVersion: deals.deal.v1
+schemaVersion: deals.deal.v2

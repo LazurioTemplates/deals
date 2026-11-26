@@ -1,0 +1,275 @@
+/* The people pages' layout: the salespeople, the settings, the import, the
+   companies and the contacts. Colours, type and spacing come from the design
+   system's --ds-* tokens; this file is layout only. */
+
+/* Salespeople: a grid of cards */
+.person-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: var(--ds-space-16);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-grid > li {
+  display: grid;
+  min-width: 0;
+}
+
+.person-card {
+  gap: var(--ds-space-16);
+  color: inherit;
+}
+
+.person-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-12);
+  min-width: 0;
+}
+
+.person-card-name {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.person-avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-color-accent-soft);
+  color: var(--ds-color-ink);
+  font-size: var(--ds-type-meta-size);
+  font-weight: var(--ds-type-label-weight);
+  letter-spacing: 0.02em;
+}
+
+.person-avatar--large {
+  width: 48px;
+  height: 48px;
+}
+
+.person-figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ds-space-12) var(--ds-space-16);
+  margin: 0;
+}
+
+.person-figures div {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-width: 0;
+}
+
+.person-figures dt {
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-meta-size);
+}
+
+.person-figures dd {
+  margin: 0;
+  text-align: start;
+  font-weight: var(--ds-type-label-weight);
+  overflow-wrap: anywhere;
+}
+
+.person-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-12);
+}
+
+.person-tiles-title {
+  margin: var(--ds-space-16) 0 var(--ds-space-8);
+}
+
+/* Four counts in a row, the amounts under them twice as wide. */
+.person-tiles {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.person-tiles > :nth-child(n + 5) {
+  grid-column: span 2;
+}
+
+.person-form {
+  margin-top: var(--ds-space-24);
+}
+
+/* Settings */
+.settings-panel {
+  display: grid;
+  gap: var(--ds-space-16);
+  padding-top: var(--ds-space-16);
+}
+
+.settings-actions {
+  align-items: center;
+}
+
+.settings-actions p {
+  flex: 1 1 280px;
+  margin: 0;
+}
+
+.entity-block {
+  display: grid;
+  gap: var(--ds-space-12);
+  padding: var(--ds-space-16);
+  border: var(--ds-size-border) solid var(--ds-color-line);
+  border-radius: var(--ds-radius-md);
+}
+
+.entity-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-8);
+}
+
+.entity-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.entity-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-4);
+  margin-inline-start: auto;
+}
+
+.terms-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--ds-space-24);
+}
+
+.terms-fields {
+  display: grid;
+  gap: var(--ds-space-16);
+  min-width: 0;
+}
+
+.terms-preview {
+  display: grid;
+  gap: var(--ds-space-12);
+  min-width: 0;
+  padding: var(--ds-space-16);
+  border: var(--ds-size-border) solid var(--ds-color-line);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface-muted);
+  overflow-wrap: anywhere;
+}
+
+.terms-preview-part {
+  display: grid;
+  gap: var(--ds-space-8);
+}
+
+.terms-preview-part h4,
+.terms-preview-part h5,
+.terms-preview-part p,
+.terms-preview-part ul {
+  margin: 0;
+}
+
+.terms-preview-part ul {
+  padding-inline-start: var(--ds-space-20);
+}
+
+/* Import */
+.import-steps {
+  display: grid;
+  gap: var(--ds-space-16);
+  max-width: 1040px;
+}
+
+.import-steps > * {
+  min-width: 0;
+}
+
+.import-text {
+  font-family: var(--ds-type-mono-font);
+  font-size: var(--ds-type-meta-size);
+}
+
+.import-mapping {
+  display: grid;
+  gap: var(--ds-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.import-mapping-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 16rem);
+  align-items: center;
+  gap: var(--ds-space-12);
+  padding-block: var(--ds-space-8);
+  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+}
+
+.import-mapping-source {
+  display: grid;
+  min-width: 0;
+}
+
+.import-mapping-source > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-options {
+  display: grid;
+  gap: var(--ds-space-16);
+}
+
+.import-notes {
+  display: grid;
+  gap: var(--ds-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  white-space: normal;
+}
+
+/* A phone: one column, nothing wider than the screen. */
+@media (max-width: 640px) {
+  .person-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .terms-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .import-mapping-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ds-space-4);
+  }
+
+  .entity-block {
+    padding: var(--ds-space-12);
+  }
+
+  .entity-actions {
+    margin-inline-start: 0;
+  }
+}
+
+/* An add button under a list keeps its own width. */
+.settings-panel .ds-card > .ds-button {
+  justify-self: start;
+}

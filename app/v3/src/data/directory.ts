@@ -40,12 +40,8 @@ const PLACEHOLDER = ".gitkeep";
 
 export function readDataDirectory(root: string, today: string = localToday()): DirectoryData {
   const issues: RuleIssue[] = [];
-  const values: { [C in CollectionName]: RecordOf[C][] } = {
-    settings: [],
-    companies: [],
-    contacts: [],
-    deals: [],
-    activities: [],
+  const values = Object.fromEntries(COLLECTION_NAMES.map((name) => [name, []])) as unknown as {
+    [C in CollectionName]: RecordOf[C][];
   };
   let documents = 0;
   if (!existsSync(root)) {

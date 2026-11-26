@@ -1,23 +1,30 @@
-import { Button, Table } from "design-system/react";
-import { useState } from "react";
-import { addDays, localToday } from "../../domain/common.ts";
+import { Button } from "design-system/react";
+import { useMemo } from "react";
+import { localToday, monthOf } from "../../domain/common.ts";
 import { probabilityOf } from "../../domain/deal.ts";
-import { forecast } from "../../domain/forecast.ts";
+import { amountsOf, forecast, forecastRows } from "../../domain/forecast.ts";
 import { sumAmounts } from "../../domain/money.ts";
+import { periodOf } from "../../domain/periods.ts";
 import { openStages } from "../../domain/settings.ts";
-import { stats } from "../../domain/stats.ts";
+import { changeBasisPoints, stats } from "../../domain/stats.ts";
 import { type AppData, dataSetOf } from "../App.tsx";
+import { StatTile } from "../components/Board.tsx";
 import { MoveDeal } from "../components/CloseDeal.tsx";
+import { changeText, monthName } from "../components/charts/format.ts";
 import { PageHeader } from "../components/common.tsx";
-import { DAYS, DEALS, useFormat, useT } from "../i18n.tsx";
-import { href } from "../routes.ts";
+import { DAYS, DEALS, useFormat, useLocale, useT } from "../i18n.tsx";
+import { useLookups } from "../lookups.ts";
+import { href, navigate } from "../routes.ts";
 import { useCanWrite } from "../write.tsx";
 
+const SOONEST = 8;
+
 /**
- * The overview: the open pipeline by stage with the deals in each, the
- * weighted forecast by month, and the statistics of a period (the last 90
- * days unless the person picks another). The numbers come from the same
- * pure functions as the API's `/api/forecast` and `/api/stats`.
+ * The overview: the open pipeline by stage with the deals in each, this
+ * month's forecast from the payment plans, what is on the way and overdue,
+ * the results of the last 90 days and the open deals closing soonest. The
+ * numbers come from the same pure functions as the forecast and the
+ * statistics pages.
  */
 export function OverviewPage({
   data,
@@ -29,37 +36,84 @@ export function OverviewPage({
   today?: string;
 }) {
   const t = useT();
+  const locale = useLocale();
   const canWrite = useCanWrite();
   const settings = data.settings.value;
   const f = useFormat(settings.currency);
-  const [from, setFrom] = useState(addDays(today, -89));
-  const [to, setTo] = useState(today);
-  const set = dataSetOf(data);
-  const companies = new Map(data.companies.map((entry) => [entry.value.id, entry.value]));
+  const lookups = useLookups(data);
+  const set = useMemo(() => dataSetOf(data), [data]);
+  const thisMonth = monthOf(today);
   const pipeline = openStages(settings).map((stage) => {
     const deals = data.deals.filter((entry) => entry.value.stageId === stage.id);
     return { stage, deals, sum: sumAmounts(deals.map((entry) => entry.value.value)) };
   });
-  const outlook = forecast(set, { today });
-  const periodValid = from !== "" && to !== "" && from <= to;
-  const period = periodValid ? stats(set, { from, to }) : null;
+  const openDeals = pipeline.flatMap((column) => column.deals);
+  const outlook = useMemo(() => forecast(set, { today }), [set, today]);
+  const month = outlook.months.find((entry) => entry.month === thisMonth);
+  const rows = useMemo(() => forecastRows(set, today), [set, today]);
+  const all = amountsOf(rows);
+  const overdue = rows
+    .filter((row) => row.state === "overdue")
+    .sort((left, right) => (left.dueOn ?? "").localeCompare(right.dueOn ?? ""));
+  const period = useMemo(() => stats(set, periodOf("last90", today)), [set, today]);
+  const soonest = openDeals
+    .filter((entry) => entry.value.expectedClose !== undefined)
+    .sort((left, right) =>
+      (left.value.expectedClose ?? "").localeCompare(right.value.expectedClose ?? ""),
+    )
+    .slice(0, SOONEST);
+  const wonChange = changeBasisPoints(period.current.won.value, period.previous.won.value);
 
   return (
-    <section>
+    <section className="overview-page">
       <PageHeader
         title={t("Přehled obchodu", "Sales overview")}
         subtitle={t(
-          "Otevřené případy podle fáze, vážený forecast a výsledky za zvolené období.",
-          "Open deals by stage, the weighted forecast and the results of a period.",
+          "Otevřené případy podle fáze, forecast tohoto měsíce a výsledky posledních 90 dní.",
+          "Open deals by stage, this month's forecast and the results of the last 90 days.",
         )}
         actions={
           canWrite ? (
-            <Button variant="primary" href={href({ page: "new-deal", company: null })}>
+            <Button variant="primary" href={href({ page: "new-deal", company: null, stage: null })}>
               {t("Nový případ", "New deal")}
             </Button>
           ) : null
         }
       />
+
+      <div className="stat-tiles">
+        <StatTile
+          label={t(
+            `Forecast: ${monthName(thisMonth, locale)}`,
+            `Forecast: ${monthName(thisMonth, locale)}`,
+          )}
+          value={f.money(month?.forecast ?? 0)}
+          note={t(
+            `vyfakturováno ${f.money(month?.invoiced ?? 0)} · zaplaceno ${f.money(month?.paid ?? 0)}`,
+            `invoiced ${f.money(month?.invoiced ?? 0)} · paid ${f.money(month?.paid ?? 0)}`,
+          )}
+          onOpen={() => navigate({ page: "forecast" })}
+        />
+        <StatTile
+          label={t("Na cestě", "On the way")}
+          value={f.money(all.onTheWay)}
+          note={t("vyfakturováno, nezaplaceno", "invoiced, not paid yet")}
+          onOpen={() => navigate({ page: "forecast" })}
+        />
+        <StatTile
+          label={t("Po splatnosti", "Overdue")}
+          value={
+            <span className={all.overdue > 0 ? "danger" : undefined}>{f.money(all.overdue)}</span>
+          }
+          note={t.count(overdue.length, PAYMENTS)}
+        />
+        <StatTile
+          label={t("Otevřená pipeline", "Open pipeline")}
+          value={f.money(sumAmounts(openDeals.map((entry) => entry.value.value)))}
+          note={t.count(openDeals.length, DEALS)}
+          onOpen={() => navigate({ page: "deals", tab: "open" })}
+        />
+      </div>
 
       <h2 id="pipeline-heading">{t("Pipeline", "Pipeline")}</h2>
       <section className="pipeline" aria-labelledby="pipeline-heading">
@@ -85,7 +139,7 @@ export function OverviewPage({
                         {deal.title}
                       </a>
                       <span className="muted small deal-card-company">
-                        {companies.get(deal.companyId)?.name ?? deal.companyId}
+                        {lookups.companyName(deal.companyId)}
                       </span>
                       <span className="deal-card-meta">
                         <span className="num">{f.money(deal.value)}</span>
@@ -112,133 +166,117 @@ export function OverviewPage({
         ))}
       </section>
 
-      <div className="overview-panels">
+      <div className="overview-grid">
         <article className="ds-card">
-          <h2>{t("Vážený forecast", "Weighted forecast")}</h2>
-          <p className="muted small">
-            {t(
-              "Hodnota × pravděpodobnost podle očekávaného měsíce uzavření. Případy bez data nebo s datem v minulosti jsou zvlášť.",
-              "Value × probability by the expected month of closing. Deals without a date or with one in the past are apart.",
-            )}
-          </p>
-          <Table
-            id="forecast"
-            caption={t("Vážený forecast po měsících", "Weighted forecast by month")}
-            hideCaption
-          >
-            <thead>
-              <tr>
-                <th>{t("Měsíc", "Month")}</th>
-                <th className="ds-table__num">{t("Případy", "Deals")}</th>
-                <th className="ds-table__num">{t("Hodnota", "Value")}</th>
-                <th className="ds-table__num">{t("Vážená", "Weighted")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {outlook.months.map((month) => (
-                <tr key={month.month}>
-                  <td>{f.month(month.month)}</td>
-                  <td className="ds-table__num">{month.count}</td>
-                  <td className="ds-table__num">{f.money(month.value)}</td>
-                  <td className="ds-table__num">{f.money(month.weighted)}</td>
-                </tr>
-              ))}
-              <tr>
-                <td>{t("Bez data", "No date")}</td>
-                <td className="ds-table__num">{outlook.noDate.count}</td>
-                <td className="ds-table__num">{f.money(outlook.noDate.value)}</td>
-                <td className="ds-table__num">{f.money(outlook.noDate.weighted)}</td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr>
-                <th scope="row">{t("Celkem", "Total")}</th>
-                <td className="ds-table__num">{outlook.total.count}</td>
-                <td className="ds-table__num">{f.money(outlook.total.value)}</td>
-                <td className="ds-table__num">
-                  <strong>{f.money(outlook.total.weighted)}</strong>
-                </td>
-              </tr>
-            </tfoot>
-          </Table>
+          <header className="overview-card-head">
+            <h2>{t("Posledních 90 dní", "The last 90 days")}</h2>
+            <a href={href({ page: "stats" })} className="small">
+              {t("Statistiky", "Statistics")}
+            </a>
+          </header>
+          <dl className="figures">
+            <div>
+              <dt>{t("Vyhráno", "Won")}</dt>
+              <dd>
+                {period.current.won.count} · {f.money(period.current.won.value)}
+                {period.previous.won.value > 0 ? (
+                  <span className="muted small"> {changeText(wonChange, f.rate, locale)}</span>
+                ) : null}
+              </dd>
+            </div>
+            <div>
+              <dt>{t("Konverze", "Conversion")}</dt>
+              <dd>{f.rate(period.conversionBasisPoints)}</dd>
+            </div>
+            <div>
+              <dt>{t("Ztracené", "Lost")}</dt>
+              <dd>
+                {period.lost.count} · {f.money(period.lost.value)}
+              </dd>
+            </div>
+            <div>
+              <dt>{t("Průměrná výhra", "Average win")}</dt>
+              <dd>{period.averageWonValue === null ? "–" : f.money(period.averageWonValue)}</dd>
+            </div>
+            <div>
+              <dt>{t("Průměrný cyklus", "Average cycle")}</dt>
+              <dd>
+                {period.averageCycleDays === null ? "–" : t.count(period.averageCycleDays, DAYS)}
+              </dd>
+            </div>
+          </dl>
         </article>
 
         <article className="ds-card">
-          <h2>{t("Výsledky za období", "Results of a period")}</h2>
-          <div className="period">
-            <label className="ds-field">
-              <span className="ds-field__label">{t("Od", "From")}</span>
-              <input
-                className="ds-input"
-                type="date"
-                value={from}
-                onChange={(event) => setFrom(event.target.value)}
-              />
-            </label>
-            <label className="ds-field">
-              <span className="ds-field__label">{t("Do", "To")}</span>
-              <input
-                className="ds-input"
-                type="date"
-                value={to}
-                onChange={(event) => setTo(event.target.value)}
-              />
-            </label>
-          </div>
-          {!period ? (
-            <p className="warning">
-              {t(
-                "Období musí začínat nejpozději v den konce.",
-                "The period must start no later than it ends.",
-              )}
+          <h2>{t("Nejbližší uzavření", "Closing soonest")}</h2>
+          {soonest.length === 0 ? (
+            <p className="muted small">
+              {t("Žádný otevřený případ s datem.", "No open deal with a date.")}
             </p>
           ) : (
-            <>
-              <dl className="figures">
-                <div>
-                  <dt>{t("Konverze", "Conversion")}</dt>
-                  <dd>{f.rate(period.conversionBasisPoints)}</dd>
-                </div>
-                <div>
-                  <dt>{t("Vyhrané", "Won")}</dt>
-                  <dd>
-                    {period.won.count} · {f.money(period.won.value)}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{t("Ztracené", "Lost")}</dt>
-                  <dd>
-                    {period.lost.count} · {f.money(period.lost.value)}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{t("Průměrná výhra", "Average win")}</dt>
-                  <dd>{period.averageWonValue === null ? "–" : f.money(period.averageWonValue)}</dd>
-                </div>
-                <div>
-                  <dt>{t("Průměrný cyklus", "Average cycle")}</dt>
-                  <dd>
-                    {period.averageCycleDays === null
-                      ? "–"
-                      : t.count(period.averageCycleDays, DAYS)}
-                  </dd>
-                </div>
-              </dl>
-              <h3>{t("Ztracené podle důvodu", "Lost by reason")}</h3>
-              <ul className="plain-list">
-                {period.lostByReason.map((reason) => (
-                  <li key={reason.reasonId}>
-                    <span>{reason.label}</span>
-                    <span className="num">
-                      {reason.count} · {f.money(reason.value)}
+            <ul className="overview-list">
+              {soonest.map((entry) => {
+                const deal = entry.value;
+                const late = (deal.expectedClose ?? "") < today;
+                return (
+                  <li key={deal.id}>
+                    <span className="overview-list-main">
+                      <a href={href({ page: "deal", id: deal.id })}>{deal.title}</a>
+                      <span className="small muted">
+                        {lookups.companyName(deal.companyId)} ·{" "}
+                        {lookups.stage(deal.stageId)?.label ?? deal.stageId}
+                      </span>
+                    </span>
+                    <span className="overview-list-side">
+                      <span className="num">{f.money(deal.value)}</span>
+                      <span className={late ? "small warning" : "small muted"}>
+                        {late ? `${t("po termínu", "overdue")} ` : ""}
+                        {f.date(deal.expectedClose)}
+                      </span>
                     </span>
                   </li>
-                ))}
-              </ul>
-            </>
+                );
+              })}
+            </ul>
+          )}
+        </article>
+
+        <article className="ds-card">
+          <h2>{t("Platby po splatnosti", "Overdue payments")}</h2>
+          {overdue.length === 0 ? (
+            <p className="muted small">{t("Nic není po splatnosti.", "Nothing is overdue.")}</p>
+          ) : (
+            <ul className="overview-list">
+              {overdue.map((row) => (
+                <li key={row.key}>
+                  <span className="overview-list-main">
+                    {row.dealId ? (
+                      <a href={href({ page: "deal", id: row.dealId })}>{row.title}</a>
+                    ) : (
+                      <a href={href({ page: "forecast" })}>{row.title}</a>
+                    )}
+                    <span className="small muted">
+                      {lookups.companyName(row.companyId)}
+                      {row.label ? ` · ${row.label}` : ""}
+                    </span>
+                  </span>
+                  <span className="overview-list-side">
+                    <span className="num">{f.money(row.amount)}</span>
+                    <span className="small danger">
+                      {t("splatné", "due")} {f.date(row.dueOn)}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </article>
       </div>
     </section>
   );
 }
+
+const PAYMENTS = {
+  cs: { one: "platba", few: "platby", many: "plateb" },
+  en: { one: "payment", other: "payments" },
+};

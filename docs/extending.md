@@ -12,18 +12,29 @@ security fix.
 
 - **A new field or record rule.** Change the Zod schema in
   `app/v3/src/domain/`; the TypeScript type follows by itself. Add a new field
-  as optional so existing records stay valid, or ship a migration of the data
-  in the same release. Run `bun run schema:export` and copy the regenerated
+  as optional so existing records stay valid, or give the collection a new
+  `schemaVersion` and a step of the migration (`app/v3/src/cli/migrate.ts`,
+  `bun run migrate`, tested in `tests/migrate.test.ts`) in the same release.
+  Run `bun run schema:export` and copy the regenerated
   `templates/data-repo/schemas/` into the Organization's data repository in a
   pull request of its own. Update both starts in `app/v3/seed/`.
+- **A new collection** is one entry in `app/v3/src/domain/collections.ts`
+  (its directory name, its `schemaVersion` and its Zod schema), a field in
+  `DataSet`, an order in `ordered` (`app/v3/src/data/records.ts`), its labels
+  and its page in `record-store.ts` and `review-adapter.ts` (TypeScript asks
+  for each) and an empty directory in both `empty` starts; the
+  storage port's generic `list`, `get`, `save`, `saveAll` and `remove` serve
+  it without a new method.
 - **A rule across records** belongs to `app/v3/src/domain/rules.ts`, as an
   error (it stops a save and a publication) or a warning (it is shown). It
   speaks Czech and English and has its tests.
 - **A new figure of the forecast or the statistics** is a pure function in
   `app/v3/src/domain/forecast.ts` or `stats.ts`, with its numbers counted by
-  hand over the `sample` start in `tests/forecast.test.ts`. Amounts go
-  through `money.ts`: weighted amounts stay exact and are rounded half up once
-  per sum.
+  hand over the `sample` start in `tests/forecast.test.ts` or
+  `tests/stats.test.ts`. The forecast stays the payment plans of won deals
+  and the manual rows; a figure over open deals belongs to the statistics.
+  Amounts go through `money.ts`: every division rounds half up once, never
+  to the even neighbour.
 - **A new operation on the data** is a method of the storage port
   (`app/v3/src/data/store.ts`) named by the domain (`archiveDeal`, not
   `moveFile`), implemented in every store and covered by
@@ -126,7 +137,8 @@ git merge --no-ff <commit>
   system) stays the Organization's; the rest usually takes the template's side.
 - Read the release's `CHANGELOG.md` section: when the schemas changed, the data
   repository gets the regenerated `schemas/` (and any migration) in a pull
-  request of its own, merged together with the Module's.
+  request of its own, merged together with the Module's. 0.2.0 is such a
+  release: [`adoption.md`](adoption.md), "Taking 0.2.0".
 - `bun install --frozen-lockfile && bun run check && bun run build`, then a
   pull request. Merging it is the person's Publication.
 
@@ -178,9 +190,10 @@ move is planned, reviewed and reversible:
    the storage port over Dolt (per the profile `app-database`), and SQL
    migrations derived from the Zod schemas. Every write stores a new random
    value in the row's `revision` column, as v3 does in `record.revision`.
-   Settings, companies, contacts, deals and activities are flat records with a
-   stable id, so they map to rows; the stages and the loss reasons of the
-   settings become tables of their own.
+   Every collection holds flat records with a stable id, so they map to rows;
+   the stages, the loss reasons, the deal types and the billing entities of
+   the settings, a quote's lines and a deal's payments become tables of their
+   own.
 2. **Draft & Publish stays the same for people.** A draft is the person's
    working set or branch, publishing is `DOLT_COMMIT` with the author and a
    summary, the review comes from Dolt's diff tables. This mapping is to be

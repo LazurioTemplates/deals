@@ -1,0 +1,8 @@
+id: S-0003
+record:
+  active: false
+  email: karel@example.com
+  id: S-0003
+  name: Karel Příkladný
+  role: Obchodník
+schemaVersion: deals.salesperson.v1

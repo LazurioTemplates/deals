@@ -1,0 +1,58 @@
+id: Q-2026-0002-r1
+record:
+  billingEntityId: trade
+  commercialTerms:
+    customerScope: b2b
+    termsUrl: https://example.com/terms
+    termsVersion: 2026-01
+  contactId: P-0003
+  currency: CZK
+  customer:
+    address:
+      city: Ostrava
+      country: Česká republika
+      postalCode: 702 00
+      street: Skladová 4
+    companyId: C-0002
+    name: Vzorová Logistika a.s.
+  dealId: D-2026-0004
+  id: Q-2026-0002-r1
+  issuedOn: 2026-11-10
+  lines:
+    - id: l1
+      name: Projektový den
+      pricebookItemId: I-0005
+      quantity: 4
+      sectionId: work
+      unit: MD
+      unitPrice: 1200000
+    - id: l2
+      name: Chladicí nástavba
+      quantity: 3
+      sectionId: items
+      unit: ks
+      unitPrice: 6400000
+  number: Q-2026-0002
+  sections:
+    - id: items
+      label: Dodávka
+    - id: work
+      label: Práce
+    - id: service
+      label: Servis a podpora
+  sentOn: 2026-11-10
+  status: active
+  terms:
+    payments: |-
+      ## Platby
+      - Záloha 50 % při objednávce
+      - Doplatek 50 % po předání
+
+      Splatnost faktur je 14 dní.
+    scope: Nabídka platí pro rozsah uvedený v položkách. Práce navíc účtujeme podle ceníku.
+    vatNote: Ceny jsou uvedeny bez DPH. DPH se účtuje podle platných předpisů.
+  title: Chladicí vozy do flotily
+  validUntil: 2026-12-10
+  vatRate: 2100
+  version: 1
+schemaVersion: deals.quote.v1

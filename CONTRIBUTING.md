@@ -16,6 +16,10 @@ by merging their tags. A contribution keeps that path working.
    licensed under MIT, like the repository.
 
 A change of a record schema is a change of the data contract: say in the pull
-request how existing data repositories stay valid, or ship the migration. A
-new tool for agents declares its `effect` honestly; a publication is a tool of
-its own.
+request how existing data repositories stay valid, or give the collection a
+new `schemaVersion` and ship its step of the migration
+(`app/v3/src/cli/migrate.ts`, tested in `app/v3/tests/migrate.test.ts`) with
+the regenerated `templates/data-repo/schemas/`. A new tool for agents
+declares its `effect` honestly; a publication is a tool of its own. Amounts
+stay whole minor units; a new figure of the forecast or the statistics comes
+with its numbers counted by hand over the `sample` start.

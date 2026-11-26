@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import {
+  COLLECTION_NAMES,
   type CollectionName,
   collections,
   type DataSet,
@@ -156,14 +157,11 @@ export type Snapshot = { [C in CollectionName]: Map<string, Entry<RecordOf[C]>> 
 };
 
 export function emptySnapshot(): Snapshot {
-  return {
-    settings: new Map(),
-    companies: new Map(),
-    contacts: new Map(),
-    deals: new Map(),
-    activities: new Map(),
-    problems: [],
-  };
+  const result = { problems: [] as Problem[] } as Snapshot;
+  for (const collection of COLLECTION_NAMES) {
+    (result as Record<string, unknown>)[collection] = new Map();
+  }
+  return result;
 }
 
 export function dataSetOf(snapshot: Snapshot): DataSet {
@@ -172,10 +170,15 @@ export function dataSetOf(snapshot: Snapshot): DataSet {
   const settings = snapshot.settings.get("settings")?.value;
   return {
     settings: settings === undefined ? null : structuredClone(settings),
+    salespeople: values("salespeople"),
     companies: values("companies"),
     contacts: values("contacts"),
     deals: values("deals"),
     activities: values("activities"),
+    pricebook: values("pricebook"),
+    quotes: values("quotes"),
+    forecastEntries: values("forecastEntries"),
+    forecastNotes: values("forecastNotes"),
   };
 }
 
@@ -195,12 +198,20 @@ function refusal(code: string, issues: { path: string; message: Localized }[]): 
  * Refuse a save that would break a rule across records (an unknown company,
  * contact or stage, a won deal without a value). Only errors about the saved
  * records count, so an older problem elsewhere never blocks an unrelated
- * edit, and a warning never blocks.
+ * edit, and a warning never blocks. With `before` (a write that removes a
+ * record), an error of any record that the data did not have before counts
+ * too: a removed company still named by a deal.
  */
-export function assertRulesFor(keys: readonly string[], data: DataSet): void {
+export function assertRulesFor(
+  keys: readonly string[],
+  data: DataSet,
+  before: DataSet | null = null,
+): void {
   const wanted = new Set(keys);
+  const signature = (issue: { record: string; code: string }) => `${issue.record}|${issue.code}`;
+  const old = before ? new Set(errorsOf(checkRulesLocalized(before)).map(signature)) : null;
   const issues = errorsOf(checkRulesLocalized(data))
-    .filter((issue) => wanted.has(issue.record))
+    .filter((issue) => wanted.has(issue.record) || (old !== null && !old.has(signature(issue))))
     .map((issue) => ({ path: issue.record, message: issue.message }));
   if (issues.length > 0) throw refusal("invalid_record", issues);
 }
@@ -226,6 +237,8 @@ export function ordered<C extends CollectionName>(
   switch (collection) {
     case "companies":
     case "contacts":
+    case "salespeople":
+    case "pricebook":
       return entries.sort(
         (left, right) =>
           byName(left.value as { name: string }, right.value as { name: string }) ||
@@ -241,6 +254,17 @@ export function ordered<C extends CollectionName>(
         const b = right.value as RecordOf["activities"];
         return Date.parse(b.at) - Date.parse(a.at) || b.id.localeCompare(a.id);
       });
+    case "quotes":
+      return entries.sort((left, right) => {
+        const a = left.value as RecordOf["quotes"];
+        const b = right.value as RecordOf["quotes"];
+        return b.number.localeCompare(a.number) || b.version - a.version;
+      });
+    case "forecastEntries":
+    case "forecastNotes":
+      return entries.sort((left, right) =>
+        (left.value as { id: string }).id.localeCompare((right.value as { id: string }).id),
+      );
     default:
       return entries;
   }

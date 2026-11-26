@@ -1,11 +1,15 @@
 import type { DraftPanelInput } from "@lazurio/repository-db";
 import { Alert } from "design-system/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import type { Activity } from "../domain/activity.ts";
 import type { DataSet } from "../domain/collections.ts";
 import type { Company } from "../domain/company.ts";
 import type { Contact } from "../domain/contact.ts";
 import type { Deal } from "../domain/deal.ts";
+import type { ForecastEntry, ForecastNote } from "../domain/forecast-entry.ts";
+import type { PricebookItem } from "../domain/pricebook.ts";
+import type { Quote } from "../domain/quote.ts";
+import type { Salesperson } from "../domain/salesperson.ts";
 import type { Settings } from "../domain/settings.ts";
 import { ApiError, api, type Stored, subscribe } from "./api.ts";
 import { Layout } from "./components/Layout.tsx";
@@ -18,18 +22,44 @@ import { DealListPage } from "./pages/DealListPage.tsx";
 import { DealPage } from "./pages/DealPage.tsx";
 import { DraftPage } from "./pages/DraftPage.tsx";
 import { OverviewPage } from "./pages/OverviewPage.tsx";
+import { PricebookPage } from "./pages/PricebookPage.tsx";
+import { QuoteListPage } from "./pages/QuoteListPage.tsx";
+import { SalespeopleListPage } from "./pages/SalespeopleListPage.tsx";
+import { SalespersonPage } from "./pages/SalespersonPage.tsx";
 import { SettingsPage } from "./pages/SettingsPage.tsx";
 import { parseRoute, type Route } from "./routes.ts";
 import { type InstalledTools, installTools } from "./tools.ts";
 import { followWriteStatus, useCanWrite, WriteContext } from "./write.tsx";
 
+// The heavier pages load when they are first opened, so the App starts quickly.
+const ForecastPage = lazy(() =>
+  import("./pages/ForecastPage.tsx").then((module) => ({ default: module.ForecastPage })),
+);
+const ImportPage = lazy(() =>
+  import("./pages/ImportPage.tsx").then((module) => ({ default: module.ImportPage })),
+);
+const QuotePage = lazy(() =>
+  import("./pages/QuotePage.tsx").then((module) => ({ default: module.QuotePage })),
+);
+const QuotePrintPage = lazy(() =>
+  import("./pages/QuotePrintPage.tsx").then((module) => ({ default: module.QuotePrintPage })),
+);
+const StatsPage = lazy(() =>
+  import("./pages/StatsPage.tsx").then((module) => ({ default: module.StatsPage })),
+);
+
 /** Everything the pages read, loaded once and again whenever the data moves. */
 export interface AppData {
   settings: Stored<Settings>;
+  salespeople: Stored<Salesperson>[];
   companies: Stored<Company>[];
   contacts: Stored<Contact>[];
   deals: Stored<Deal>[];
   activities: Stored<Activity>[];
+  pricebook: Stored<PricebookItem>[];
+  quotes: Stored<Quote>[];
+  forecastEntries: Stored<ForecastEntry>[];
+  forecastNotes: Stored<ForecastNote>[];
 }
 
 /** The records of the App's data without their revisions, as the domain reads them. */
@@ -37,23 +67,55 @@ export function dataSetOf(data: AppData): DataSet & { settings: Settings } {
   const values = <T,>(entries: readonly Stored<T>[]) => entries.map((entry) => entry.value);
   return {
     settings: data.settings.value,
+    salespeople: values(data.salespeople),
     companies: values(data.companies),
     contacts: values(data.contacts),
     deals: values(data.deals),
     activities: values(data.activities),
+    pricebook: values(data.pricebook),
+    quotes: values(data.quotes),
+    forecastEntries: values(data.forecastEntries),
+    forecastNotes: values(data.forecastNotes),
   };
 }
 
 /** Every record the pages read, as the API stores them now. */
 export async function loadAppData(): Promise<AppData> {
-  const [settings, companies, contacts, deals, activities] = await Promise.all([
+  const [
+    settings,
+    salespeople,
+    companies,
+    contacts,
+    deals,
+    activities,
+    pricebook,
+    quotes,
+    forecastEntries,
+    forecastNotes,
+  ] = await Promise.all([
     api.settings(),
+    api.salespeople(),
     api.companies(),
     api.contacts(),
     api.deals(),
     api.activities(),
+    api.pricebook(),
+    api.quotes(),
+    api.forecastEntries(),
+    api.forecastNotes(),
   ]);
-  return { settings, companies, contacts, deals, activities };
+  return {
+    settings,
+    salespeople,
+    companies,
+    contacts,
+    deals,
+    activities,
+    pricebook,
+    quotes,
+    forecastEntries,
+    forecastNotes,
+  };
 }
 
 function useHashRoute(): Route {
@@ -161,7 +223,11 @@ export function App() {
             {error.message}
           </Alert>
         ) : null}
-        {data ? <Page route={route} data={data} onChanged={changed} /> : null}
+        {data ? (
+          <Suspense fallback={<p className="muted">{t("Načítám…", "Loading…")}</p>}>
+            <Page route={route} data={data} onChanged={changed} />
+          </Suspense>
+        ) : null}
         {!data && !error ? <p className="muted">{t("Načítám…", "Loading…")}</p> : null}
       </Layout>
     </WriteContext.Provider>
@@ -192,7 +258,10 @@ function Page({
   const canWrite = useCanWrite();
   // A copy that may not write opens no form that only creates; the notice
   // above says why.
-  if (!canWrite && ["new-deal", "new-company", "new-contact"].includes(route.page)) {
+  if (
+    !canWrite &&
+    ["new-deal", "new-company", "new-contact", "new-salesperson"].includes(route.page)
+  ) {
     return <OverviewPage data={data} onChanged={onChanged} />;
   }
   const revisionOf = (entries: readonly Stored<{ id: string }>[], id: string) =>
@@ -201,14 +270,15 @@ function Page({
     case "overview":
       return <OverviewPage data={data} onChanged={onChanged} />;
     case "deals":
-      return <DealListPage data={data} tab={route.tab} />;
+      return <DealListPage data={data} tab={route.tab} onChanged={onChanged} />;
     case "new-deal":
       return (
         <DealPage
-          key={`new:${route.company ?? ""}`}
+          key={`new:${route.company ?? ""}:${route.stage ?? ""}`}
           data={data}
           id={null}
           company={route.company}
+          stage={route.stage}
           onChanged={onChanged}
         />
       );
@@ -219,9 +289,44 @@ function Page({
           data={data}
           id={route.id}
           company={null}
+          stage={null}
           onChanged={onChanged}
         />
       );
+    case "quotes":
+      return <QuoteListPage data={data} onChanged={onChanged} />;
+    case "quote":
+      return (
+        <QuotePage
+          key={detailKey(route.id, revisionOf(data.quotes, route.id), canWrite)}
+          data={data}
+          id={route.id}
+          onChanged={onChanged}
+        />
+      );
+    case "quote-print":
+      return <QuotePrintPage data={data} id={route.id} />;
+    case "pricebook":
+      return <PricebookPage data={data} onChanged={onChanged} />;
+    case "salespeople":
+      return <SalespeopleListPage data={data} />;
+    case "new-salesperson":
+      return <SalespersonPage key="new" data={data} id={null} onChanged={onChanged} />;
+    case "salesperson":
+      return (
+        <SalespersonPage
+          key={detailKey(route.id, revisionOf(data.salespeople, route.id), canWrite)}
+          data={data}
+          id={route.id}
+          onChanged={onChanged}
+        />
+      );
+    case "forecast":
+      return <ForecastPage data={data} onChanged={onChanged} />;
+    case "stats":
+      return <StatsPage data={data} />;
+    case "import":
+      return <ImportPage data={data} onChanged={onChanged} />;
     case "companies":
       return <CompanyListPage data={data} />;
     case "new-company":

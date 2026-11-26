@@ -28,7 +28,42 @@ const FIELD_LABELS: Record<string, Localized> = {
   role: { cs: "Role", en: "Role" },
   companyId: { cs: "Firma", en: "Company" },
   contactIds: { cs: "Kontakty", en: "Contacts" },
-  owner: { cs: "Obchodník", en: "Owner" },
+  ownerId: { cs: "Obchodník", en: "Salesperson" },
+  dealTypeId: { cs: "Typ zakázky", en: "Deal type" },
+  billingEntityId: { cs: "Fakturační firma", en: "Billing entity" },
+  primaryQuoteId: { cs: "Hlavní nabídka", en: "Primary quote" },
+  paymentPlan: { cs: "Plán plateb", en: "Payment plan" },
+  active: { cs: "Aktivní", en: "Active" },
+  code: { cs: "Kód", en: "Code" },
+  unit: { cs: "Jednotka", en: "Unit" },
+  unitPrice: { cs: "Jednotková cena", en: "Unit price" },
+  sectionId: { cs: "Sekce", en: "Section" },
+  number: { cs: "Číslo nabídky", en: "Quote number" },
+  version: { cs: "Revize", en: "Revision" },
+  status: { cs: "Stav", en: "Status" },
+  issuedOn: { cs: "Vystaveno", en: "Issued" },
+  validUntil: { cs: "Platnost do", en: "Valid until" },
+  customer: { cs: "Odběratel", en: "Customer" },
+  contactId: { cs: "Kontakt", en: "Contact" },
+  vatRate: { cs: "Sazba DPH", en: "VAT rate" },
+  reverseCharge: { cs: "Přenesená daňová povinnost", en: "Reverse charge" },
+  sections: { cs: "Sekce", en: "Sections" },
+  lines: { cs: "Položky", en: "Lines" },
+  changeReserve: { cs: "Rezerva na změny", en: "Reserve for changes" },
+  terms: { cs: "Podmínky nabídky", en: "Quote terms" },
+  commercialTerms: { cs: "Obchodní podmínky", en: "Commercial terms" },
+  sentOn: { cs: "Odesláno", en: "Sent" },
+  approvedOn: { cs: "Schváleno", en: "Approved" },
+  month: { cs: "Měsíc", en: "Month" },
+  amount: { cs: "Částka", en: "Amount" },
+  invoicedOn: { cs: "Faktura vystavena", en: "Invoiced" },
+  dueOn: { cs: "Splatnost", en: "Due" },
+  paidOn: { cs: "Zaplaceno", en: "Paid" },
+  text: { cs: "Text", en: "Text" },
+  paymentDueDays: { cs: "Splatnost faktur (dny)", en: "Invoice due (days)" },
+  dealTypes: { cs: "Typy zakázek", en: "Deal types" },
+  billingEntities: { cs: "Fakturační firmy", en: "Billing entities" },
+  quotes: { cs: "Výchozí hodnoty nabídek", en: "Quote defaults" },
   stageId: { cs: "Fáze", en: "Stage" },
   value: { cs: "Hodnota", en: "Value" },
   probability: { cs: "Pravděpodobnost", en: "Probability" },
@@ -37,7 +72,6 @@ const FIELD_LABELS: Record<string, Localized> = {
   closedAt: { cs: "Uzavřeno", en: "Closed" },
   lossReasonId: { cs: "Důvod ztráty", en: "Loss reason" },
   lossNote: { cs: "Poznámka ke ztrátě", en: "Loss note" },
-  quoteRef: { cs: "Nabídka", en: "Quote" },
   description: { cs: "Popis", en: "Description" },
   dealId: { cs: "Obchodní případ", en: "Deal" },
   type: { cs: "Typ", en: "Type" },
@@ -47,19 +81,23 @@ const FIELD_LABELS: Record<string, Localized> = {
   currency: { cs: "Měna", en: "Currency" },
   stages: { cs: "Fáze pipeline", en: "Pipeline stages" },
   lossReasons: { cs: "Důvody ztráty", en: "Loss reasons" },
-  owners: { cs: "Obchodníci", en: "Salespeople" },
   aresLookup: { cs: "Vyhledávání v ARES", en: "ARES lookup" },
 };
 
 /** Fields that hold an amount in haléře, shown as an amount. */
-const MONEY_FIELDS = new Set(["value"]);
+const MONEY_FIELDS = new Set(["value", "amount", "unitPrice", "changeReserve"]);
 
 const TYPE_LABELS: Record<CollectionName, Localized> = {
   settings: { cs: "Nastavení", en: "Settings" },
+  salespeople: { cs: "Obchodník", en: "Salesperson" },
   companies: { cs: "Firma", en: "Company" },
   contacts: { cs: "Kontakt", en: "Contact" },
   deals: { cs: "Obchodní případ", en: "Deal" },
   activities: { cs: "Aktivita", en: "Activity" },
+  pricebook: { cs: "Položka ceníku", en: "Price list item" },
+  quotes: { cs: "Cenová nabídka", en: "Quote" },
+  forecastEntries: { cs: "Řádek forecastu", en: "Forecast row" },
+  forecastNotes: { cs: "Poznámka k měsíci", en: "Month note" },
 };
 
 /**
@@ -121,6 +159,30 @@ export function describeRecord(
         href: `#/deals/${encodeURIComponent(id)}`,
       };
     }
+    case "salespeople":
+    case "pricebook": {
+      const name = textOf("name");
+      return {
+        typeLabel,
+        label: name ? `${name} (${id})` : id,
+        href:
+          collection === "salespeople" ? `#/salespeople/${encodeURIComponent(id)}` : "#/pricebook",
+      };
+    }
+    case "quotes": {
+      const title = textOf("title");
+      return {
+        typeLabel,
+        label: title ? `${id} · ${title}` : id,
+        href: `#/quotes/${encodeURIComponent(id)}`,
+      };
+    }
+    case "forecastEntries": {
+      const title = textOf("title");
+      return { typeLabel, label: title ? `${id} · ${title}` : id, href: "#/forecast" };
+    }
+    case "forecastNotes":
+      return { typeLabel, label: id, href: "#/forecast" };
     case "activities": {
       const summary = textOf("summary");
       const deal = textOf("dealId");
@@ -135,7 +197,7 @@ export function describeRecord(
 
 /** `data/deals/D-2026-0001.yaml` → the collection and the id, or null for another file. */
 export function recordAt(path: string): { collection: CollectionName; id: string } | null {
-  const match = /(?:^|\/)data\/([a-z]+)\/([^/]+)\.yaml$/.exec(path);
+  const match = /(?:^|\/)data\/([a-zA-Z]+)\/([^/]+)\.yaml$/.exec(path);
   if (!match?.[1] || !match[2]) return null;
   const collection = match[1] as CollectionName;
   if (!COLLECTION_NAMES.includes(collection)) return null;

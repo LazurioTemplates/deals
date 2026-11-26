@@ -1,0 +1,14 @@
+id: F-2026-0001
+record:
+  amount: 2400000
+  billingEntityId: services
+  companyId: C-0004
+  dealTypeId: service
+  dueOn: 2026-11-15
+  id: F-2026-0001
+  invoicedOn: 2026-11-01
+  month: 2026-11
+  ownerId: S-0002
+  paidOn: 2026-11-12
+  title: Servisní paušál – listopad
+schemaVersion: deals.forecast-entry.v1

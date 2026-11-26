@@ -1,0 +1,9 @@
+id: I-0004
+record:
+  active: true
+  id: I-0004
+  name: Montáž
+  sectionId: work
+  unit: h
+  unitPrice: 85000
+schemaVersion: deals.pricebook-item.v1

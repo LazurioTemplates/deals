@@ -1,7 +1,19 @@
 id: settings
 record:
   aresLookup: false
+  billingEntities:
+    - email: office@example.com
+      id: main
+      name: Your Company Ltd
+      website: https://example.com
   currency: CZK
+  dealTypes:
+    - id: delivery
+      label: Delivery
+    - id: service
+      label: Services
+    - id: licence
+      label: Licence
   lossReasons:
     - id: price
       label: Price
@@ -11,6 +23,35 @@ record:
       label: Timing
     - id: no-decision
       label: No decision
+  paymentDueDays: 14
+  quotes:
+    sections:
+      - id: items
+        label: Delivery
+      - id: work
+        label: Work
+      - id: service
+        label: Service and support
+    terms:
+      payments: |-
+        ## Payments
+        - A deposit of 50 % with the order
+        - The remaining 50 % on handover
+
+        Invoices are due in 14 days.
+      scope: The quote covers the scope of its lines. Extra work is charged by the price list.
+      vatNote: Prices are without VAT. VAT is charged as the law requires.
+    termsUrl: https://example.com/terms
+    termsVersion: 2026-01
+    units:
+      - pcs
+      - h
+      - day
+      - m
+      - km
+      - month
+    validityDays: 30
+    vatRate: 2100
   stages:
     - id: lead
       kind: open
@@ -36,4 +77,4 @@ record:
       kind: lost
       label: Lost
       probability: 0
-schemaVersion: deals.settings.v1
+schemaVersion: deals.settings.v2

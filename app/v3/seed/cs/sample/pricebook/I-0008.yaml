@@ -1,0 +1,10 @@
+id: I-0008
+record:
+  active: true
+  code: LIC-POS
+  id: I-0008
+  name: Licence pokladního systému
+  sectionId: items
+  unit: ks
+  unitPrice: 1890000
+schemaVersion: deals.pricebook-item.v1

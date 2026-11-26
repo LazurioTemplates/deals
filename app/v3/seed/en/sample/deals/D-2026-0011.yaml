@@ -5,9 +5,26 @@ record:
   contactIds:
     - P-0008
   createdAt: 2026-08-10
+  dealTypeId: delivery
   id: D-2026-0011
-  owner: Alex Sample
+  ownerId: S-0001
+  paymentPlan:
+    payments:
+      - amount: 15228000
+        dueOn: 2026-11-04
+        id: p1
+        invoicedOn: 2026-10-21
+        label: Deposit
+        month: 2026-10
+      - amount: 15228000
+        id: p2
+        month: 2026-12
+      - amount: 20304000
+        id: p3
+        label: Final payment
+        month: 2027-02
+    status: planned
   stageId: won
   title: Site offices
-  value: 42000000
-schemaVersion: deals.deal.v1
+  value: 50760000
+schemaVersion: deals.deal.v2

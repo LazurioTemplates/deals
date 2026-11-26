@@ -224,7 +224,12 @@ describe("module contract", () => {
 
   test("carries the process for agents, the same for Codex and Claude Code", () => {
     const names = readdirSync(resolve(ROOT, ".agents/skills")).sort();
-    expect(names).toEqual(["close-deal", "create-deal-from-message", "weekly-pipeline-review"]);
+    expect(names).toEqual([
+      "close-deal",
+      "create-deal-from-message",
+      "prepare-quote",
+      "weekly-pipeline-review",
+    ]);
     expect(readdirSync(resolve(ROOT, ".claude/skills")).sort()).toEqual(names);
     const registry = createAgentTools({
       api: async () => Response.json({}),
@@ -253,7 +258,7 @@ describe("module contract", () => {
       expect(typeof JSON.parse(description)).toBe("string");
       // Every tool a skill names is one the App offers.
       const named = skill.match(
-        /`((?:find|get|check|create|update|move|add|discard|publish)_[a-z_]+)`/g,
+        /`((?:find|get|list|check|create|update|move|add|plan|mark|save|set|revise|discard|publish)_[a-z_]+)`/g,
       );
       for (const tool of named ?? []) {
         const bare = tool.replaceAll("`", "");
@@ -263,8 +268,9 @@ describe("module contract", () => {
           offered: true,
         });
       }
-      // A skill publishes only on the person's instruction.
+      // A skill publishes only on the person's instruction, and sends nothing.
       if (skill.includes("publish_draft")) expect(skill).toMatch(/Publikuj/);
+      expect(skill).toMatch(/## Never/);
       expect(read("AGENTS.md")).toContain(`.agents/skills/${name}/SKILL.md`);
     }
     // docs/agents.md names every tool with its effect.
@@ -448,11 +454,12 @@ describe.skipIf(!TEMPLATE)("template contract (skipped in an adopted Module)", (
         .sort();
     const cs = shots("cs");
     expect(cs).toEqual([
-      "company.webp",
       "deal.webp",
       "deals.webp",
+      "forecast.webp",
       "overview.webp",
-      "settings.webp",
+      "quote.webp",
+      "stats.webp",
     ]);
     expect(shots("en")).toEqual(cs);
     const readme = read("README.md");

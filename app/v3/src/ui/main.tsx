@@ -4,6 +4,12 @@ import { createRoot } from "react-dom/client";
 // then the App's own layout, then the Organization's overlay.
 import "design-system/styles.css";
 import "./styles.css";
+import "./styles/components.css";
+import "./styles/deals.css";
+import "./styles/quotes.css";
+import "./styles/forecast.css";
+import "./styles/stats.css";
+import "./styles/people.css";
 import "../instance/theme.css";
 import { App } from "./App.tsx";
 import { setApiLocale } from "./api.ts";

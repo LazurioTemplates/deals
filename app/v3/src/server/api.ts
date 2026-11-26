@@ -7,10 +7,16 @@ import { isoDate, localToday, slug } from "../domain/common.ts";
 import { company } from "../domain/company.ts";
 import { contact } from "../domain/contact.ts";
 import { deal } from "../domain/deal.ts";
+import { forecastEntry, forecastNote } from "../domain/forecast-entry.ts";
 import { money } from "../domain/money.ts";
+import { MONTH, paymentPlan } from "../domain/payment-plan.ts";
+import { pricebookItem } from "../domain/pricebook.ts";
+import { QUOTE_STATUSES, quote } from "../domain/quote.ts";
+import { salesperson } from "../domain/salesperson.ts";
 import { settings } from "../domain/settings.ts";
-import { type Locale, localeOfAcceptLanguage } from "../i18n/locale.ts";
+import { LOCALES, type Locale, localeOfAcceptLanguage } from "../i18n/locale.ts";
 import { createService, type DealsService, lastDays } from "../service/deals-service.ts";
+import { ALL_IMPORT_FIELDS, IMPORT_KINDS, importRecords } from "../service/import.ts";
 import type { AresClient } from "./ares.ts";
 
 /**
@@ -45,6 +51,38 @@ const stageMove = z.strictObject({
   closedAt: isoDate.optional(),
   lossReasonId: slug.optional(),
   lossNote: z.string().max(2000).optional(),
+  paymentPlan: paymentPlan.optional(),
+});
+
+const paymentChange = z.strictObject({
+  baseRevision: revision,
+  invoicedOn: isoDate.nullable().optional(),
+  paidOn: isoDate.nullable().optional(),
+});
+
+const removal = z.strictObject({ baseRevision: revision });
+
+const newQuote = z.strictObject({
+  dealId: z.string().min(1),
+  title: z.string().max(200).optional(),
+  pricebookItemIds: z.array(z.string()).max(200).optional(),
+});
+
+const importField = z.enum(ALL_IMPORT_FIELDS);
+const importInput = z.strictObject({
+  kind: z.enum(IMPORT_KINDS),
+  rows: z
+    .array(
+      z.strictObject({
+        row: z.int().min(1),
+        values: z.partialRecord(importField, z.string().max(10_000)),
+      }),
+    )
+    .min(1)
+    .max(5_000),
+  createCompanies: z.boolean(),
+  numberLocale: z.enum(LOCALES),
+  defaultOwnerId: z.string().min(1).optional(),
 });
 
 const publishInput = z.strictObject({
@@ -302,6 +340,22 @@ export function createApi(store: DealsStore, options: ApiOptions) {
       const input = await body(req, create(newDeal));
       return json(await service.createDeal(input.record), 201);
     }
+    const planOf = one(/^\/api\/deals\/([^/]+)\/plan$/, pathname);
+    if (planOf && method === "PUT") {
+      const input = await body(req, z.strictObject({ plan: paymentPlan, baseRevision: revision }));
+      return json(await service.planPayments(planOf, input.plan, input.baseRevision));
+    }
+    const paymentOf = /^\/api\/deals\/([^/]+)\/payments\/([^/]+)$/.exec(pathname);
+    if (paymentOf?.[1] && paymentOf[2] && method === "POST") {
+      const input = await body(req, paymentChange);
+      return json(
+        await service.changePayment(
+          decodeURIComponent(paymentOf[1]),
+          decodeURIComponent(paymentOf[2]),
+          input,
+        ),
+      );
+    }
     const stageOf = one(/^\/api\/deals\/([^/]+)\/stage$/, pathname);
     if (stageOf && method === "POST") {
       return json(await service.moveDeal(stageOf, await body(req, stageMove)));
@@ -320,7 +374,7 @@ export function createApi(store: DealsStore, options: ApiOptions) {
     if (dealId && method === "PUT") {
       const input = await body(req, save(deal));
       sameId(input.record.id, dealId, { cs: "obchodního případu", en: "a deal" });
-      return json(await store.saveDeal(input.record, input.baseRevision));
+      return json(await service.saveDeal(input.record, input.baseRevision));
     }
 
     if (pathname === "/api/activities" && get) return json(await store.listActivities());
@@ -335,7 +389,114 @@ export function createApi(store: DealsStore, options: ApiOptions) {
       return json(await store.saveActivity(input.record, input.baseRevision));
     }
 
-    if (pathname === "/api/forecast" && get) return json(await service.forecast());
+    if (pathname === "/api/salespeople" && get) return json(await store.list("salespeople"));
+    if (pathname === "/api/salespeople" && method === "POST") {
+      const input = await body(req, create(salesperson.omit({ id: true })));
+      return json(await service.createSalesperson(input.record), 201);
+    }
+    const salespersonId = one(/^\/api\/salespeople\/([^/]+)$/, pathname);
+    if (salespersonId && method === "PUT") {
+      const input = await body(req, save(salesperson));
+      sameId(input.record.id, salespersonId, { cs: "obchodníka", en: "a salesperson" });
+      return json(await store.save("salespeople", input.record, input.baseRevision));
+    }
+
+    if (pathname === "/api/pricebook" && get) return json(await store.list("pricebook"));
+    if (pathname === "/api/pricebook" && method === "POST") {
+      const input = await body(req, create(pricebookItem.omit({ id: true })));
+      return json(await service.createPricebookItem(input.record), 201);
+    }
+    const itemId = one(/^\/api\/pricebook\/([^/]+)$/, pathname);
+    if (itemId && method === "PUT") {
+      const input = await body(req, save(pricebookItem));
+      sameId(input.record.id, itemId, { cs: "položky ceníku", en: "a price list item" });
+      return json(await store.save("pricebook", input.record, input.baseRevision));
+    }
+
+    if (pathname === "/api/quotes" && get) return json(await store.list("quotes"));
+    if (pathname === "/api/quotes" && method === "POST") {
+      return json(await service.createQuote(await body(req, newQuote)), 201);
+    }
+    const reviseOf = one(/^\/api\/quotes\/([^/]+)\/revise$/, pathname);
+    if (reviseOf && method === "POST") return json(await service.reviseQuote(reviseOf), 201);
+    const statusOf = one(/^\/api\/quotes\/([^/]+)\/status$/, pathname);
+    if (statusOf && method === "POST") {
+      const input = await body(
+        req,
+        z.strictObject({ status: z.enum(QUOTE_STATUSES), baseRevision: revision }),
+      );
+      return json(await service.setQuoteStatus(statusOf, input.status, input.baseRevision));
+    }
+    const quoteId = one(/^\/api\/quotes\/([^/]+)$/, pathname);
+    if (quoteId && get) {
+      const found = await store.get("quotes", quoteId);
+      return found
+        ? json(found)
+        : notFound(
+            locale,
+            `Nabídka ${quoteId} neexistuje.`,
+            `The quote ${quoteId} does not exist.`,
+          );
+    }
+    if (quoteId && method === "PUT") {
+      const input = await body(req, save(quote));
+      sameId(input.record.id, quoteId, { cs: "nabídky", en: "a quote" });
+      return json(await service.saveQuote(input.record, input.baseRevision));
+    }
+
+    if (pathname === "/api/forecast-entries" && get) {
+      return json(await store.list("forecastEntries"));
+    }
+    if (pathname === "/api/forecast-entries" && method === "POST") {
+      const input = await body(req, create(forecastEntry.omit({ id: true })));
+      return json(await service.createForecastEntry(input.record), 201);
+    }
+    const entryPayment = one(/^\/api\/forecast-entries\/([^/]+)\/payment$/, pathname);
+    if (entryPayment && method === "POST") {
+      return json(await service.changeForecastEntry(entryPayment, await body(req, paymentChange)));
+    }
+    const entryId = one(/^\/api\/forecast-entries\/([^/]+)$/, pathname);
+    if (entryId && method === "PUT") {
+      const input = await body(req, save(forecastEntry));
+      sameId(input.record.id, entryId, { cs: "řádku forecastu", en: "a forecast row" });
+      return json(await store.save("forecastEntries", input.record, input.baseRevision));
+    }
+    if (entryId && method === "DELETE") {
+      const input = await body(req, removal);
+      await store.remove("forecastEntries", entryId, input.baseRevision);
+      return json({ ok: true });
+    }
+
+    if (pathname === "/api/forecast-notes" && get) return json(await store.list("forecastNotes"));
+    const noteMonth = one(/^\/api\/forecast-notes\/([^/]+)$/, pathname);
+    if (noteMonth && method === "PUT") {
+      if (!MONTH.test(noteMonth)) {
+        throw new StoreError("bad_request", {
+          cs: "Měsíc poznámky je ve tvaru YYYY-MM.",
+          en: "The month of a note is YYYY-MM.",
+        });
+      }
+      const input = await body(
+        req,
+        z.strictObject({
+          text: forecastNote.shape.text.or(z.literal("")),
+          baseRevision: revision.nullable(),
+        }),
+      );
+      return json(await service.saveForecastNote(noteMonth, input.text, input.baseRevision));
+    }
+
+    if (pathname === "/api/forecast" && get) {
+      const year = url.searchParams.get("year");
+      const parsedYear = year && /^[0-9]{4}$/.test(year) ? Number(year) : undefined;
+      return json(
+        await service.forecast(parsedYear, {
+          ownerId: url.searchParams.get("owner") || undefined,
+          dealTypeId: url.searchParams.get("type") || undefined,
+          billingEntityId: url.searchParams.get("entity") || undefined,
+        }),
+      );
+    }
     if (pathname === "/api/stats" && get) {
       const fallback = lastDays(today());
       const period = z.strictObject({ from: isoDate, to: isoDate }).safeParse({
@@ -348,7 +509,12 @@ export function createApi(store: DealsStore, options: ApiOptions) {
           en: "A period needs from and to as YYYY-MM-DD, from no later than to.",
         });
       }
-      return json(await service.stats(period.data));
+      return json(
+        await service.stats(period.data, {
+          ownerId: url.searchParams.get("owner") || undefined,
+          dealTypeId: url.searchParams.get("type") || undefined,
+        }),
+      );
     }
 
     const ico = one(/^\/api\/ares\/([^/]+)$/, pathname);
@@ -367,6 +533,12 @@ export function createApi(store: DealsStore, options: ApiOptions) {
         });
       }
       return json(await options.ares(ico));
+    }
+
+    // An import writes every new record in one draft and answers in the person's language.
+    if (pathname === "/api/import" && method === "POST") {
+      const input = await body(req, importInput);
+      return json(await importRecords(store, input, { today: today(), locale }));
     }
 
     if (pathname === "/api/check" && get) return json(await store.check(locale, today()));

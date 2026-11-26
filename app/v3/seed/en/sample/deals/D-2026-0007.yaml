@@ -1,13 +1,15 @@
 id: D-2026-0007
 record:
+  billingEntityId: services
   companyId: C-0004
   contactIds:
     - P-0007
   createdAt: 2026-11-10
+  dealTypeId: service
   description: The customer does not know yet when the budget is approved.
   id: D-2026-0007
-  owner: Jordan Example
+  ownerId: S-0002
   stageId: lead
   title: One year of operations support
   value: 9000000
-schemaVersion: deals.deal.v1
+schemaVersion: deals.deal.v2

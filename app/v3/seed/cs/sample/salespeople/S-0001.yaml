@@ -1,0 +1,9 @@
+id: S-0001
+record:
+  active: true
+  email: jana@example.com
+  id: S-0001
+  name: Jana Ukázková
+  phone: +420 000 000 001
+  role: Obchodní ředitelka
+schemaVersion: deals.salesperson.v1

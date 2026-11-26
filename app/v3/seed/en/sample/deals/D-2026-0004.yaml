@@ -5,12 +5,13 @@ record:
     - P-0003
     - P-0004
   createdAt: 2026-08-25
+  dealTypeId: delivery
   description: The customer weighs buying against leasing, hence a lower probability than the stage's.
   expectedClose: 2026-12-18
   id: D-2026-0004
-  owner: Jordan Example
+  ownerId: S-0002
   probability: 45
   stageId: negotiation
   title: Refrigerated vans for the fleet
-  value: 21999990
-schemaVersion: deals.deal.v1
+  value: 24000000
+schemaVersion: deals.deal.v2

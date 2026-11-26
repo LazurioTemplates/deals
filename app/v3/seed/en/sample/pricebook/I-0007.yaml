@@ -1,0 +1,9 @@
+id: I-0007
+record:
+  active: true
+  id: I-0007
+  name: Annual support
+  sectionId: service
+  unit: month
+  unitPrice: 450000
+schemaVersion: deals.pricebook-item.v1

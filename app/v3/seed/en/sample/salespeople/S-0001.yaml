@@ -1,0 +1,9 @@
+id: S-0001
+record:
+  active: true
+  email: jana@example.com
+  id: S-0001
+  name: Alex Sample
+  phone: +420 000 000 001
+  role: Head of sales
+schemaVersion: deals.salesperson.v1

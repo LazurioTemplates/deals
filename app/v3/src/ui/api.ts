@@ -3,11 +3,19 @@ import type { Activity } from "../domain/activity.ts";
 import type { Company } from "../domain/company.ts";
 import type { Contact } from "../domain/contact.ts";
 import type { Deal } from "../domain/deal.ts";
+import type { Forecast, ForecastFilter } from "../domain/forecast.ts";
+import type { ForecastEntry, ForecastNote } from "../domain/forecast-entry.ts";
+import type { PaymentPlan } from "../domain/payment-plan.ts";
+import type { PricebookItem } from "../domain/pricebook.ts";
+import type { Quote, QuoteStatus } from "../domain/quote.ts";
 import type { RuleIssue } from "../domain/rules.ts";
+import type { Salesperson } from "../domain/salesperson.ts";
 import type { Settings } from "../domain/settings.ts";
+import type { Stats, StatsFilter, StatsPeriod } from "../domain/stats.ts";
 import { DEFAULT_LOCALE, type Locale, type Localized } from "../i18n/locale.ts";
 import type { AresCompany } from "../server/ares.ts";
-import type { StageMove } from "../service/deals-service.ts";
+import type { NewQuote, PaymentChange, StageMove } from "../service/deals-service.ts";
+import type { ImportInput, ImportReport } from "../service/import.ts";
 
 /** What the server stores, as the browser receives it. */
 export interface Stored<T> {
@@ -163,6 +171,15 @@ function makeApi(channel: ClientChannel) {
     send<T>(channel, path, init);
   const put = <T>(path: string, body: unknown) => request<T>(path, { method: "PUT", body });
   const post = <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body });
+  const remove = <T>(path: string, body: unknown) => request<T>(path, { method: "DELETE", body });
+  const query = (values: Record<string, string | number | undefined>) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(values)) {
+      if (value !== undefined && value !== "") params.set(key, String(value));
+    }
+    const text = params.toString();
+    return text ? `?${text}` : "";
+  };
   return {
     /** Whether the data are open, and whether this copy lets the person change them now. */
     status: () =>
@@ -191,8 +208,54 @@ function makeApi(channel: ClientChannel) {
       post<Stored<Activity>>("/api/activities", { record }),
     saveActivity: (record: Activity, baseRevision: string) =>
       put<Stored<Activity>>(at("/api/activities", record.id), { record, baseRevision }),
+    planPayments: (id: string, plan: PaymentPlan, baseRevision: string) =>
+      put<Stored<Deal>>(`${at("/api/deals", id)}/plan`, { plan, baseRevision }),
+    changePayment: (dealId: string, paymentId: string, change: PaymentChange) =>
+      post<Stored<Deal>>(
+        `${at("/api/deals", dealId)}/payments/${encodeURIComponent(paymentId)}`,
+        change,
+      ),
+    salespeople: () => request<Stored<Salesperson>[]>("/api/salespeople"),
+    createSalesperson: (record: Without<Salesperson>) =>
+      post<Stored<Salesperson>>("/api/salespeople", { record }),
+    saveSalesperson: (record: Salesperson, baseRevision: string) =>
+      put<Stored<Salesperson>>(at("/api/salespeople", record.id), { record, baseRevision }),
+    pricebook: () => request<Stored<PricebookItem>[]>("/api/pricebook"),
+    createPricebookItem: (record: Without<PricebookItem>) =>
+      post<Stored<PricebookItem>>("/api/pricebook", { record }),
+    savePricebookItem: (record: PricebookItem, baseRevision: string) =>
+      put<Stored<PricebookItem>>(at("/api/pricebook", record.id), { record, baseRevision }),
+    quotes: () => request<Stored<Quote>[]>("/api/quotes"),
+    createQuote: (input: NewQuote) => post<Stored<Quote>>("/api/quotes", input),
+    saveQuote: (record: Quote, baseRevision: string) =>
+      put<Stored<Quote>>(at("/api/quotes", record.id), { record, baseRevision }),
+    reviseQuote: (id: string) => post<Stored<Quote>>(`${at("/api/quotes", id)}/revise`, {}),
+    setQuoteStatus: (id: string, status: QuoteStatus, baseRevision: string) =>
+      post<Stored<Quote>>(`${at("/api/quotes", id)}/status`, { status, baseRevision }),
+    forecastEntries: () => request<Stored<ForecastEntry>[]>("/api/forecast-entries"),
+    createForecastEntry: (record: Without<ForecastEntry>) =>
+      post<Stored<ForecastEntry>>("/api/forecast-entries", { record }),
+    saveForecastEntry: (record: ForecastEntry, baseRevision: string) =>
+      put<Stored<ForecastEntry>>(at("/api/forecast-entries", record.id), { record, baseRevision }),
+    removeForecastEntry: (id: string, baseRevision: string) =>
+      remove<{ ok: true }>(at("/api/forecast-entries", id), { baseRevision }),
+    changeForecastEntry: (id: string, change: PaymentChange) =>
+      post<Stored<ForecastEntry>>(`${at("/api/forecast-entries", id)}/payment`, change),
+    forecastNotes: () => request<Stored<ForecastNote>[]>("/api/forecast-notes"),
+    saveForecastNote: (month: string, text: string, baseRevision: string | null) =>
+      put<Stored<ForecastNote> | null>(at("/api/forecast-notes", month), { text, baseRevision }),
+    forecast: (year?: number, filter: ForecastFilter = {}) =>
+      request<Forecast>(
+        `/api/forecast${query({ year, owner: filter.ownerId, type: filter.dealTypeId, entity: filter.billingEntityId })}`,
+      ),
+    stats: (period: StatsPeriod, filter: StatsFilter = {}) =>
+      request<Stats>(
+        `/api/stats${query({ from: period.from, to: period.to, owner: filter.ownerId, type: filter.dealTypeId })}`,
+      ),
     /** A company by its IČO from ARES, through the server. */
     ares: (ico: string) => request<AresCompany>(at("/api/ares", ico)),
+    /** New companies, contacts or deals from mapped CSV rows, as one draft. */
+    importRecords: (input: ImportInput) => post<ImportReport>("/api/import", input),
     check: () => request<RuleIssue[]>("/api/check"),
     draft: () => request<DraftPanelInput>("/api/draft"),
     publish: (expectedRevision: string) =>

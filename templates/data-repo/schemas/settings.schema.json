@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "deals.settings.v1",
+  "$id": "deals.settings.v2",
   "title": "Deals settings",
   "$comment": "Generated from the Zod schemas of Deals (app/v3/src/domain) by `bun run schema:export`. Do not edit.",
   "type": "object",
   "properties": {
     "schemaVersion": {
-      "const": "deals.settings.v1"
+      "const": "deals.settings.v2"
     },
     "id": {
       "type": "string",
@@ -81,13 +81,188 @@
             "additionalProperties": false
           }
         },
-        "owners": {
-          "description": "The salespeople a deal is usually assigned to; another name only warns.",
+        "dealTypes": {
+          "description": "The types of deals („Typ zakázky“) a deal and a forecast row may name.",
           "type": "array",
           "items": {
-            "type": "string",
-            "minLength": 1
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ],
+            "additionalProperties": false
           }
+        },
+        "billingEntities": {
+          "description": "The entities that issue quotes and invoices; the first one is the default.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "ico": {
+                "type": "string",
+                "pattern": "^[0-9]{8}$"
+              },
+              "dic": {
+                "type": "string",
+                "minLength": 1
+              },
+              "address": {
+                "type": "object",
+                "properties": {
+                  "street": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "city": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "postalCode": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "country": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "additionalProperties": false
+              },
+              "email": {
+                "type": "string",
+                "minLength": 1
+              },
+              "phone": {
+                "type": "string",
+                "minLength": 1
+              },
+              "website": {
+                "type": "string",
+                "minLength": 1
+              },
+              "bankAccount": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "quotes": {
+          "type": "object",
+          "properties": {
+            "vatRate": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000,
+              "description": "The VAT rate of a new quote in basis points: 2100 = 21 %."
+            },
+            "validityDays": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365,
+              "description": "How many days a new quote is valid."
+            },
+            "sections": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "id",
+                  "label"
+                ],
+                "additionalProperties": false
+              },
+              "description": "The sections a new quote offers, in order."
+            },
+            "units": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": "The units a line offers: ks, h, MD, m …"
+            },
+            "terms": {
+              "type": "object",
+              "properties": {
+                "vatNote": {
+                  "description": "The note on VAT („Poznámka k DPH“).",
+                  "type": "string",
+                  "minLength": 1
+                },
+                "payments": {
+                  "description": "Payments and deposits („Platby a zálohy“).",
+                  "type": "string",
+                  "minLength": 1
+                },
+                "scope": {
+                  "description": "Scope, assumptions and other conditions.",
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "additionalProperties": false
+            },
+            "termsVersion": {
+              "description": "The version of the Organization's commercial terms.",
+              "type": "string",
+              "minLength": 1
+            },
+            "termsUrl": {
+              "description": "Where the public commercial terms are published.",
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "vatRate",
+            "validityDays",
+            "sections",
+            "units"
+          ],
+          "additionalProperties": false
+        },
+        "paymentDueDays": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 365,
+          "description": "Days from an invoice to its due date, unless a company has its own."
         },
         "aresLookup": {
           "type": "boolean",
@@ -114,6 +289,8 @@
         "currency",
         "stages",
         "lossReasons",
+        "quotes",
+        "paymentDueDays",
         "aresLookup"
       ],
       "additionalProperties": false

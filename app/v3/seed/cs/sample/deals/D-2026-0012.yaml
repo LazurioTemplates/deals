@@ -6,9 +6,13 @@ record:
     - P-0009
     - P-0010
   createdAt: 2026-09-01
+  dealTypeId: delivery
   id: D-2026-0012
-  owner: Petr Vzorný
+  ownerId: S-0002
+  paymentPlan:
+    payments: []
+    status: unassigned
   stageId: won
   title: Ordinace v přízemí
-  value: 9950000
-schemaVersion: deals.deal.v1
+  value: 5830000
+schemaVersion: deals.deal.v2

@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deals.pricebook-item.v1",
+  "title": "Deals pricebook",
+  "$comment": "Generated from the Zod schemas of Deals (app/v3/src/domain) by `bun run schema:export`. Do not edit.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "deals.pricebook-item.v1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "record": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^I-[0-9]{4,6}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "code": {
+          "description": "The Organization's own code of the item.",
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "unitPrice": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100000000000000,
+          "description": "The price of one unit without VAT, in haléře."
+        },
+        "sectionId": {
+          "description": "The quote section a line from it goes to by default.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "revision": {
+          "description": "A new random value on every write; audit metadata, not business data.",
+          "type": "string",
+          "minLength": 1
+        },
+        "updatedAt": {
+          "description": "When the App last wrote the record (UTC); audit metadata, not business data.",
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$",
+          "format": "date-time"
+        },
+        "updatedBy": {
+          "description": "The subject of the person the App last wrote the record for; audit metadata.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "unit",
+        "unitPrice",
+        "active"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "record"
+  ],
+  "additionalProperties": false
+}

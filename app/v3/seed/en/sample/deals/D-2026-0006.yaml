@@ -1,14 +1,16 @@
 id: D-2026-0006
 record:
+  billingEntityId: services
   companyId: C-0004
   contactIds:
     - P-0006
     - P-0007
   createdAt: 2026-09-08
+  dealTypeId: service
   expectedClose: 2027-01-15
   id: D-2026-0006
-  owner: Alex Sample
+  ownerId: S-0001
   stageId: negotiation
   title: Training for the development team
   value: 15600000
-schemaVersion: deals.deal.v1
+schemaVersion: deals.deal.v2

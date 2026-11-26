@@ -1,0 +1,58 @@
+id: Q-2026-0003-r1
+record:
+  billingEntityId: trade
+  commercialTerms:
+    customerScope: b2b
+    termsUrl: https://example.com/terms
+    termsVersion: 2026-01
+  contactId: P-0005
+  currency: CZK
+  customer:
+    address:
+      city: Olomouc
+      country: Czech Republic
+      postalCode: 779 00
+      street: 7 Bread Lane
+    companyId: C-0003
+    name: Trial Bakery Ltd.
+  dealId: D-2026-0005
+  id: Q-2026-0003-r1
+  issuedOn: 2026-11-20
+  lines:
+    - id: l1
+      name: Point-of-sale licence
+      pricebookItemId: I-0008
+      quantity: 2
+      sectionId: items
+      unit: pcs
+      unitPrice: 1890000
+    - id: l2
+      name: Assembly
+      pricebookItemId: I-0004
+      quantity: 6
+      sectionId: work
+      unit: h
+      unitPrice: 85000
+  number: Q-2026-0003
+  sections:
+    - id: items
+      label: Delivery
+    - id: work
+      label: Work
+    - id: service
+      label: Service and support
+  status: draft
+  terms:
+    payments: |-
+      ## Payments
+      - A deposit of 50 % with the order
+      - The remaining 50 % on handover
+
+      Invoices are due in 14 days.
+    scope: The quote covers the scope of its lines. Extra work is charged by the price list.
+    vatNote: Prices are without VAT. VAT is charged as the law requires.
+  title: Till system for the second shop
+  validUntil: 2026-12-20
+  vatRate: 2100
+  version: 1
+schemaVersion: deals.quote.v1

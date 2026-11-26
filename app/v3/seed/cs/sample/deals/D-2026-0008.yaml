@@ -4,10 +4,11 @@ record:
   contactIds:
     - P-0008
   createdAt: 2026-08-03
+  dealTypeId: delivery
   expectedClose: 2026-10-30
   id: D-2026-0008
-  owner: Jana Ukázková
+  ownerId: S-0001
   stageId: qualified
   title: Vybavení stavebních kontejnerů
   value: 52000000
-schemaVersion: deals.deal.v1
+schemaVersion: deals.deal.v2

@@ -30,13 +30,22 @@ import { ContactListPage } from "../src/ui/pages/ContactListPage.tsx";
 import { ContactPage, contactFormOf, submitContact } from "../src/ui/pages/ContactPage.tsx";
 import { DealListPage } from "../src/ui/pages/DealListPage.tsx";
 import { DealPage, dealFormOf, submitDeal } from "../src/ui/pages/DealPage.tsx";
+import { ForecastPage } from "../src/ui/pages/ForecastPage.tsx";
+import { ImportPage } from "../src/ui/pages/ImportPage.tsx";
 import { OverviewPage } from "../src/ui/pages/OverviewPage.tsx";
+import { PricebookPage } from "../src/ui/pages/PricebookPage.tsx";
+import { QuoteListPage } from "../src/ui/pages/QuoteListPage.tsx";
+import { QuotePage } from "../src/ui/pages/QuotePage.tsx";
+import { QuotePrintPage } from "../src/ui/pages/QuotePrintPage.tsx";
+import { SalespeopleListPage } from "../src/ui/pages/SalespeopleListPage.tsx";
+import { SalespersonPage } from "../src/ui/pages/SalespersonPage.tsx";
 import {
   freshId,
   SettingsPage,
   settingsFormOf,
   submitSettings,
 } from "../src/ui/pages/SettingsPage.tsx";
+import { StatsPage } from "../src/ui/pages/StatsPage.tsx";
 import { href, parseRoute, type Route } from "../src/ui/routes.ts";
 import { withOffset } from "../src/ui/time.ts";
 import { followWriteStatus, statusRetryDelay, WriteContext } from "../src/ui/write.tsx";
@@ -50,10 +59,15 @@ const nb = (value: string) => value.replaceAll(" ", "\u00a0");
 function appDataOf(data: DataSet & { settings: NonNullable<DataSet["settings"]> }): AppData {
   return {
     settings: stored(data.settings),
+    salespeople: (data.salespeople ?? []).map(stored),
     companies: data.companies.map(stored),
     contacts: data.contacts.map(stored),
     deals: data.deals.map(stored),
     activities: data.activities.map(stored),
+    pricebook: (data.pricebook ?? []).map(stored),
+    quotes: (data.quotes ?? []).map(stored),
+    forecastEntries: (data.forecastEntries ?? []).map(stored),
+    forecastNotes: (data.forecastNotes ?? []).map(stored),
   };
 }
 
@@ -75,18 +89,40 @@ function pages(locale: Locale, data: AppData = appData(locale)): Record<string, 
   return {
     overview: render(locale, <OverviewPage data={data} onChanged={changed} today={TODAY} />),
     deals: render(locale, <DealListPage data={data} tab="all" />),
+    open: render(locale, <DealListPage data={data} tab="open" />),
     lost: render(locale, <DealListPage data={data} tab="lost" />),
     deal: render(
       locale,
-      <DealPage data={data} id="D-2026-0004" company={null} onChanged={changed} today={TODAY} />,
+      <DealPage
+        data={data}
+        id="D-2026-0004"
+        company={null}
+        stage={null}
+        onChanged={changed}
+        today={TODAY}
+      />,
     ),
     wonDeal: render(
       locale,
-      <DealPage data={data} id="D-2026-0010" company={null} onChanged={changed} today={TODAY} />,
+      <DealPage
+        data={data}
+        id="D-2026-0011"
+        company={null}
+        stage={null}
+        onChanged={changed}
+        today={TODAY}
+      />,
     ),
     newDeal: render(
       locale,
-      <DealPage data={data} id={null} company="C-0001" onChanged={changed} today={TODAY} />,
+      <DealPage
+        data={data}
+        id={null}
+        company="C-0001"
+        stage={null}
+        onChanged={changed}
+        today={TODAY}
+      />,
     ),
     companies: render(locale, <CompanyListPage data={data} />),
     company: render(locale, <CompanyPage data={data} id="C-0002" onChanged={changed} />),
@@ -97,6 +133,15 @@ function pages(locale: Locale, data: AppData = appData(locale)): Record<string, 
       <ContactPage data={data} id="P-0004" company={null} onChanged={changed} />,
     ),
     settings: render(locale, <SettingsPage data={data} onChanged={changed} />),
+    quotes: render(locale, <QuoteListPage data={data} onChanged={changed} today={TODAY} />),
+    quote: render(locale, <QuotePage data={data} id="Q-2026-0001-r2" onChanged={changed} />),
+    quotePrint: render(locale, <QuotePrintPage data={data} id="Q-2026-0001-r2" />),
+    pricebook: render(locale, <PricebookPage data={data} onChanged={changed} />),
+    salespeople: render(locale, <SalespeopleListPage data={data} />),
+    salesperson: render(locale, <SalespersonPage data={data} id="S-0001" onChanged={changed} />),
+    forecast: render(locale, <ForecastPage data={data} onChanged={changed} today={TODAY} />),
+    stats: render(locale, <StatsPage data={data} today={TODAY} />),
+    import: render(locale, <ImportPage data={data} onChanged={changed} />),
   };
 }
 
@@ -107,8 +152,18 @@ describe("routes", () => {
       { page: "deals", tab: "all" },
       { page: "deals", tab: "won" },
       { page: "deals", tab: "lost" },
-      { page: "new-deal", company: null },
-      { page: "new-deal", company: "C-0001" },
+      { page: "new-deal", company: null, stage: null },
+      { page: "new-deal", company: "C-0001", stage: "proposal" },
+      { page: "quotes" },
+      { page: "quote", id: "Q-2026-0001-r2" },
+      { page: "quote-print", id: "Q-2026-0001-r2" },
+      { page: "pricebook" },
+      { page: "salespeople" },
+      { page: "new-salesperson" },
+      { page: "salesperson", id: "S-0001" },
+      { page: "forecast" },
+      { page: "stats" },
+      { page: "import" },
       { page: "deal", id: "D-2026-0002" },
       { page: "companies" },
       { page: "new-company" },
@@ -125,7 +180,15 @@ describe("routes", () => {
   });
 
   test("the review's links open the record's page", () => {
-    for (const link of ["#/deals/D-2026-0001", "#/companies/C-0001", "#/contacts/P-0001"]) {
+    for (const link of [
+      "#/deals/D-2026-0001",
+      "#/companies/C-0001",
+      "#/contacts/P-0001",
+      "#/quotes/Q-2026-0001-r1",
+      "#/salespeople/S-0001",
+      "#/pricebook",
+      "#/forecast",
+    ]) {
       expect(parseRoute(link).page).not.toBe("not-found");
     }
   });
@@ -143,23 +206,25 @@ describe("pages in Czech", () => {
     // Lead: D-2026-0001 and D-2026-0007, 210 000 Kč.
     expect(html.overview).toContain("2 případy");
     expect(html.overview).toContain(nb("210 000,00 Kč"));
-    // The forecast of the sample, counted by hand (tests/forecast.test.ts).
-    expect(html.overview).toContain(nb("287 175,12 Kč"));
-    expect(html.overview).toContain(nb("802 625,19 Kč"));
-    expect(html.overview).toContain("Bez data");
+    // This month's forecast: the paid service fee of November.
+    expect(html.overview).toContain(nb("24 000,00 Kč"));
+    // Invoiced and unpaid: the deposit of D-2026-0011 and the consulting row.
+    expect(html.overview).toContain("Na cestě");
+    expect(html.overview).toContain(nb("170 780,00 Kč"));
     // D-2026-0008 was expected on 30. 10. 2026.
     expect(html.overview).toContain("po termínu");
-    // The last 90 days: 28. 8. – 25. 11. 2026, three won and two lost.
-    expect(html.overview).toContain('value="2026-08-28"');
+    // The last 90 days: three won and two lost.
     expect(html.overview).toContain(nb("60 %"));
     expect(html.overview).toContain("71 dní");
   });
 
   test("the deals: tabs, a deal with its activities, closing", () => {
-    expect(html.deals).toContain("Všechny (14)");
-    expect(html.deals).toContain("Otevřené (9)");
-    expect(html.deals).toContain("Vyhrané (3)");
-    expect(html.deals).toContain("Ztracené (2)");
+    expect(html.deals).toContain("Všechny případy");
+    expect(html.deals).toContain("Hodnota aktivních");
+    expect(html.deals).toContain(nb("2 435 900,10 Kč"));
+    expect(html.deals).toContain(nb("759 400,00 Kč"));
+    expect(html.open).toContain("Aktivní");
+    expect(html.open).not.toContain("Vybavení prodejny");
     expect(html.lost).toContain("Konkurence");
     expect(html.lost).not.toContain("Vybavení prodejny");
     expect(html.deal).toContain("Chladicí vozy do flotily");
@@ -169,6 +234,8 @@ describe("pages in Czech", () => {
     expect(html.deal).toContain("Poslat upravené podmínky");
     expect(html.wonDeal).toContain("Upravit uzavření");
     expect(html.wonDeal).toContain("Znovu otevřít");
+    expect(html.wonDeal).toContain("Plán plateb");
+    expect(html.wonDeal).toContain("Cenové nabídky");
     expect(html.newDeal).toContain("Nový obchodní případ");
   });
 
@@ -188,9 +255,11 @@ describe("pages in English", () => {
 
   test("say the same in English", () => {
     expect(html.overview).toContain("Sales overview");
-    expect(html.overview).toContain(nb("CZK 802,625.19"));
+    expect(html.overview).toContain(nb("CZK 170,780.00"));
     expect(html.overview).toContain("71 days");
-    expect(html.deals).toContain("Won (3)");
+    expect(html.deals).toContain("Value of won deals");
+    expect(html.forecast).toContain("Forecast 2026");
+    expect(html.quotes).toContain("Quotes");
     expect(html.deal).toContain("Activities");
     expect(html.settings).toContain("Pipeline stages");
   });
@@ -256,7 +325,7 @@ describe("the worst real data", () => {
     const html = pages("cs", data);
     expect(html.overview).toContain("Žádný případ.");
     expect(html.overview).toContain("0 případů");
-    expect(html.deals).toContain("Žádný případ v této záložce.");
+    expect(html.deals).toContain("Zatím žádný obchodní případ.");
     expect(html.companies).toContain("Zatím žádná firma.");
     expect(html.contacts).toContain("Zatím žádný kontakt.");
     expect(html.newDeal).toContain("Nejdřív založte firmu.");
@@ -580,7 +649,13 @@ describe("a form over a record that changes meanwhile", () => {
   test("the settings: the edits outlive a reload, and a stale save is record_changed", async () => {
     const opened = await loadAppData();
     let state = openForm(opened.settings, settingsFormOf);
-    state = { ...state, form: { ...state.form, owners: "Jana Ukázková\nNový Obchodník" } };
+    state = {
+      ...state,
+      form: {
+        ...state.form,
+        types: [...state.form.types, { key: "new-1", id: "", label: "Nový typ" }],
+      },
+    };
 
     // A colleague renames a stage; another action reloads the data.
     await api.saveSettings(
@@ -604,7 +679,7 @@ describe("a form over a record that changes meanwhile", () => {
       detailKey("settings", reloaded.settings.revision, true),
     );
     state = followRecord(state, reloaded.settings, settingsFormOf);
-    expect(state.form.owners).toBe("Jana Ukázková\nNový Obchodník");
+    expect(state.form.types.at(-1)?.label).toBe("Nový typ");
     expect(state.base?.revision).toBe(opened.settings.revision);
     expect(driftOf(state.base, reloaded.settings)).toBe("changed");
 
@@ -617,27 +692,33 @@ describe("a form over a record that changes meanwhile", () => {
     });
     const after = await loadAppData();
     expect(after.settings.value.stages[0]?.label).toBe("Zájemce");
-    expect(after.settings.value.owners).toEqual(opened.settings.value.owners);
+    expect(after.settings.value.dealTypes).toEqual(opened.settings.value.dealTypes);
   });
 
   test("the settings: what is typed while a save waits stays in the form", async () => {
     const opened = await loadAppData();
     let state = openForm(opened.settings, settingsFormOf);
-    state = { ...state, form: { ...state.form, owners: "Jana Ukázková\nNový Obchodník" } };
+    state = {
+      ...state,
+      form: {
+        ...state.form,
+        types: [...state.form.types, { key: "new-1", id: "", label: "Nový typ" }],
+      },
+    };
     const submitted = state.form;
     const sending = submitSettings(opened.settings, submitted);
     // The person switches the ARES lookup on before the save answers.
     state = { ...state, form: { ...state.form, ares: true } };
     const stored = await sending;
     state = afterSave(state, stored, submitted, settingsFormOf);
-    expect(state.form.owners).toBe("Jana Ukázková\nNový Obchodník");
+    expect(state.form.types.at(-1)?.label).toBe("Nový typ");
     expect(state.form.ares).toBe(true);
     expect(state.base?.revision).toBe(stored.revision);
     expect(stored.value.aresLookup).toBe(false);
     expect(isTouched(state, settingsFormOf)).toBe(true);
     const next = await submitSettings(state.base ?? stored, state.form);
     expect(next.value.aresLookup).toBe(true);
-    expect(next.value.owners).toEqual(["Jana Ukázková", "Nový Obchodník"]);
+    expect(next.value.dealTypes).toContainEqual({ id: "novy-typ", label: "Nový typ" });
   });
 
   test("the notice says what happened and offers the current version or going on", () => {
@@ -697,7 +778,7 @@ describe("two pages over one store", () => {
       await api.createDeal({
         title: "Vybavení recepce",
         companyId: "C-0001",
-        owner: "Jana Ukázková",
+        ownerId: "S-0001",
         stageId: "qualified",
         value: 6_400_000,
         expectedClose: "2027-03-31",
@@ -719,7 +800,7 @@ describe("two pages over one store", () => {
         expect(shown).toContain("Vybavení recepce");
         expect(shown).toContain("Přejmenovaný případ");
       }
-      expect(list).toContain("Všechny (15)");
+      expect(list).toContain(">10</span>");
     } finally {
       stop.abort();
       store.close();
