@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseYaml, toStableYaml } from "@lazurio/repository-db";
 import { readDataDirectory } from "../src/data/directory.ts";
+import { COLLECTION_NAMES } from "../src/domain/collections.ts";
 import { LOCALES } from "../src/i18n/locale.ts";
 import { sampleData, seedDirectory, TODAY } from "./support/seed.ts";
 
@@ -30,6 +31,8 @@ describe("the starts this template ships", () => {
       const { data, warnings } = readDataDirectory(seedDirectory(locale, "empty"), TODAY);
       expect(data.companies.length + data.contacts.length).toBe(0);
       expect(data.deals.length + data.activities.length).toBe(0);
+      expect(data.salespeople.length + data.pricebook.length + data.quotes.length).toBe(0);
+      expect(data.forecastEntries.length + data.forecastNotes.length).toBe(0);
       expect(warnings).toEqual([]);
       expect(data.settings?.currency).toBe("CZK");
       expect(data.settings?.stages.map((stage) => [stage.kind, stage.probability])).toEqual([
@@ -41,8 +44,16 @@ describe("the starts this template ships", () => {
         ["lost", 0],
       ]);
       expect(data.settings?.lossReasons.length).toBeGreaterThan(0);
-      expect(data.settings?.owners).toBeUndefined();
       expect(data.settings?.aresLookup).toBe(false);
+      // What a new quote and an invoice start with, ready to change.
+      expect(data.settings?.quotes.vatRate).toBe(2100);
+      expect(data.settings?.quotes.sections.length).toBeGreaterThan(0);
+      expect(data.settings?.paymentDueDays).toBe(14);
+      expect(data.settings?.billingEntities).toHaveLength(1);
+      // Every collection of the data has its directory, so the layout shows.
+      expect(readdirSync(seedDirectory(locale, "empty")).sort()).toEqual(
+        [...COLLECTION_NAMES].sort(),
+      );
     });
 
     test(`${locale}: the sample covers the whole pipeline`, () => {
@@ -60,6 +71,22 @@ describe("the starts this template ships", () => {
       expect(new Set(data.activities.map((activity) => activity.type))).toEqual(
         new Set(["call", "meeting", "email", "note", "task"]),
       );
+      // 0.2.0: salespeople (one has left), a price list, quotes with a
+      // revision, payment plans in every state and manual forecast rows.
+      expect(data.salespeople.map((person) => [person.id, person.active])).toEqual([
+        ["S-0001", true],
+        ["S-0002", true],
+        ["S-0003", false],
+      ]);
+      expect(data.pricebook).toHaveLength(8);
+      expect(data.quotes).toHaveLength(7);
+      expect(new Set(data.quotes.map((quote) => quote.status))).toEqual(
+        new Set(["draft", "active", "approved", "superseded"]),
+      );
+      const plans = data.deals.flatMap((deal) => (deal.paymentPlan ? [deal.paymentPlan] : []));
+      expect(plans.map((plan) => plan.status).sort()).toEqual(["planned", "planned", "unassigned"]);
+      expect(data.forecastEntries).toHaveLength(3);
+      expect(data.forecastNotes.map((note) => note.id)).toEqual(["2026-12"]);
     });
   }
 
@@ -71,10 +98,37 @@ describe("the starts this template ships", () => {
       reasons: data.settings.lossReasons.map((reason) => reason.id),
       companies: data.companies.map((company) => company.id).sort(),
       contacts: data.contacts.map((contact) => [contact.id, contact.companyId]),
+      salespeople: data.salespeople.map(({ id, active }) => [id, active]),
+      pricebook: data.pricebook.map(({ id, unitPrice, sectionId, active }) => [
+        id,
+        unitPrice,
+        sectionId,
+        active,
+      ]),
+      quotes: data.quotes.map(({ id, dealId, status, issuedOn, vatRate, lines, changeReserve }) => [
+        id,
+        dealId,
+        status,
+        issuedOn,
+        vatRate,
+        changeReserve,
+        lines.map(({ id: line, quantity, unitPrice, discount }) => [
+          line,
+          quantity,
+          unitPrice,
+          discount,
+        ]),
+      ]),
+      forecastEntries: data.forecastEntries.map(({ title: _t, note: _n, ...rest }) => rest),
       deals: data.deals.map((deal) => [
         deal.id,
         deal.companyId,
         deal.contactIds,
+        deal.ownerId,
+        deal.dealTypeId,
+        deal.billingEntityId,
+        deal.paymentPlan?.status,
+        deal.paymentPlan?.payments.map(({ label: _l, note: _n, ...rest }) => rest),
         deal.stageId,
         deal.value,
         deal.probability,

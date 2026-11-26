@@ -2,9 +2,104 @@
 
 ## Unreleased
 
-Work in progress towards 0.2.0: salespeople, pipeline views, quotes with a
-price list, a payment-plan forecast, statistics, commercial terms and a CSV
-import.
+0.2.0 brings Deals to the structure of a mature sales pipeline: salespeople
+as records, a price list, quotes with revisions, a forecast that is the
+payment plans of won deals, statistics against the previous period, a record
+of commercial terms and a CSV import. The data changes shape; an Organization
+on 0.1.x migrates it (below).
+
+### For whoever runs it
+
+- **Salespeople are records.** `salespeople` (`S-0001`): name, role,
+  contacts and whether still active. A deal names its salesperson by id
+  (`ownerId`) instead of a free name; somebody who left stays, inactive, and
+  an open deal of theirs is a warning.
+- **The settings grow** (`deals.settings.v2`): deal types, the billing
+  entities that issue quotes and invoices, what a new quote starts with (VAT
+  rate, validity, sections, units, the texts of the terms, the version and
+  address of the commercial terms) and the days an invoice is due; a company
+  may have its own.
+- **Deals** (`deals.deal.v2`) carry a deal type, a billing entity, the quote
+  their value follows and, once won, a payment plan.
+- **The price list** (`pricebook`, `I-0001`): items with a code, a unit, a
+  price without VAT and a quote section; an item no longer sold stays,
+  inactive.
+- **Quotes** (`quotes`): a quote of a deal from the price list and the
+  settings, with lines in sections, quantities to three decimals, discounts,
+  one VAT rate or reverse charge, a reserve for changes and the customer
+  copied as it was. Every revision is a record of its own
+  (`Q-2026-0001-r2`), so what was sent never changes; statuses draft,
+  active (sent), approved, superseded and cancelled. A line is rounded half
+  up once, the VAT once per quote. While a deal has a quote with lines, its
+  value follows its primary quote (the one it names, else the approved one,
+  else the newest live revision), saved in the same write. A print view
+  makes the PDF; the App sends nothing.
+- **A record of the commercial terms** on a quote: business or consumer, the
+  version and address of the terms, when and how the customer accepted them,
+  and per area whether the standard terms apply. Never the legal text.
+- **The forecast is the payment plans of won deals**, no longer a weighted
+  pipeline: each payment planned, invoiced, overdue or paid, by month and
+  quarter of a year, with what is invoiced, paid, overdue and on the way,
+  grouped and filtered by salesperson, deal type and billing entity, plus
+  manual rows (`forecastEntries`) and notes on a month (`forecastNotes`). A
+  won deal without a plan waits among the unassigned. Winning a deal plans
+  its payments or leaves it unassigned; a plan adds up exactly to the value,
+  a split by shares gives the last payment what is left.
+- **Statistics against the previous period** of the same length: won, lost,
+  new deals and quotes, conversion, average win and cycle, the open
+  pipeline, a leaderboard of the salespeople, charts by week or month, the
+  won value day by day, every number with the deals behind it; period
+  presets from today to last year; filters by salesperson and deal type.
+- **A CSV import** of companies, contacts and deals with a preview row by
+  row, written as one draft.
+- **The App**: a navigation in sections, the deals as a table with sortable,
+  movable and resizable columns kept per viewer or as a board by stage with
+  drag and drop, and pages for the quotes, the price list, the salespeople,
+  the forecast, the statistics and the import.
+- **The storage port** gains generic `list`, `get`, `save`, `saveAll` and
+  `remove`: a write of several records of any collections is checked whole
+  and written whole or not at all, and a removal is refused while another
+  record names the record. The shared contract suite covers them.
+- **New rules across records**: a salesperson, a deal type, a billing entity
+  and a quote a record names exist; only a won deal has a payment plan and
+  a planned one adds up to the value; an invoice's due date and payment are
+  not before it; a quote's id, sections and lines agree. Warnings: a value
+  that differs from the quote, two approved quotes of a deal, approved terms
+  without evidence of their acceptance.
+- **Tools for agents**: `list_salespeople`, `list_pricebook`, `list_quotes`,
+  `get_quote`, `create_quote`, `save_quote`, `set_quote_status`,
+  `revise_quote`, `plan_payments`, `mark_payment` and
+  `create_forecast_entry`; `get_forecast` takes a year and filters,
+  `get_stats` filters, and the deal tools take `owner_id`. Every one of them
+  writes a draft or only reads; `publish_draft` stays the one publication.
+- **Skills**: a new `prepare-quote` prepares a quote from a message or a call
+  note as a draft, from the price list where it fits, never inventing a
+  price and never sending it; `create-deal-from-message` names the
+  salesperson by id; `weekly-pipeline-review` reads the payment-plan
+  forecast, what is overdue and what is unassigned; `close-deal` plans the
+  payments of a won deal or leaves it unassigned.
+- **The starts** carry the new collections; the `sample` has three
+  salespeople, a price list, quotes in every status but cancelled, payment
+  plans in every state and manual forecast rows, fictional only.
+
+### For whoever adopts it
+
+- **The data must be migrated.** The App of 0.2.0 does not read 0.1 data:
+  `bun run migrate <data directory> [--lang cs|en] [--write]` turns the
+  names of the salespeople into records, moves the deals to `ownerId`, keeps
+  a 0.1 quote reference in the description, gives the settings what a new
+  quote starts with and leaves every won deal unassigned in the forecast. It
+  stamps every record it writes and is idempotent.
+- **The data repository** takes the release's `schemas/` (five new, three
+  changed) and `scripts/validate.ts`, which now checks the shapes the quotes
+  use.
+- **The order**: the Module's pull request, then in its worktree the
+  schemas, the migration and both validations in the data checkout, the
+  review and the publication of that draft in the App, and the merge of the
+  Module right after, all on the person's word (`docs/adoption.md`, "Taking
+  0.2.0"). Afterwards the person checks the salespeople it created, fills
+  the deal types, the billing entities and the price list, and plans the
+  payments of the won deals that should count in the forecast.
 
 ## 0.1.2 — 2026-11-26
 

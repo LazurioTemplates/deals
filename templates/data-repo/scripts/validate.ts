@@ -21,6 +21,7 @@ type Schema = {
   minLength?: number;
   maxLength?: number;
   minItems?: number;
+  maxItems?: number;
   minimum?: number;
   maximum?: number;
   exclusiveMinimum?: number;
@@ -28,6 +29,7 @@ type Schema = {
   properties?: Record<string, Schema>;
   required?: string[];
   additionalProperties?: boolean | Schema;
+  propertyNames?: Schema;
   items?: Schema;
   anyOf?: Schema[];
   oneOf?: Schema[];
@@ -117,6 +119,9 @@ export function check(schema: Schema, value: unknown, at = ""): string[] {
     if (schema.minItems !== undefined && value.length < schema.minItems) {
       errors.push(`${here}: needs at least ${schema.minItems} item(s)`);
     }
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) {
+      errors.push(`${here}: has at most ${schema.maxItems} item(s)`);
+    }
     if (schema.items) {
       value.forEach((item, index) => {
         errors.push(...check(schema.items as Schema, item, `${at}/${index}`));
@@ -129,9 +134,16 @@ export function check(schema: Schema, value: unknown, at = ""): string[] {
       if (!(key in record)) errors.push(`${at}/${key}: is required`);
     }
     for (const [key, item] of Object.entries(record)) {
+      if (schema.propertyNames && check(schema.propertyNames, key).length > 0) {
+        errors.push(`${at}/${key}: is not an allowed name`);
+        continue;
+      }
       const property = schema.properties?.[key];
       if (property) errors.push(...check(property, item, `${at}/${key}`));
       else if (schema.additionalProperties === false) errors.push(`${at}/${key}: is not allowed`);
+      else if (typeof schema.additionalProperties === "object") {
+        errors.push(...check(schema.additionalProperties, item, `${at}/${key}`));
+      }
     }
   }
   return errors;

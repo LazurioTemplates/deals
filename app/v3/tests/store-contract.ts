@@ -2,7 +2,16 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { type CHANGES, type DealsStore, readOnly } from "../src/data/store.ts";
 import { forecast } from "../src/domain/forecast.ts";
 import { errorsOf, warningsOf } from "../src/domain/rules.ts";
-import { newActivity, newCompany, newContact, newDeal, sampleData, TODAY } from "./support/seed.ts";
+import {
+  newActivity,
+  newCompany,
+  newContact,
+  newDeal,
+  newPricebookItem,
+  newSalesperson,
+  sampleData,
+  TODAY,
+} from "./support/seed.ts";
 
 /**
  * The shared test suite of the storage port. Every implementation runs it:
@@ -54,6 +63,8 @@ export function storeContract(
         contacts: await store.listContacts(),
         deals: await store.listDeals(),
         activities: await store.listActivities(),
+        pricebook: await store.list("pricebook"),
+        notes: await store.list("forecastNotes"),
         draft: (await store.draft()).records?.length ?? 0,
       });
       const before = await state();
@@ -63,6 +74,12 @@ export function storeContract(
         saveContact: () => view.saveContact(newContact(), null),
         saveDeal: () => view.saveDeal(newDeal(), null),
         saveActivity: () => view.saveActivity(newActivity(), null),
+        save: () => view.save("pricebook", newPricebookItem(), null),
+        saveAll: () =>
+          view.saveAll([
+            { collection: "salespeople", value: newSalesperson(), baseRevision: null },
+          ]),
+        remove: () => view.remove("forecastNotes", "2026-12", "r"),
         publish: () => view.publish({ expectedRevision: "r" }),
         finishSend: () => view.finishSend("h"),
         discard: () => view.discard({ kind: "draft" }, "r"),
@@ -110,6 +127,31 @@ export function storeContract(
       expect(activities[0]?.value.id).toBe("A-2026-00013");
       expect(activities.at(-1)?.value.id).toBe("A-2026-00004");
       expect((await store.getActivity("A-2026-00015"))?.value.done).toBe(true);
+      // The collections of 0.2.0, through the generic reads.
+      const people = await store.list("salespeople");
+      expect(people.map((entry) => entry.value.name)).toEqual([
+        "Jana Ukázková",
+        "Karel Příkladný",
+        "Petr Vzorný",
+      ]);
+      expect((await store.list("pricebook")).map((entry) => entry.value.id)).toHaveLength(8);
+      // Quotes: the newest number first, its latest revision before the older one.
+      expect((await store.list("quotes")).map((entry) => entry.value.id)).toEqual([
+        "Q-2026-0006-r1",
+        "Q-2026-0005-r1",
+        "Q-2026-0004-r1",
+        "Q-2026-0003-r1",
+        "Q-2026-0002-r1",
+        "Q-2026-0001-r2",
+        "Q-2026-0001-r1",
+      ]);
+      expect((await store.list("forecastEntries")).map((entry) => entry.value.id)).toEqual([
+        "F-2026-0001",
+        "F-2026-0002",
+        "F-2026-0003",
+      ]);
+      expect((await store.get("forecastNotes", "2026-12"))?.value.text).toContain("1. etapy");
+      expect(await store.get("quotes", "Q-2026-0404-r1")).toBeNull();
       // The sample has no error and the two warnings it is meant to show.
       const issues = await store.check("en", TODAY);
       expect(errorsOf(issues)).toEqual([]);
@@ -123,6 +165,9 @@ export function storeContract(
       const data = await store.readData();
       expect(data.deals).toHaveLength(14);
       expect(data.activities).toHaveLength(20);
+      expect(data.salespeople).toHaveLength(3);
+      expect(data.quotes).toHaveLength(7);
+      expect(data.forecastEntries).toHaveLength(3);
       expect(forecast(data, { today: TODAY })).toEqual(forecast(sampleData(), { today: TODAY }));
     });
 
@@ -173,6 +218,17 @@ export function storeContract(
       const deal = await store.getDeal("D-2026-0001");
       const activity = await store.getActivity("A-2026-00001");
       if (!company || !contact || !deal || !activity) throw new Error("sample records missing");
+      const generic = new Map<string, { value: object; revision: string }>();
+      for (const [collection, id] of [
+        ["salespeople", "S-0002"],
+        ["pricebook", "I-0001"],
+        ["quotes", "Q-2026-0003-r1"],
+        ["forecastEntries", "F-2026-0002"],
+        ["forecastNotes", "2026-12"],
+      ] as const) {
+        const found = await store.get(collection, id);
+        if (found) generic.set(collection, found);
+      }
       const cases = [
         {
           opened: settings,
@@ -204,12 +260,30 @@ export function storeContract(
           save: (value: unknown, base: string) => store.saveActivity(value as never, base),
           read: async () => (await store.getActivity("A-2026-00001"))?.revision,
         },
+        ...(
+          [
+            ["salespeople", "S-0002", { role: "Senior obchodník" }],
+            ["pricebook", "I-0001", { unitPrice: 1_390_000 }],
+            ["quotes", "Q-2026-0003-r1", { title: "Pokladna B" }],
+            ["forecastEntries", "F-2026-0002", { title: "Paušál B" }],
+            ["forecastNotes", "2026-12", { text: "Poznámka B" }],
+          ] as const
+        ).map(([collection, id, change]) => {
+          const opened = generic.get(collection);
+          if (!opened) throw new Error(`${collection}/${id} missing`);
+          return {
+            opened,
+            edit: { ...opened.value, ...change },
+            save: (value: unknown, base: string) => store.save(collection, value as never, base),
+            read: async () => (await store.get(collection, id))?.revision,
+          };
+        }),
       ];
       for (const { opened, edit, save, read } of cases) {
         const b = await save(edit, opened.revision);
         const back = await save(opened.value, b.revision);
         // A again: the same content, a new revision each time, never a repeat.
-        expect(back.value).toEqual(opened.value);
+        expect(back.value as unknown).toEqual(opened.value);
         expect(new Set([opened.revision, b.revision, back.revision]).size).toBe(3);
         expect(await read()).toBe(back.revision);
         // The value handed out carries no audit fields.
@@ -328,9 +402,10 @@ export function storeContract(
     });
 
     test("a warning never blocks a save", async () => {
-      // P-0003 belongs to C-0002, not to the deal's C-0001: a warning.
+      // P-0003 belongs to C-0002, not to the deal's C-0001, and S-0003 has
+      // left: warnings. A salesperson who does not exist is an error.
       const saved = await store.saveDeal(
-        { ...newDeal(), contactIds: ["P-0003"], owner: "Someone Else", expectedClose: undefined },
+        { ...newDeal(), contactIds: ["P-0003"], ownerId: "S-0003", expectedClose: undefined },
         null,
       );
       expect(saved.value.contactIds).toEqual(["P-0003"]);
@@ -339,9 +414,144 @@ export function storeContract(
       );
       expect(issues.map((issue) => [issue.severity, issue.code])).toEqual([
         ["warning", "contact_other_company"],
-        ["warning", "owner_unknown"],
         ["warning", "expected_close_missing"],
+        ["warning", "salesperson_inactive"],
       ]);
+      expect(
+        await refusal(() => store.saveDeal({ ...newDeal("D-2026-0016"), ownerId: "S-0404" }, null)),
+      ).toBe("invalid_record");
+    });
+
+    test("a record of any collection is saved, read and listed through the generic port", async () => {
+      const person = await store.save("salespeople", newSalesperson(), null);
+      expect(person.value).toEqual(newSalesperson());
+      expect((await store.get("salespeople", "S-0004"))?.revision).toBe(person.revision);
+      expect((await store.list("salespeople")).map((entry) => entry.value.id)).toContain("S-0004");
+      const item = await store.save("pricebook", newPricebookItem(), null);
+      expect(item.value.unitPrice).toBe(250_000);
+      expect(
+        await refusal(() =>
+          store.save("pricebook", { ...newPricebookItem(), unitPrice: -1 }, null),
+        ),
+      ).toBe("invalid_record");
+      expect(
+        (await refused(() => store.save("pricebook", newPricebookItem(), null))).currentRevision,
+      ).toBe(item.revision);
+      const card = await store.draft("en");
+      expect(card.records?.map((record) => record.resource.metadata?.typeLabel).sort()).toEqual([
+        "Price list item",
+        "Salesperson",
+      ]);
+    });
+
+    test("saveAll writes records of several collections as one write, or nothing", async () => {
+      const deal = await store.getDeal("D-2026-0004");
+      const quote = await store.get("quotes", "Q-2026-0002-r1");
+      if (!deal || !quote) throw new Error("sample records missing");
+      const before = (await store.draft()).records?.length ?? 0;
+      // A stale revision of one change refuses the whole write.
+      const stale = await refused(() =>
+        store.saveAll([
+          { collection: "salespeople", value: newSalesperson(), baseRevision: null },
+          { collection: "deals", value: { ...deal.value, title: "Nový" }, baseRevision: "stale" },
+        ]),
+      );
+      expect(stale.code).toBe("record_changed");
+      expect(stale.currentRevision).toBe(deal.revision);
+      expect(await store.get("salespeople", "S-0004")).toBeNull();
+      // So does a change that breaks a rule across records.
+      expect(
+        await refusal(() =>
+          store.saveAll([
+            { collection: "salespeople", value: newSalesperson(), baseRevision: null },
+            {
+              collection: "deals",
+              value: { ...deal.value, ownerId: "S-0404" },
+              baseRevision: deal.revision,
+            },
+          ]),
+        ),
+      ).toBe("invalid_record");
+      expect(await store.get("salespeople", "S-0004")).toBeNull();
+      expect((await store.draft()).records?.length ?? 0).toBe(before);
+      // The same record twice in one write is refused.
+      expect(
+        await refusal(() =>
+          store.saveAll([
+            { collection: "deals", value: deal.value, baseRevision: deal.revision },
+            { collection: "deals", value: deal.value, baseRevision: deal.revision },
+          ]),
+        ),
+      ).toBe("bad_request");
+      // A new salesperson and the deal handed to them, together: one depends on the other.
+      const [person, moved, revised] = await store.saveAll([
+        { collection: "salespeople", value: newSalesperson(), baseRevision: null },
+        {
+          collection: "deals",
+          value: { ...deal.value, ownerId: "S-0004" },
+          baseRevision: deal.revision,
+        },
+        {
+          collection: "quotes",
+          value: { ...quote.value, title: "Chladicí vozy, revize" },
+          baseRevision: quote.revision,
+        },
+      ]);
+      expect(person?.revision).toBe((await store.get("salespeople", "S-0004"))?.revision);
+      expect(moved?.revision).toBe((await store.getDeal("D-2026-0004"))?.revision);
+      expect(revised?.revision).toBe((await store.get("quotes", "Q-2026-0002-r1"))?.revision);
+      expect((await store.getDeal("D-2026-0004"))?.value.ownerId).toBe("S-0004");
+      expect((await store.draft()).records).toHaveLength(3);
+    });
+
+    test("a removal is a draft, names its revision and is refused while a record names it", async () => {
+      const note = await store.get("forecastNotes", "2026-12");
+      if (!note) throw new Error("2026-12 missing");
+      expect(await refusal(() => store.remove("forecastNotes", "2026-12", "stale"))).toBe(
+        "record_changed",
+      );
+      await store.remove("forecastNotes", "2026-12", note.revision);
+      expect(await store.get("forecastNotes", "2026-12")).toBeNull();
+      const card = await store.draft("en");
+      expect(card.records?.map((record) => record.resource.changes[0]?.kind)).toEqual(["deleted"]);
+      // Gone already: a second removal is refused.
+      expect(await refusal(() => store.remove("forecastNotes", "2026-12", note.revision))).toBe(
+        "record_changed",
+      );
+      // A salesperson, a company or a deal another record names stays.
+      for (const [collection, id] of [
+        ["salespeople", "S-0001"],
+        ["companies", "C-0002"],
+        ["deals", "D-2026-0002"],
+        ["contacts", "P-0001"],
+      ] as const) {
+        const found = await store.get(collection, id);
+        if (!found) throw new Error(`${collection}/${id} missing`);
+        expect({
+          id,
+          code: await refusal(() => store.remove(collection, id, found.revision)),
+        }).toEqual({ id, code: "invalid_record" });
+        expect(await store.get(collection, id)).not.toBeNull();
+      }
+      // A forecast row nothing names goes; saveAll removes and saves at once.
+      const row = await store.get("forecastEntries", "F-2026-0002");
+      const item = await store.get("pricebook", "I-0008");
+      if (!row || !item) throw new Error("sample records missing");
+      const result = await store.saveAll([
+        { collection: "forecastEntries", remove: "F-2026-0002", baseRevision: row.revision },
+        {
+          collection: "pricebook",
+          value: { ...item.value, active: false },
+          baseRevision: item.revision,
+        },
+      ]);
+      expect(result[0]).toBeNull();
+      expect(await store.get("forecastEntries", "F-2026-0002")).toBeNull();
+      expect((await store.get("pricebook", "I-0008"))?.value.active).toBe(false);
+      // Discarding the draft brings the removed records back.
+      await store.discard({ kind: "draft" }, (await store.draft()).revision ?? "");
+      expect(await store.get("forecastNotes", "2026-12")).not.toBeNull();
+      expect(await store.get("forecastEntries", "F-2026-0002")).not.toBeNull();
     });
 
     test("a stage or a loss reason a deal uses cannot be removed", async () => {

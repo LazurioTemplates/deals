@@ -1,1 +1,795 @@
 /* The quotes pages' layout; colours, type and spacing come from the design system's --ds-* tokens. */
+
+/* List of quotes */
+.quotes-filters {
+  display: grid;
+  gap: var(--ds-space-8);
+  margin-bottom: var(--ds-space-16);
+  min-width: 0;
+}
+
+.quote-row-faded {
+  opacity: 0.6;
+}
+
+.quote-status-select .ds-select {
+  min-height: var(--ds-size-control-sm);
+  padding-block: 0;
+}
+
+.quote-board .board-column--muted {
+  opacity: 0.65;
+}
+
+.quote-card-head,
+.quote-card-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ds-space-8);
+}
+
+.quote-card-title {
+  font-weight: var(--ds-type-label-weight);
+  overflow-wrap: anywhere;
+}
+
+/* Pickers in dialogs: a deal for a new quote, an item of the price list */
+.picker {
+  display: grid;
+  gap: var(--ds-space-12);
+}
+
+.picker-list {
+  display: grid;
+  gap: var(--ds-space-4);
+  max-height: min(60dvh, 480px);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.picker-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-12);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--ds-space-8) var(--ds-space-12);
+  border: var(--ds-size-border) solid var(--ds-color-line);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-color-surface);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.picker-option:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.picker-option:focus-visible {
+  outline: var(--ds-size-focus-width) solid var(--ds-color-focus);
+  outline-offset: var(--ds-size-focus-offset);
+}
+
+.picker-option-main {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-width: 0;
+}
+
+.picker-option-name {
+  font-weight: var(--ds-type-label-weight);
+  overflow-wrap: anywhere;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .picker-option:not(:disabled):hover {
+    border-color: var(--ds-color-line-strong);
+    background: var(--ds-color-surface-hover);
+  }
+}
+
+/* The quote editor */
+.quote-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  align-items: start;
+  gap: var(--ds-space-24);
+}
+
+.quote-main,
+.quote-aside {
+  min-width: 0;
+}
+
+.quote-aside {
+  position: sticky;
+  top: var(--ds-space-16);
+}
+
+.quote-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-8) var(--ds-space-12);
+  margin-bottom: var(--ds-space-8);
+}
+
+.quote-card-heading h2 {
+  margin: 0;
+}
+
+.quote-section {
+  display: grid;
+  gap: var(--ds-space-8);
+  padding-block: var(--ds-space-16);
+  border-top: var(--ds-size-border) solid var(--ds-color-line);
+}
+
+.quote-section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-8);
+}
+
+.quote-section-label.ds-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 360px;
+  font-weight: var(--ds-type-label-weight);
+}
+
+.quote-section-total {
+  margin-left: auto;
+  font-weight: var(--ds-type-label-weight);
+}
+
+.quote-section-empty {
+  margin: 0;
+}
+
+.quote-section-add,
+.quote-add-section-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-8);
+}
+
+.quote-add-section-form .ds-input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.quote-add-section {
+  padding-top: var(--ds-space-16);
+  border-top: var(--ds-size-border) solid var(--ds-color-line);
+}
+
+.quote-add-section-select {
+  max-width: 280px;
+}
+
+/* A line: the name and description, then the numbers. The layout follows
+   the width of the card (a container query), not of the screen, because the
+   summary beside it takes part of a wide screen. Narrow: the numbers stack
+   under the name with their labels; medium: in one row under the name;
+   wide: everything in one row under a header. */
+.quote-lines {
+  display: grid;
+  gap: var(--ds-space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  container-type: inline-size;
+}
+
+.quote-line {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    "name name name"
+    "qty unit price"
+    "discount total total"
+    "actions actions actions";
+  align-items: start;
+  gap: var(--ds-space-8);
+  padding-bottom: var(--ds-space-12);
+  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+}
+
+.quote-line-labels {
+  display: none;
+}
+
+.quote-line-name {
+  display: grid;
+  grid-area: name;
+  gap: var(--ds-space-4);
+  min-width: 0;
+}
+
+.quote-line-qty {
+  grid-area: qty;
+}
+
+.quote-line-unit {
+  grid-area: unit;
+}
+
+.quote-line-price {
+  grid-area: price;
+}
+
+.quote-line-discount {
+  grid-area: discount;
+}
+
+.quote-line-total {
+  display: grid;
+  grid-area: total;
+  justify-items: end;
+  align-self: end;
+  padding-bottom: var(--ds-space-8);
+}
+
+.quote-line-actions {
+  display: flex;
+  grid-area: actions;
+  justify-content: flex-end;
+}
+
+.quote-line > label {
+  display: grid;
+  gap: var(--ds-space-2);
+  min-width: 0;
+}
+
+.quote-line .ds-input,
+.quote-line .ds-select {
+  width: 100%;
+  min-width: 0;
+}
+
+.quote-line-label {
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-meta-size);
+}
+
+@container (min-width: 560px) {
+  .quote-line {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+    grid-template-areas:
+      "name name name name name actions"
+      "qty unit price . total actions";
+  }
+
+  .quote-lines--discounts .quote-line {
+    grid-template-areas:
+      "name name name name name actions"
+      "qty unit price discount total actions";
+  }
+
+  .quote-line-actions {
+    align-self: start;
+  }
+}
+
+@container (min-width: 880px) {
+  .quote-line {
+    grid-template-columns: minmax(0, 1fr) 80px 88px 112px 128px auto;
+    grid-template-areas: "name qty unit price total actions";
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .quote-lines--discounts .quote-line {
+    grid-template-columns: minmax(0, 1fr) 80px 88px 112px 76px 128px auto;
+    grid-template-areas: "name qty unit price discount total actions";
+  }
+
+  .quote-line-labels {
+    display: grid;
+    color: var(--ds-color-ink-muted);
+    font-size: var(--ds-type-meta-size);
+  }
+
+  .quote-line-labels .quote-line-qty,
+  .quote-line-labels .quote-line-price,
+  .quote-line-labels .quote-line-discount,
+  .quote-line-labels .quote-line-total {
+    text-align: right;
+  }
+
+  .quote-line-labels .quote-line-actions {
+    width: 104px;
+  }
+
+  .quote-line-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .quote-line-total {
+    align-self: start;
+    padding-top: var(--ds-space-8);
+    padding-bottom: 0;
+  }
+}
+
+.item-name {
+  position: relative;
+  min-width: 0;
+}
+
+.item-name-list {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + var(--ds-space-4));
+  z-index: var(--ds-z-dropdown);
+  max-height: 320px;
+  overflow-y: auto;
+  padding: var(--ds-space-4);
+  border: var(--ds-size-border) solid var(--ds-color-line);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-color-surface-raised);
+  box-shadow: var(--ds-shadow-float);
+}
+
+.item-name-option {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ds-space-12);
+  padding: var(--ds-space-8);
+  border-radius: var(--ds-radius-xs);
+  cursor: pointer;
+}
+
+.item-name-option.is-active {
+  background: var(--ds-color-surface-selected);
+}
+
+.item-name-option-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Summary */
+.quote-totals {
+  display: grid;
+  gap: var(--ds-space-4);
+  margin: 0 0 var(--ds-space-16);
+}
+
+.quote-totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ds-space-12);
+}
+
+.quote-totals dt {
+  color: var(--ds-color-ink-muted);
+}
+
+.quote-totals dd {
+  margin: 0;
+}
+
+.quote-totals-section dt {
+  padding-left: var(--ds-space-8);
+}
+
+.quote-totals-strong {
+  padding-top: var(--ds-space-4);
+  border-top: var(--ds-size-border) solid var(--ds-color-line);
+  font-weight: var(--ds-type-label-weight);
+}
+
+.quote-totals-strong dt {
+  color: inherit;
+}
+
+.quote-summary-fields {
+  display: grid;
+  gap: var(--ds-space-12);
+  margin-bottom: var(--ds-space-16);
+}
+
+.quote-save {
+  display: grid;
+  gap: var(--ds-space-8);
+}
+
+.quote-save p {
+  margin: 0;
+}
+
+.quote-revisions {
+  display: grid;
+  gap: var(--ds-space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quote-revisions li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-8);
+}
+
+/* Terms */
+.quote-terms-field {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ds-space-16);
+  margin-top: var(--ds-space-16);
+}
+
+.quote-terms-preview {
+  min-width: 0;
+  padding: var(--ds-space-12);
+  border: var(--ds-size-border) dashed var(--ds-color-line);
+  border-radius: var(--ds-radius-sm);
+}
+
+.quote-terms-preview-label {
+  display: block;
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-meta-size);
+}
+
+.terms-preview,
+.quote-sheet-terms-text {
+  overflow-wrap: anywhere;
+}
+
+.terms-preview h4,
+.quote-sheet-terms-text h4 {
+  margin: var(--ds-space-8) 0 var(--ds-space-4);
+  font-size: var(--ds-type-label-size);
+  font-weight: var(--ds-type-label-weight);
+}
+
+.terms-preview p,
+.terms-preview ul,
+.quote-sheet-terms-text p,
+.quote-sheet-terms-text ul {
+  margin: 0 0 var(--ds-space-8);
+}
+
+.terms-preview ul,
+.quote-sheet-terms-text ul {
+  padding-left: var(--ds-space-20);
+}
+
+.quote-terms-areas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--ds-space-12) var(--ds-space-16);
+  margin-bottom: var(--ds-space-16);
+}
+
+/* Price list */
+.pricebook-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: var(--ds-type-label-weight);
+  text-align: start;
+  cursor: pointer;
+}
+
+.pricebook-open:focus-visible {
+  outline: var(--ds-size-focus-width) solid var(--ds-color-focus);
+  outline-offset: var(--ds-size-focus-offset);
+}
+
+.pricebook-form {
+  display: grid;
+  gap: var(--ds-space-16);
+}
+
+/* The printable quote: an A4 sheet on the screen, the only thing printed. */
+.quote-print-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--ds-space-8);
+  max-width: 210mm;
+  margin: 0 auto var(--ds-space-16);
+}
+
+.quote-print-notice {
+  max-width: 210mm;
+  margin: 0 auto var(--ds-space-16);
+}
+
+.quote-sheet {
+  display: grid;
+  gap: var(--ds-space-24);
+  max-width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 18mm 16mm;
+  border: var(--ds-size-border) solid var(--ds-color-line);
+  border-radius: var(--ds-radius-xs);
+  background: var(--ds-color-surface);
+  box-shadow: var(--ds-shadow-float);
+  color: var(--ds-color-ink);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-leading);
+  align-content: start;
+}
+
+.quote-sheet p {
+  margin: 0;
+}
+
+.quote-sheet-head {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ds-space-24);
+}
+
+.quote-sheet-party {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.quote-sheet-label {
+  margin-bottom: var(--ds-space-4);
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-status-size);
+  font-weight: var(--ds-type-status-weight);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.quote-sheet-name {
+  font-weight: var(--ds-type-label-weight);
+}
+
+.quote-sheet-title h1 {
+  margin: 0;
+  font-family: var(--ds-type-display-font);
+  font-size: var(--ds-type-display-size);
+  font-weight: var(--ds-type-display-weight);
+  line-height: var(--ds-type-display-leading);
+}
+
+.quote-sheet-project {
+  margin-top: var(--ds-space-4);
+  font-size: var(--ds-type-lead-size);
+  overflow-wrap: anywhere;
+}
+
+.quote-sheet-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-8) var(--ds-space-24);
+  margin: var(--ds-space-12) 0 0;
+}
+
+.quote-sheet-meta dt {
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-meta-size);
+}
+
+.quote-sheet-meta dd {
+  margin: 0;
+  font-weight: var(--ds-type-label-weight);
+}
+
+.quote-sheet-block {
+  min-width: 0;
+}
+
+.quote-sheet-block h2 {
+  margin: 0 0 var(--ds-space-8);
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-leading);
+}
+
+.quote-sheet-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.quote-sheet-table th,
+.quote-sheet-table td {
+  padding: var(--ds-space-4) var(--ds-space-8);
+  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+  text-align: start;
+  vertical-align: top;
+}
+
+.quote-sheet-table th.num,
+.quote-sheet-table td.num {
+  text-align: right;
+}
+
+.quote-sheet-table thead th {
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-meta-size);
+  font-weight: var(--ds-type-label-weight);
+}
+
+.quote-sheet-section th {
+  padding-top: var(--ds-space-12);
+  font-weight: var(--ds-type-label-weight);
+}
+
+.quote-sheet-line-name {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.quote-sheet-line-description {
+  display: block;
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-meta-size);
+  overflow-wrap: anywhere;
+}
+
+.quote-sheet-totals {
+  display: grid;
+  justify-items: end;
+  gap: var(--ds-space-8);
+}
+
+.quote-sheet-totals dl {
+  display: grid;
+  gap: var(--ds-space-4);
+  min-width: min(100%, 320px);
+  margin: 0;
+}
+
+.quote-sheet-totals dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ds-space-16);
+}
+
+.quote-sheet-totals dd {
+  margin: 0;
+}
+
+.quote-sheet-grand {
+  padding-top: var(--ds-space-4);
+  border-top: var(--ds-size-border) solid var(--ds-color-line-strong);
+  font-size: var(--ds-type-lead-size);
+  font-weight: var(--ds-type-title-weight);
+}
+
+.quote-sheet-note {
+  color: var(--ds-color-ink-muted);
+  text-align: end;
+}
+
+.quote-sheet-footer {
+  display: grid;
+  gap: var(--ds-space-2);
+  margin-top: var(--ds-space-24);
+  padding-top: var(--ds-space-8);
+  border-top: var(--ds-size-border) solid var(--ds-color-line);
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-meta-size);
+  overflow-wrap: anywhere;
+}
+
+/* Narrower screens: the summary goes under the editor. */
+@media (max-width: 1100px) {
+  .quote-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quote-aside {
+    position: static;
+  }
+}
+
+/* A phone: the numbers of a line stack under its name, with their labels. */
+@media (max-width: 720px) {
+  .quote-terms-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quote-section-label.ds-input {
+    max-width: none;
+  }
+
+  .quote-sheet {
+    min-height: 0;
+    padding: var(--ds-space-16);
+  }
+
+  .quote-sheet-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quote-sheet-lines {
+    min-width: 520px;
+    font-size: var(--ds-type-meta-size);
+  }
+
+  /* A wide table of lines scrolls inside its block, never the page. */
+  .quote-sheet-block {
+    overflow-x: auto;
+  }
+
+  .quote-sheet-table th,
+  .quote-sheet-table td {
+    padding-inline: var(--ds-space-4);
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 14mm 16mm;
+
+    @bottom-right {
+      content: counter(page) " / " counter(pages);
+      font-size: 8pt;
+    }
+  }
+
+  body:has(.quote-print-page) {
+    background: none;
+  }
+
+  body:has(.quote-print-page) .shell {
+    display: block;
+    min-height: 0;
+  }
+
+  body:has(.quote-print-page) .sidebar,
+  body:has(.quote-print-page) .content-area > :not(.quote-print-page),
+  .quote-print-toolbar,
+  .quote-print-notice {
+    display: none;
+  }
+
+  body:has(.quote-print-page) .content-area {
+    padding: 0;
+  }
+
+  .quote-sheet {
+    max-width: none;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    font-size: 9.5pt;
+  }
+
+  .quote-sheet-table thead {
+    display: table-header-group;
+  }
+
+  .quote-sheet-table tr,
+  .quote-sheet-totals,
+  .quote-sheet-head {
+    break-inside: avoid;
+  }
+
+  .quote-sheet-block h2 {
+    break-after: avoid;
+  }
+}

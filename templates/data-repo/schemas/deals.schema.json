@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "deals.deal.v1",
+  "$id": "deals.deal.v2",
   "title": "Deals deals",
   "$comment": "Generated from the Zod schemas of Deals (app/v3/src/domain) by `bun run schema:export`. Do not edit.",
   "type": "object",
   "properties": {
     "schemaVersion": {
-      "const": "deals.deal.v1"
+      "const": "deals.deal.v2"
     },
     "id": {
       "type": "string",
@@ -34,11 +34,22 @@
             "pattern": "^P-[0-9]{4,6}$"
           }
         },
-        "owner": {
+        "ownerId": {
           "type": "string",
-          "minLength": 1
+          "pattern": "^S-[0-9]{4,6}$",
+          "description": "The salesperson who owns the deal („Obchodník“)."
         },
         "stageId": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "dealTypeId": {
+          "description": "The type of the deal („Typ zakázky“) from the settings.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "billingEntityId": {
+          "description": "The entity that invoices it, from the settings; else the first one.",
           "type": "string",
           "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
         },
@@ -46,7 +57,7 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 100000000000000,
-          "description": "An amount in minor units of the currency (haléře): 139000 = 1 390,00 Kč."
+          "description": "The value without VAT in haléře; while the deal has a quote, its primary quote's total."
         },
         "probability": {
           "description": "The chance the deal is won when it differs from its stage's probability.",
@@ -80,16 +91,87 @@
           "type": "string",
           "minLength": 1
         },
-        "quoteRef": {
+        "primaryQuoteId": {
+          "description": "The quote the value follows; else the approved one, else the latest revision.",
+          "type": "string"
+        },
+        "paymentPlan": {
+          "description": "How a won deal is invoiced month by month; only a won deal has one.",
           "type": "object",
           "properties": {
-            "id": {
+            "status": {
               "type": "string",
-              "minLength": 1
+              "enum": [
+                "planned",
+                "unassigned"
+              ]
+            },
+            "reverseCharge": {
+              "description": "Whether the customer accounts for the VAT („Přenesená daňová povinnost“).",
+              "type": "boolean"
+            },
+            "payments": {
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                    "description": "A short id unique within the plan: `p1`, `p2`."
+                  },
+                  "month": {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+                    "description": "The month the payment is invoiced („Fakturační měsíc“)."
+                  },
+                  "amount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000000000000,
+                    "description": "The amount without VAT, in haléře."
+                  },
+                  "label": {
+                    "description": "What it is: „Záloha“, „Doplatek“.",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "invoicedOn": {
+                    "description": "The day the invoice was issued.",
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
+                    "format": "date"
+                  },
+                  "dueOn": {
+                    "description": "The day the invoice is due.",
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
+                    "format": "date"
+                  },
+                  "paidOn": {
+                    "description": "The day it was paid.",
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
+                    "format": "date"
+                  },
+                  "note": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "id",
+                  "month",
+                  "amount"
+                ],
+                "additionalProperties": false
+              }
             }
           },
           "required": [
-            "id"
+            "status",
+            "payments"
           ],
           "additionalProperties": false
         },
@@ -118,7 +200,7 @@
         "id",
         "title",
         "companyId",
-        "owner",
+        "ownerId",
         "stageId",
         "value",
         "createdAt"

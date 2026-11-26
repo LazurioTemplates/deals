@@ -7,6 +7,7 @@ import { api, type Stored } from "../api.ts";
 import { Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
 import { EditNotices, formLocked, isRecordChanged, useRecordForm } from "../edit.tsx";
 import { useT } from "../i18n.tsx";
+import { useLookups } from "../lookups.ts";
 import { href, navigate } from "../routes.ts";
 import { useCanWrite } from "../write.tsx";
 
@@ -60,6 +61,7 @@ export function ContactPage({
   const t = useT();
   const canWrite = useCanWrite();
   const settings = data.settings.value;
+  const lookups = useLookups(data);
   const current = id ? data.contacts.find((entry) => entry.value.id === id) : undefined;
   // The form keeps the contact it came from: a reload of the data never
   // replaces what the person is typing, and the save sends that revision.
@@ -198,6 +200,9 @@ export function ContactPage({
                       <a href={href({ page: "deal", id: entry.value.id })}>{entry.value.title}</a>
                       <span className="related-meta">
                         <StageChip stage={stageById(settings, entry.value.stageId)} />
+                        <span className="muted small">
+                          {lookups.salespersonName(entry.value.ownerId)}
+                        </span>
                       </span>
                     </li>
                   ))}

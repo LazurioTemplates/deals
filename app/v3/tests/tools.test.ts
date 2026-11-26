@@ -9,12 +9,16 @@ import { fetchIn, installTools } from "../src/ui/tools.ts";
 /** Every tool of the App in the order the registry lists them. */
 const NAMES = [
   "get_settings",
+  "list_salespeople",
+  "list_pricebook",
   "find_deals",
   "get_deal",
   "find_companies",
   "get_company",
   "find_contacts",
   "get_contact",
+  "list_quotes",
+  "get_quote",
   "get_forecast",
   "get_stats",
   "check_data",
@@ -22,14 +26,29 @@ const NAMES = [
   "create_deal",
   "update_deal",
   "move_deal_stage",
+  "plan_payments",
+  "mark_payment",
   "create_company",
   "update_company",
   "create_contact",
   "update_contact",
   "add_activity",
+  "create_quote",
+  "save_quote",
+  "set_quote_status",
+  "revise_quote",
+  "create_forecast_entry",
   "discard_draft",
   "publish_draft",
 ];
+
+/** What each tool does to the data: reads, a draft, or the one publication. */
+const EFFECTS: Record<string, "read" | "write" | "publish"> = Object.fromEntries(
+  NAMES.map((name) => [
+    name,
+    name === "publish_draft" ? "publish" : /^(get|find|list|check)_/.test(name) ? "read" : "write",
+  ]),
+);
 
 const ADMIN = {
   entry: "app",
@@ -62,6 +81,10 @@ describe("tools for agents: names, inputs and the page", () => {
           publishes: tool.name === "publish_draft",
         });
         expect(tool.annotations.destructiveHint).toBe(tool.effect === "publish");
+        expect({ name: tool.name, effect: tool.effect as string }).toEqual({
+          name: tool.name,
+          effect: EFFECTS[tool.name] ?? "unknown",
+        });
       }
       if (locale === "en")
         for (const tool of own)
@@ -85,13 +108,25 @@ describe("tools for agents: names, inputs and the page", () => {
         .map((tool) => [tool.name, [...((tool.inputSchema.required ?? []) as string[])].sort()]),
     );
     expect(required.get_deal).toEqual(["id"]);
-    expect(required.create_deal).toEqual(["company_id", "owner", "title", "value"]);
+    expect(required.create_deal).toEqual(["company_id", "owner_id", "title", "value"]);
     expect(required.update_deal).toEqual(["base_revision", "changes", "id"]);
     expect(required.move_deal_stage).toEqual(["base_revision", "id", "stage_id"]);
     expect(required.create_company).toEqual(["name"]);
     expect(required.add_activity).toEqual(["at", "deal_id", "summary", "type"]);
     expect(required.publish_draft).toEqual(["expected_revision"]);
     expect(required.find_deals).toEqual([]);
+    expect(required.list_salespeople).toEqual([]);
+    expect(required.list_pricebook).toEqual([]);
+    expect(required.get_quote).toEqual(["id"]);
+    expect(required.create_quote).toEqual(["deal_id"]);
+    expect(required.save_quote).toEqual(["base_revision", "record"]);
+    expect(required.set_quote_status).toEqual(["base_revision", "id", "status"]);
+    expect(required.revise_quote).toEqual(["id"]);
+    expect(required.plan_payments).toEqual(["base_revision", "deal_id"]);
+    expect(required.mark_payment).toEqual(["base_revision"]);
+    expect(required.get_forecast).toEqual([]);
+    expect(required.get_stats).toEqual([]);
+    expect(required.create_forecast_entry).toEqual(["amount", "month", "title"]);
   });
 
   test("the page registers what its server lists, in its language, and asks again", async () => {

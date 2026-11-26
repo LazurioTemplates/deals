@@ -11,6 +11,9 @@ import {
   newCompany,
   newContact,
   newDeal,
+  newPricebookItem,
+  newQuote,
+  newSalesperson,
   sampleData,
 } from "./support/seed.ts";
 
@@ -85,8 +88,99 @@ describe("data repository template", () => {
           { ...newDeal(), updatedAt: "2027-02-31T10:00:00.000Z" },
           { ...newDeal(), updatedAt: "2026-11-24T10:00:00.000Z" },
           { ...newDeal(), id: "D-26-1" },
-          { ...newDeal(), quoteRef: { id: "" } },
-          { ...newDeal(), owner: "" },
+          { ...newDeal(), quoteRef: { id: "Q-1" } },
+          { ...newDeal(), owner: "Jana Ukázková" },
+          { ...newDeal(), ownerId: "" },
+          { ...newDeal(), ownerId: "Jana" },
+          { ...newDeal(), dealTypeId: "Dodávka" },
+          { ...newDeal(), paymentPlan: { status: "unassigned", payments: [] } },
+          { ...newDeal(), paymentPlan: { status: "later", payments: [] } },
+          {
+            ...newDeal(),
+            paymentPlan: {
+              status: "planned",
+              payments: [{ id: "p1", month: "2027-13", amount: 1 }],
+            },
+          },
+          {
+            ...newDeal(),
+            paymentPlan: {
+              status: "planned",
+              payments: Array.from({ length: 13 }, (_, index) => ({
+                id: `p${index + 1}`,
+                month: "2027-01",
+                amount: 1,
+              })),
+            },
+          },
+          {
+            ...newDeal(),
+            paymentPlan: {
+              status: "planned",
+              payments: [{ id: "p1", month: "2027-01", amount: 1, paidOn: "2027-02-30" }],
+            },
+          },
+        ],
+      },
+      {
+        collection: "salespeople",
+        values: [
+          ...sample.salespeople,
+          newSalesperson(),
+          { ...newSalesperson(), id: "S-1" },
+          { ...newSalesperson(), active: "yes" },
+          { ...newSalesperson(), name: "" },
+        ],
+      },
+      {
+        collection: "pricebook",
+        values: [
+          ...sample.pricebook,
+          newPricebookItem(),
+          { ...newPricebookItem(), unitPrice: 1.5 },
+          { ...newPricebookItem(), sectionId: "Práce" },
+          { ...newPricebookItem(), id: "P-0001" },
+        ],
+      },
+      {
+        collection: "quotes",
+        values: [
+          ...sample.quotes,
+          newQuote(),
+          { ...newQuote(), id: "Q-2026-0007" },
+          { ...newQuote(), status: "sent" },
+          { ...newQuote(), vatRate: 10_001 },
+          { ...newQuote(), sections: [] },
+          {
+            ...newQuote(),
+            commercialTerms: { customerScope: "b2b", choices: { warranty: "standard" } },
+          },
+          {
+            ...newQuote(),
+            commercialTerms: { customerScope: "b2b", choices: { weather: "standard" } },
+          },
+          {
+            ...newQuote(),
+            commercialTerms: { customerScope: "b2b", choices: { warranty: "maybe" } },
+          },
+          { ...newQuote(), lines: [{ ...newQuote().lines[0], quantity: 0 }] },
+          { ...newQuote(), lines: [{ ...newQuote().lines[0], discount: 1.5 }] },
+        ],
+      },
+      {
+        collection: "forecastEntries",
+        values: [
+          ...sample.forecastEntries,
+          { ...sample.forecastEntries[0], month: "2026-1" },
+          { ...sample.forecastEntries[0], amount: -1 },
+        ],
+      },
+      {
+        collection: "forecastNotes",
+        values: [
+          ...sample.forecastNotes,
+          { id: "2026-11", text: "" },
+          { id: "2026-11", text: "Poznámka", extra: true },
         ],
       },
       {
@@ -119,7 +213,7 @@ describe("data repository template", () => {
     }
     expect(
       check(schema("deals.schema.json"), {
-        schemaVersion: "deals.deal.v2",
+        schemaVersion: "deals.deal.v1",
         id: "X",
         record: newDeal(),
       }),

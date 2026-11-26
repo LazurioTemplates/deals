@@ -1,18 +1,25 @@
 import { Button, Dialog, Icon } from "design-system/react";
 import { useId, useState } from "react";
-import { localToday } from "../../domain/common.ts";
+import { localToday, monthOf } from "../../domain/common.ts";
 import type { Deal } from "../../domain/deal.ts";
+import { type PaymentPlan, plannedTotal, singlePayment } from "../../domain/payment-plan.ts";
 import type { Settings, Stage } from "../../domain/settings.ts";
 import { api, type Stored } from "../api.ts";
 import { useFormat, useLocale, useT } from "../i18n.tsx";
 import { useCanWrite } from "../write.tsx";
 import { ErrorNotice, Field, fieldErrors } from "./common.tsx";
+import { PaymentPlanEditor } from "./PaymentPlanEditor.tsx";
+
+/** Whether a plan can go to the forecast: planned, with payments that add up to the value. */
+export function isCompletePlan(plan: PaymentPlan, value: number): boolean {
+  return plan.status === "planned" && plan.payments.length > 0 && plannedTotal(plan) === value;
+}
 
 /**
- * Closing a deal asks what closing needs: won asks for the value and the day
- * it was won, lost for the reason from the settings, a note and the day.
- * The dialog saves the move as a draft; the rules on the server have the
- * last word (a won deal needs a value above zero).
+ * Closing a deal asks what closing needs: won asks for the value, the day it
+ * was won and how it is invoiced (the payment plan), lost for the reason from
+ * the settings, a note and the day. The dialog saves the move as a draft; the
+ * rules on the server have the last word (a won deal needs a value above zero).
  */
 export function CloseDealDialog({
   deal,
@@ -31,30 +38,214 @@ export function CloseDealDialog({
   onDone: () => Promise<void>;
   today?: string;
 }) {
+  const won = stage.kind === "won";
+  return won ? (
+    <WonDialog
+      deal={deal}
+      stage={stage}
+      settings={settings}
+      open={open}
+      onClose={onClose}
+      onDone={onDone}
+      today={today}
+    />
+  ) : (
+    <LostDialog
+      deal={deal}
+      stage={stage}
+      settings={settings}
+      open={open}
+      onClose={onClose}
+      onDone={onDone}
+      today={today}
+    />
+  );
+}
+
+interface DialogProps {
+  deal: Stored<Deal>;
+  stage: Stage;
+  settings: Settings;
+  open: boolean;
+  onClose: () => void;
+  onDone: () => Promise<void>;
+  today: string;
+}
+
+/**
+ * Won: the final value, the day and the payment plan. „Zařadit do forecastu“
+ * saves a complete plan; „Zařadit později“ leaves the plan unassigned, so the
+ * forecast lists the deal among those still to plan.
+ */
+function WonDialog({ deal, stage, settings, open, onClose, onDone, today }: DialogProps) {
   const t = useT();
   const locale = useLocale();
   const f = useFormat(settings.currency);
   const formId = useId();
-  const won = stage.kind === "won";
+  const kept = deal.value.paymentPlan;
   const [valueText, setValueText] = useState(() => f.amount(deal.value.value));
   const [closedAt, setClosedAt] = useState(deal.value.closedAt ?? today);
-  const [reason, setReason] = useState(settings.lossReasons[0]?.id ?? "");
-  const [note, setNote] = useState(deal.value.lossNote ?? "");
-  const [busy, setBusy] = useState(false);
+  // Until the person touches the plan, it is one payment of the whole value
+  // in the closing month, and follows the value and the day as they change.
+  const [edited, setEdited] = useState<{ plan: PaymentPlan; complete: boolean } | null>(() =>
+    kept && kept.status === "planned" && kept.payments.length > 0
+      ? { plan: kept, complete: true }
+      : null,
+  );
+  const [busy, setBusy] = useState<"plan" | "later" | null>(null);
   const [error, setError] = useState<unknown>(null);
   const value = f.parseMoney(valueText);
+  const amount = value ?? 0;
   const valueProblem =
-    won && (value === null || value <= 0)
+    value === null || value <= 0
       ? t(
           "Vyhraný případ potřebuje hodnotu větší než nula.",
           "A won deal needs a value above zero.",
         )
       : undefined;
+  const reverseCharge = kept?.reverseCharge;
+  const plan: PaymentPlan = edited?.plan ?? {
+    ...singlePayment(amount, monthOf(closedAt || today)),
+    ...(reverseCharge ? { reverseCharge } : {}),
+  };
+  const complete =
+    !valueProblem && (edited ? edited.complete : true) && isCompletePlan(plan, amount);
+  const errors = fieldErrors(error);
+
+  async function close(paymentPlan: PaymentPlan, which: "plan" | "later") {
+    if (valueProblem) return;
+    setBusy(which);
+    setError(null);
+    try {
+      await api.moveDeal(deal.value.id, {
+        stageId: stage.id,
+        baseRevision: deal.revision,
+        closedAt,
+        value: amount,
+        paymentPlan,
+      });
+      await onDone();
+      onClose();
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const later: PaymentPlan = {
+    status: "unassigned",
+    payments: [],
+    ...(plan.reverseCharge ? { reverseCharge: plan.reverseCharge } : {}),
+  };
+
+  return (
+    <Dialog
+      id={`won-${formId.replace(/:/g, "")}`}
+      title={t("Vyhráno", "Won")}
+      description={deal.value.title}
+      size="lg"
+      open={open}
+      onClose={onClose}
+      locale={locale}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            {t("Zrušit", "Cancel")}
+          </Button>
+          <Button
+            variant="secondary"
+            busy={busy === "later"}
+            disabled={Boolean(valueProblem) || busy !== null}
+            onClick={() => void close(later, "later")}
+          >
+            {t("Zařadit později", "Plan it later")}
+          </Button>
+          <Button
+            variant="primary"
+            type="submit"
+            form={formId}
+            busy={busy === "plan"}
+            disabled={!complete || busy !== null}
+          >
+            {t("Zařadit do forecastu", "Add to the forecast")}
+          </Button>
+        </>
+      }
+    >
+      <form
+        id={formId}
+        className="form close-deal-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (complete) void close(plan, "plan");
+        }}
+      >
+        <ErrorNotice error={error} />
+        <div className="close-deal-fields">
+          <Field
+            label={t(
+              `Hodnota bez DPH (${settings.currency})`,
+              `Value without VAT (${settings.currency})`,
+            )}
+            error={valueProblem ?? errors.value}
+          >
+            <input
+              value={valueText}
+              inputMode="decimal"
+              autoComplete="off"
+              onChange={(event) => setValueText(event.target.value)}
+            />
+          </Field>
+          <Field label={t("Vyhráno dne", "Won on")} error={errors.closedAt}>
+            <input
+              type="date"
+              value={closedAt}
+              required
+              onChange={(event) => setClosedAt(event.target.value)}
+            />
+          </Field>
+        </div>
+        <fieldset className="close-deal-plan">
+          <legend className="ds-field__label">{t("Plán plateb", "Payment plan")}</legend>
+          <PaymentPlanEditor
+            value={plan}
+            total={amount}
+            currency={settings.currency}
+            today={closedAt || today}
+            idPrefix={`won-plan-${deal.value.id}`}
+            disabled={busy !== null}
+            onChange={(next, nextComplete) => setEdited({ plan: next, complete: nextComplete })}
+          />
+          {errors.paymentPlan ? <p className="ds-field__error">{errors.paymentPlan}</p> : null}
+        </fieldset>
+        <p className="muted small">
+          {t(
+            "Do forecastu jde jen plán, jehož platby dávají dohromady hodnotu případu. Jinak ho zařaďte později.",
+            "Only a plan whose payments add up to the deal's value goes to the forecast. Otherwise plan it later.",
+          )}
+        </p>
+      </form>
+    </Dialog>
+  );
+}
+
+/** Lost: the reason from the settings, a note and the day. */
+function LostDialog({ deal, stage, settings, open, onClose, onDone, today }: DialogProps) {
+  const t = useT();
+  const locale = useLocale();
+  const formId = useId();
+  const [closedAt, setClosedAt] = useState(deal.value.closedAt ?? today);
+  const [reason, setReason] = useState(
+    deal.value.lossReasonId ?? settings.lossReasons[0]?.id ?? "",
+  );
+  const [note, setNote] = useState(deal.value.lossNote ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>(null);
   const errors = fieldErrors(error);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (valueProblem) return;
     setBusy(true);
     setError(null);
     try {
@@ -62,7 +253,8 @@ export function CloseDealDialog({
         stageId: stage.id,
         baseRevision: deal.revision,
         closedAt,
-        ...(won ? { value: value ?? 0 } : { lossReasonId: reason, lossNote: note }),
+        lossReasonId: reason,
+        lossNote: note,
       });
       await onDone();
       onClose();
@@ -75,8 +267,8 @@ export function CloseDealDialog({
 
   return (
     <Dialog
-      id={`close-${formId.replace(/:/g, "")}`}
-      title={won ? t("Vyhráno", "Won") : t("Ztraceno", "Lost")}
+      id={`lost-${formId.replace(/:/g, "")}`}
+      title={t("Ztraceno", "Lost")}
       description={deal.value.title}
       open={open}
       onClose={onClose}
@@ -86,50 +278,26 @@ export function CloseDealDialog({
           <Button variant="secondary" onClick={onClose}>
             {t("Zrušit", "Cancel")}
           </Button>
-          <Button
-            variant={won ? "primary" : "danger"}
-            type="submit"
-            form={formId}
-            busy={busy}
-            disabled={Boolean(valueProblem) || (!won && !reason)}
-          >
-            {won
-              ? t("Označit jako vyhrané", "Mark as won")
-              : t("Označit jako ztracené", "Mark as lost")}
+          <Button variant="danger" type="submit" form={formId} busy={busy} disabled={!reason}>
+            {t("Označit jako ztracené", "Mark as lost")}
           </Button>
         </>
       }
     >
       <form id={formId} className="form" onSubmit={submit}>
         <ErrorNotice error={error} />
-        {won ? (
-          <Field
-            label={t(`Hodnota (${settings.currency})`, `Value (${settings.currency})`)}
-            error={valueProblem ?? errors.value}
-          >
-            <input
-              value={valueText}
-              inputMode="decimal"
-              autoComplete="off"
-              onChange={(event) => setValueText(event.target.value)}
-            />
-          </Field>
-        ) : (
-          <>
-            <Field label={t("Důvod ztráty", "Loss reason")} error={errors.lossReasonId}>
-              <select value={reason} onChange={(event) => setReason(event.target.value)}>
-                {settings.lossReasons.map((entry) => (
-                  <option key={entry.id} value={entry.id}>
-                    {entry.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label={t("Poznámka", "Note")}>
-              <textarea rows={3} value={note} onChange={(event) => setNote(event.target.value)} />
-            </Field>
-          </>
-        )}
+        <Field label={t("Důvod ztráty", "Loss reason")} error={errors.lossReasonId}>
+          <select value={reason} onChange={(event) => setReason(event.target.value)}>
+            {settings.lossReasons.map((entry) => (
+              <option key={entry.id} value={entry.id}>
+                {entry.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label={t("Poznámka", "Note")}>
+          <textarea rows={3} value={note} onChange={(event) => setNote(event.target.value)} />
+        </Field>
         <Field label={t("Datum uzavření", "Closing date")} error={errors.closedAt}>
           <input
             type="date"

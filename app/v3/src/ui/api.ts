@@ -15,6 +15,7 @@ import type { Stats, StatsFilter, StatsPeriod } from "../domain/stats.ts";
 import { DEFAULT_LOCALE, type Locale, type Localized } from "../i18n/locale.ts";
 import type { AresCompany } from "../server/ares.ts";
 import type { NewQuote, PaymentChange, StageMove } from "../service/deals-service.ts";
+import type { ImportInput, ImportReport } from "../service/import.ts";
 
 /** What the server stores, as the browser receives it. */
 export interface Stored<T> {
@@ -253,6 +254,8 @@ function makeApi(channel: ClientChannel) {
       ),
     /** A company by its IČO from ARES, through the server. */
     ares: (ico: string) => request<AresCompany>(at("/api/ares", ico)),
+    /** New companies, contacts or deals from mapped CSV rows, as one draft. */
+    importRecords: (input: ImportInput) => post<ImportReport>("/api/import", input),
     check: () => request<RuleIssue[]>("/api/check"),
     draft: () => request<DraftPanelInput>("/api/draft"),
     publish: (expectedRevision: string) =>

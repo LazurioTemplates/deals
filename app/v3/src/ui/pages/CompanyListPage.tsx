@@ -1,5 +1,6 @@
 import { Button, EmptyState, Table } from "design-system/react";
 import { useState } from "react";
+import { sumAmounts } from "../../domain/money.ts";
 import { stageById } from "../../domain/settings.ts";
 import type { AppData } from "../App.tsx";
 import { PageHeader } from "../components/common.tsx";
@@ -84,7 +85,7 @@ export function CompanyListPage({ data }: { data: AppData }) {
                   <td>{company.address?.city ?? ""}</td>
                   <td className="ds-table__num">{deals.length}</td>
                   <td className="ds-table__num">
-                    {f.money(deals.reduce((sum, entry) => sum + entry.value.value, 0))}
+                    {f.money(sumAmounts(deals.map((entry) => entry.value.value)))}
                   </td>
                 </tr>
               );

@@ -14,8 +14,9 @@ import { pricebookItem } from "../domain/pricebook.ts";
 import { QUOTE_STATUSES, quote } from "../domain/quote.ts";
 import { salesperson } from "../domain/salesperson.ts";
 import { settings } from "../domain/settings.ts";
-import { type Locale, localeOfAcceptLanguage } from "../i18n/locale.ts";
+import { LOCALES, type Locale, localeOfAcceptLanguage } from "../i18n/locale.ts";
 import { createService, type DealsService, lastDays } from "../service/deals-service.ts";
+import { ALL_IMPORT_FIELDS, IMPORT_KINDS, importRecords } from "../service/import.ts";
 import type { AresClient } from "./ares.ts";
 
 /**
@@ -65,6 +66,23 @@ const newQuote = z.strictObject({
   dealId: z.string().min(1),
   title: z.string().max(200).optional(),
   pricebookItemIds: z.array(z.string()).max(200).optional(),
+});
+
+const importField = z.enum(ALL_IMPORT_FIELDS);
+const importInput = z.strictObject({
+  kind: z.enum(IMPORT_KINDS),
+  rows: z
+    .array(
+      z.strictObject({
+        row: z.int().min(1),
+        values: z.partialRecord(importField, z.string().max(10_000)),
+      }),
+    )
+    .min(1)
+    .max(5_000),
+  createCompanies: z.boolean(),
+  numberLocale: z.enum(LOCALES),
+  defaultOwnerId: z.string().min(1).optional(),
 });
 
 const publishInput = z.strictObject({
@@ -515,6 +533,12 @@ export function createApi(store: DealsStore, options: ApiOptions) {
         });
       }
       return json(await options.ares(ico));
+    }
+
+    // An import writes every new record in one draft and answers in the person's language.
+    if (pathname === "/api/import" && method === "POST") {
+      const input = await body(req, importInput);
+      return json(await importRecords(store, input, { today: today(), locale }));
     }
 
     if (pathname === "/api/check" && get) return json(await store.check(locale, today()));

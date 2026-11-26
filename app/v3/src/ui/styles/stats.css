@@ -1,1 +1,230 @@
-/* The stats pages' layout; colours, type and spacing come from the design system's --ds-* tokens. */
+/* The statistics page and the App's charts. Layout only; colours, type and
+   spacing are the design system's --ds-* tokens. */
+
+.stats-filters {
+  align-items: flex-start;
+}
+
+.stats-filter-selects {
+  display: flex;
+  flex: 1 1 320px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ds-space-8);
+  min-width: 0;
+}
+
+.stats-filter-selects .forecast-filter {
+  flex: 0 1 220px;
+}
+
+.stats-filter-selects .ds-select-wrap {
+  display: block;
+}
+
+.stats-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  gap: var(--ds-space-16);
+  margin-bottom: var(--ds-space-20);
+}
+
+.stats-tables {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--ds-space-16);
+}
+
+.stats-tables > *,
+.stats-charts > * {
+  min-width: 0;
+}
+
+.stats-behind-meta {
+  display: block;
+}
+
+/* Charts */
+.chart {
+  display: grid;
+  align-content: start;
+  gap: var(--ds-space-8);
+  min-width: 0;
+  margin: 0;
+  padding: var(--ds-space-16);
+  border: var(--ds-size-border) solid var(--ds-color-line);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+}
+
+.chart-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-8);
+}
+
+.chart-title {
+  margin: 0;
+}
+
+.chart-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-8);
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-4) var(--ds-space-16);
+  margin: 0;
+  padding: 0;
+  color: var(--ds-color-ink-muted);
+  font-size: var(--ds-type-meta-size);
+  list-style: none;
+}
+
+.chart-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-4);
+}
+
+.chart-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.chart-box {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.chart-svg {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.chart-svg text {
+  font-family: var(--ds-type-meta-font);
+  font-size: 12px;
+}
+
+.chart-tick {
+  fill: var(--ds-color-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-label {
+  fill: var(--ds-color-ink);
+}
+
+.chart-value {
+  fill: var(--ds-color-ink);
+  font-weight: var(--ds-type-label-weight);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-grid {
+  stroke: var(--ds-color-line);
+  stroke-width: 1;
+}
+
+.chart-axis {
+  stroke: var(--ds-color-line-strong);
+  stroke-width: 1;
+}
+
+.chart-track {
+  fill: var(--ds-color-surface-muted);
+}
+
+.chart-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-dot {
+  stroke: var(--ds-color-surface);
+  stroke-width: 2;
+}
+
+.chart-crosshair {
+  stroke: var(--ds-color-line-strong);
+  stroke-width: 1;
+}
+
+.chart-hit {
+  fill: transparent;
+}
+
+.chart-band.is-open .chart-hit {
+  cursor: pointer;
+}
+
+.chart-tooltip {
+  position: absolute;
+  top: var(--ds-space-8);
+  display: grid;
+  gap: var(--ds-space-2);
+  min-width: 160px;
+  padding: var(--ds-space-8) var(--ds-space-12);
+  border: var(--ds-size-border) solid var(--ds-color-line);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-color-surface-raised);
+  box-shadow: var(--ds-shadow-float);
+  font-size: var(--ds-type-meta-size);
+  pointer-events: none;
+  transform: translateX(12px);
+  white-space: nowrap;
+}
+
+.chart-tooltip.is-left {
+  transform: translateX(calc(-100% - 12px));
+}
+
+.chart-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ds-color-action);
+  font: inherit;
+  text-align: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.chart-open:focus-visible {
+  outline: var(--ds-size-focus-width) solid var(--ds-color-focus);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chart-band.is-open:hover path {
+    opacity: 0.8;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-filter-selects {
+    justify-content: stretch;
+  }
+
+  .stats-filter-selects .forecast-filter {
+    flex: 1 1 100%;
+  }
+
+  .chart {
+    padding: var(--ds-space-12);
+  }
+}

@@ -154,7 +154,13 @@ describe("rules across records", () => {
 
   test("the pipeline needs one won, one lost and an open stage, each id once", () => {
     const pipeline = (stages: ReturnType<typeof sampleData>["settings"]["stages"]) =>
-      changed((data) => ({ settings: { ...data.settings, stages }, deals: [], activities: [] }));
+      changed((data) => ({
+        settings: { ...data.settings, stages },
+        deals: [],
+        activities: [],
+        quotes: [],
+        forecastEntries: [],
+      }));
     const { settings } = sampleData();
     const [lead, , , , won, lost] = settings.stages;
     if (!lead || !won || !lost) throw new Error("stages missing");
@@ -253,26 +259,212 @@ describe("rules across records", () => {
     expect(one({ stageId: "won", closedAt: "2026-11-01" })).toEqual(["closed_before_created"]);
   });
 
-  test("warnings name a contact of another company, an unknown owner and dates", () => {
+  test("warnings name a contact of another company, a salesperson who left and dates", () => {
     const data = changed((sample) => ({
       deals: [
         ...sample.deals,
-        { ...newDeal(), contactIds: ["P-0003"], owner: "Někdo Jiný", expectedClose: "2026-11-24" },
+        { ...newDeal(), contactIds: ["P-0003"], ownerId: "S-0003", expectedClose: "2026-11-24" },
       ],
     }));
     expect(
       warningsOf(checkRules(data, { today: TODAY }))
         .filter((issue) => issue.record === "deals/D-2026-0015")
         .map((issue) => issue.code),
-    ).toEqual(["contact_other_company", "owner_unknown", "expected_close_past"]);
-    // Without a list of salespeople any owner goes.
-    const free = changed((sample) => ({
-      settings: { ...sample.settings, owners: undefined },
-      deals: [...sample.deals, { ...newDeal(), owner: "Někdo Jiný" }],
+    ).toEqual(["contact_other_company", "expected_close_past", "salesperson_inactive"]);
+    // A closed deal of somebody who left stays as it was: no warning.
+    const closed = changed((sample) => ({
+      deals: sample.deals.map((deal) =>
+        deal.id === "D-2026-0014" ? { ...deal, ownerId: "S-0003" } : deal,
+      ),
     }));
-    expect(checkRules(free, { today: TODAY }).map((issue) => issue.code)).not.toContain(
-      "owner_unknown",
+    expect(checkRules(closed, { today: TODAY }).map((issue) => issue.code)).not.toContain(
+      "salesperson_inactive",
     );
+  });
+
+  test("a deal names a salesperson that exists, and a deal type and an entity of the settings", () => {
+    const one = (value: object) =>
+      errorsOf(
+        checkRules(changed((data) => ({ deals: [...data.deals, { ...newDeal(), ...value }] }))),
+      )
+        .filter((issue) => issue.record === "deals/D-2026-0015")
+        .map((issue) => issue.code);
+    expect(one({ ownerId: "S-0404" })).toEqual(["unknown_salesperson"]);
+    expect(one({ dealTypeId: "rental" })).toEqual(["unknown_deal_type"]);
+    expect(one({ billingEntityId: "elsewhere" })).toEqual(["unknown_billing_entity"]);
+    expect(one({ dealTypeId: "service", billingEntityId: "services" })).toEqual([]);
+    // A deal type or an entity something names cannot leave the settings.
+    const without = changed((sample) => ({
+      settings: {
+        ...sample.settings,
+        dealTypes: sample.settings.dealTypes?.filter((type) => type.id !== "licence"),
+        billingEntities: sample.settings.billingEntities?.filter(
+          (entity) => entity.id !== "services",
+        ),
+      },
+    }));
+    const settingsErrors = errorsOf(checkRules(without))
+      .filter((issue) => issue.record === "settings/settings")
+      .map((issue) => issue.code);
+    expect(settingsErrors).toEqual(["deal_type_in_use", "billing_entity_in_use"]);
+  });
+
+  test("a payment plan: only a won deal has one, a planned one sums to the value", () => {
+    const won = sampleData().deals.find((deal) => deal.id === "D-2026-0010");
+    if (!won?.paymentPlan) throw new Error("D-2026-0010 has no plan");
+    const plan = won.paymentPlan;
+    const one = (deal: object) =>
+      errorsOf(
+        checkRules(
+          changed((data) => ({
+            deals: data.deals.map((entry) =>
+              entry.id === "D-2026-0010" ? { ...entry, ...deal } : entry,
+            ),
+          })),
+        ),
+      )
+        .filter((issue) => issue.record === "deals/D-2026-0010")
+        .map((issue) => issue.code);
+    expect(one({})).toEqual([]);
+    expect(one({ value: won.value + 1 })).toContain("plan_sum");
+    expect(one({ paymentPlan: { status: "planned", payments: [] } })).toEqual([
+      "plan_without_payments",
+    ]);
+    expect(one({ paymentPlan: { ...plan, status: "unassigned" } })).toEqual([
+      "unassigned_with_payments",
+    ]);
+    const [first, second] = plan.payments;
+    if (!first || !second) throw new Error("two payments expected");
+    expect(one({ paymentPlan: { ...plan, payments: [first, { ...second, id: "p1" }] } })).toEqual([
+      "payment_duplicate_id",
+    ]);
+    const dated = (payment: object) => ({
+      paymentPlan: { ...plan, payments: [{ ...first, ...payment }, second] },
+    });
+    expect(one(dated({ invoicedOn: undefined, paidOn: undefined }))).toEqual([
+      "due_without_invoice",
+    ]);
+    expect(one(dated({ dueOn: "2026-09-01" }))).toEqual(["due_before_invoice"]);
+    expect(one(dated({ paidOn: "2026-09-01" }))).toEqual(["paid_before_invoice"]);
+    // A plan on an open deal is refused.
+    const open = errorsOf(
+      checkRules(
+        changed((data) => ({
+          deals: [
+            ...data.deals,
+            { ...newDeal(), paymentPlan: { status: "unassigned", payments: [] } },
+          ],
+        })),
+      ),
+    ).map((issue) => issue.code);
+    expect(open).toContain("plan_outside_won");
+  });
+
+  test("quotes: their id, deal, contact, sections and lines agree", () => {
+    const quote = sampleData().quotes.find((entry) => entry.id === "Q-2026-0003-r1");
+    if (!quote) throw new Error("Q-2026-0003-r1 missing");
+    const one = (value: object) =>
+      checkRules(
+        changed((data) => ({
+          quotes: data.quotes.map((entry) =>
+            entry.id === quote.id ? { ...entry, ...value } : entry,
+          ),
+        })),
+      )
+        .filter((issue) => issue.record === `quotes/${quote.id}`)
+        .map((issue) => issue.code);
+    expect(one({})).toEqual([]);
+    expect(one({ version: 2 })).toEqual(["quote_id_mismatch"]);
+    expect(one({ dealId: "D-2026-0404" })).toEqual(["unknown_deal"]);
+    expect(one({ contactId: "P-0404" })).toEqual(["unknown_contact"]);
+    expect(one({ customer: { ...quote.customer, companyId: "C-0404" } })).toEqual([
+      "unknown_company",
+    ]);
+    expect(one({ billingEntityId: "elsewhere" })).toEqual(["unknown_billing_entity"]);
+    expect(one({ validUntil: "2026-11-01" })).toEqual(["valid_before_issued"]);
+    expect(one({ sections: [...quote.sections, quote.sections[0]] })).toEqual([
+      "quote_section_duplicate_id",
+    ]);
+    const [line] = quote.lines;
+    if (!line) throw new Error("a line expected");
+    expect(one({ lines: [line, line] })).toEqual(["quote_line_duplicate_id"]);
+    expect(one({ lines: [{ ...line, sectionId: "nowhere" }] })).toEqual(["unknown_quote_section"]);
+    // An approved quote whose terms have no evidence of acceptance warns.
+    expect(
+      one({
+        status: "approved",
+        commercialTerms: { customerScope: "b2b", termsVersion: "2026-01" },
+      }),
+    ).toEqual(["terms_without_evidence"]);
+  });
+
+  test("a deal's value follows its primary quote, or warns; it names only its own quote", () => {
+    const issues = (deal: object) =>
+      checkRules(
+        changed((data) => ({
+          deals: data.deals.map((entry) =>
+            entry.id === "D-2026-0002" ? { ...entry, ...deal } : entry,
+          ),
+        })),
+      )
+        .filter((issue) => issue.record === "deals/D-2026-0002")
+        .map((issue) => [issue.severity, issue.code]);
+    expect(issues({})).toEqual([]);
+    expect(issues({ value: 1 })).toEqual([["warning", "value_differs_from_quote"]]);
+    // The superseded revision named as primary: the value is then its subtotal.
+    expect(issues({ primaryQuoteId: "Q-2026-0001-r1" })).toEqual([
+      ["warning", "value_differs_from_quote"],
+    ]);
+    expect(issues({ primaryQuoteId: "Q-2026-0001-r1", value: 40_960_000 })).toEqual([]);
+    expect(issues({ primaryQuoteId: "Q-2026-0002-r1" })).toContainEqual([
+      "error",
+      "unknown_primary_quote",
+    ]);
+    // Two approved quotes of one deal warn on the deal.
+    const twice = changed((data) => ({
+      quotes: data.quotes.map((entry) =>
+        entry.dealId === "D-2026-0002" ? { ...entry, status: "approved" as const } : entry,
+      ),
+    }));
+    expect(
+      checkRules(twice)
+        .filter((issue) => issue.record === "deals/D-2026-0002")
+        .map((issue) => issue.code),
+    ).toContain("several_approved_quotes");
+  });
+
+  test("forecast rows name what exists and keep the order of an invoice", () => {
+    const [entry] = sampleData().forecastEntries;
+    if (!entry) throw new Error("a forecast row expected");
+    const one = (value: object) =>
+      errorsOf(
+        checkRules(
+          changed((data) => ({
+            forecastEntries: data.forecastEntries.map((row) =>
+              row.id === entry.id ? { ...row, ...value } : row,
+            ),
+          })),
+        ),
+      )
+        .filter((issue) => issue.record === `forecastEntries/${entry.id}`)
+        .map((issue) => issue.code);
+    expect(one({})).toEqual([]);
+    expect(one({ companyId: "C-0404" })).toEqual(["unknown_company"]);
+    expect(one({ ownerId: "S-0404" })).toEqual(["unknown_salesperson"]);
+    expect(one({ dealId: "D-2026-0404" })).toEqual(["unknown_deal"]);
+    expect(one({ dealTypeId: "rental" })).toEqual(["unknown_deal_type"]);
+    expect(one({ billingEntityId: "elsewhere" })).toEqual(["unknown_billing_entity"]);
+    expect(one({ dueOn: "2026-10-01" })).toEqual(["due_before_invoice"]);
+    // A price list item in a section the settings do not have warns.
+    const item = changed((data) => ({
+      pricebook: data.pricebook.map((row) =>
+        row.id === "I-0001" ? { ...row, sectionId: "nowhere" } : row,
+      ),
+    }));
+    expect(checkRules(item).map((issue) => [issue.record, issue.code])).toContainEqual([
+      "pricebook/I-0001",
+      "unknown_quote_section",
+    ]);
   });
 
   test("contacts and activities name records that exist; only a task is done", () => {
@@ -298,7 +490,7 @@ describe("rules across records", () => {
       companies: [...sample.companies, { ...newCompany(), ico: "00000002" }],
       deals: [
         ...sample.deals,
-        { ...newDeal(), stageId: "lost", contactIds: ["P-0003"], owner: "Somebody" },
+        { ...newDeal(), stageId: "lost", contactIds: ["P-0003"], ownerId: "S-0404" },
       ],
     }));
     const issues = checkRulesLocalized(data, { today: TODAY });
