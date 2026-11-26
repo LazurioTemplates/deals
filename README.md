@@ -9,7 +9,7 @@ and a template of the Lazurio Marketplace, published by LazurioTemplates as the
 public upstream `LazurioTemplates/deals` under the MIT license. In Czech it is
 called „Obchodní případy“.
 
-![The overview: the open pipeline by stage, the weighted forecast and the results of a period](docs/screenshots/en/overview.webp)
+![The overview: this month's forecast, what is on the way and overdue, the open pipeline by stage](docs/screenshots/en/overview.webp)
 
 - **Pipeline.** Stages in the Organization's order, each with a probability,
   plus exactly one won and one lost stage, all data in the settings. Deals
@@ -64,7 +64,7 @@ called „Obchodní případy“.
   records in business language and publishes them as one change to the
   Organization's data repository, or returns them.
 
-![Přehled: otevřené obchodní případy podle fáze, vážený forecast a výsledky období](docs/screenshots/cs/overview.webp)
+![Přehled: forecast tohoto měsíce, co je na cestě a po splatnosti, otevřená pipeline podle fáze](docs/screenshots/cs/overview.webp)
 
 The App speaks Czech or English: `?lang=` in the address first, then the
 language of the person's Lazurio profile where Lazurio hands it to the page
@@ -161,8 +161,9 @@ or sent without the person's instruction. An Organization on 0.1.x takes
 | Overview | [`cs/overview.webp`](docs/screenshots/cs/overview.webp) | [`en/overview.webp`](docs/screenshots/en/overview.webp) |
 | Deals | [`cs/deals.webp`](docs/screenshots/cs/deals.webp) | [`en/deals.webp`](docs/screenshots/en/deals.webp) |
 | A deal with its activities | [`cs/deal.webp`](docs/screenshots/cs/deal.webp) | [`en/deal.webp`](docs/screenshots/en/deal.webp) |
-| A company with its deals and contacts | [`cs/company.webp`](docs/screenshots/cs/company.webp) | [`en/company.webp`](docs/screenshots/en/company.webp) |
-| Settings of the pipeline | [`cs/settings.webp`](docs/screenshots/cs/settings.webp) | [`en/settings.webp`](docs/screenshots/en/settings.webp) |
+| A quote in the editor | [`cs/quote.webp`](docs/screenshots/cs/quote.webp) | [`en/quote.webp`](docs/screenshots/en/quote.webp) |
+| The forecast of payment plans | [`cs/forecast.webp`](docs/screenshots/cs/forecast.webp) | [`en/forecast.webp`](docs/screenshots/en/forecast.webp) |
+| Statistics against the previous period | [`cs/stats.webp`](docs/screenshots/cs/stats.webp) | [`en/stats.webp`](docs/screenshots/en/stats.webp) |
 
 The navigation groups the pages in sections: Obchod / Sales (the overview and
 the deals by tab), Nabídky / Quotes (the quotes with their print view, the

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0 — 2026-11-26
+
 0.2.0 brings Deals to the structure of a mature sales pipeline: salespeople
 as records, a price list, quotes with revisions, a forecast that is the
 payment plans of won deals, statistics against the previous period, a record

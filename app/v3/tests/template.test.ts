@@ -454,11 +454,12 @@ describe.skipIf(!TEMPLATE)("template contract (skipped in an adopted Module)", (
         .sort();
     const cs = shots("cs");
     expect(cs).toEqual([
-      "company.webp",
       "deal.webp",
       "deals.webp",
+      "forecast.webp",
       "overview.webp",
-      "settings.webp",
+      "quote.webp",
+      "stats.webp",
     ]);
     expect(shots("en")).toEqual(cs);
     const readme = read("README.md");
