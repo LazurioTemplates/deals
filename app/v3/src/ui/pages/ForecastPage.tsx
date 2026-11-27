@@ -68,6 +68,8 @@ export function ForecastPage({
     writeLocal(FILTER_KEY, next);
   };
   const [opened, setOpened] = useState<string[]>([]);
+  // The months whose panel is open; the current month starts open.
+  const [expanded, setExpanded] = useState<string[]>([thisMonth]);
   const [dialog, setDialog] = useState<OpenDialog | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
@@ -180,6 +182,7 @@ export function ForecastPage({
 
   function openMonth(month: string) {
     if (!opened.includes(month)) setOpened([...opened, month]);
+    if (!expanded.includes(month)) setExpanded([...expanded, month]);
     requestAnimationFrame(() =>
       document
         .getElementById(`forecast-month-${month}`)
@@ -211,8 +214,8 @@ export function ForecastPage({
       <PageHeader
         title={t(`Forecast ${year}`, `Forecast ${year}`)}
         subtitle={t(
-          "Co se fakturuje měsíc po měsíci: plány plateb vyhraných případů a ruční řádky.",
-          "What is invoiced month by month: the payment plans of won deals and manual rows.",
+          "Plány plateb vyhraných případů a ruční řádky, měsíc po měsíci.",
+          "Payment plans of won deals and manual rows, month by month.",
         )}
         actions={
           <label className="forecast-year">
@@ -224,6 +227,7 @@ export function ForecastPage({
                 onChange={(event) => {
                   setYear(Number(event.target.value));
                   setOpened([]);
+                  setExpanded([thisMonth]);
                 }}
               >
                 {[...new Set([...outlook.years, year])]
@@ -426,6 +430,14 @@ export function ForecastPage({
             canWrite={canWrite}
             busy={busy}
             current={month === thisMonth}
+            open={expanded.includes(month)}
+            onToggle={() =>
+              setExpanded(
+                expanded.includes(month)
+                  ? expanded.filter((entry) => entry !== month)
+                  : [...expanded, month],
+              )
+            }
             actions={actions}
           />
         ))}

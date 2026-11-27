@@ -376,63 +376,199 @@
   font-weight: var(--deals-weight-strong);
 }
 
-/* Month panels */
+/* Month panels: one quiet card per month, a summary row that opens to the
+ * note and the month's rows inside the same card. */
 .forecast-panels {
   display: grid;
-  gap: var(--ds-space-24);
+  gap: var(--ds-space-8);
   margin-bottom: var(--ds-space-24);
 }
 
 .forecast-month {
-  display: grid;
-  gap: var(--ds-space-12);
   min-width: 0;
+  border-radius: var(--deals-radius-card);
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
   scroll-margin-top: var(--ds-space-16);
 }
 
-.forecast-month-head {
-  display: flex;
-  flex-wrap: wrap;
+.forecast-month.is-open {
+  margin-block: var(--ds-space-8);
+}
+
+/* The month's name is the heading; its figures read as body text. */
+.forecast-month .forecast-month-head {
+  margin: 0;
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight);
+  line-height: var(--deals-text-leading);
+}
+
+.forecast-month-toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 16px;
   align-items: center;
-  gap: var(--ds-space-8) var(--ds-space-20);
-  padding-bottom: var(--ds-space-8);
+  gap: var(--ds-space-16);
+  width: 100%;
+  min-height: 46px;
+  margin: 0;
+  padding: var(--ds-space-4) var(--ds-space-16);
+  border: 0;
+  border-radius: var(--deals-radius-card);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--deals-fade) var(--deals-ease);
+}
+
+.forecast-month.is-open .forecast-month-toggle {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.forecast-month-toggle:focus-visible {
+  outline: 2px solid var(--ds-color-focus);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .forecast-month-toggle:hover {
+    background: var(--deals-hover);
+  }
 }
 
 .forecast-month-name {
   display: flex;
   align-items: center;
   gap: var(--ds-space-8);
-  margin-right: auto;
+  min-width: 0;
 }
 
-.forecast-month-name h2 {
-  margin: 0;
+.forecast-month-label {
+  overflow: hidden;
+  color: var(--deals-ink-strong);
+  font-size: var(--deals-heading);
+  font-weight: var(--deals-weight-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.forecast-month-name h2::first-letter {
+.forecast-month-label::first-letter {
   text-transform: uppercase;
 }
 
 .forecast-month-figures {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ds-space-4) var(--ds-space-16);
-  margin: 0;
-}
-
-.forecast-month-figures div {
   display: grid;
+  grid-template-columns: 56px repeat(3, 128px);
+  gap: var(--ds-space-16);
 }
 
-.forecast-month-figures dt {
+.forecast-month-figure {
+  display: grid;
+  min-width: 0;
+}
+
+.forecast-month-figure-label {
   color: var(--deals-ink-muted);
   font-size: var(--deals-small);
+  line-height: var(--deals-small-leading);
 }
 
-.forecast-month-figures dd {
-  margin: 0;
+.forecast-month-figure .num {
+  overflow: hidden;
   font-weight: var(--deals-weight-strong);
   text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forecast-month-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--deals-ink-muted);
+  transition: transform var(--deals-fade) var(--deals-ease);
+}
+
+.forecast-month.is-open .forecast-month-chevron {
+  transform: rotate(180deg);
+}
+
+.forecast-month-body {
+  display: grid;
+  gap: var(--ds-space-12);
+  min-width: 0;
+  padding: var(--ds-space-12) var(--ds-space-16) var(--ds-space-16);
+  box-shadow: inset 0 0.5px 0 var(--deals-line);
+}
+
+.forecast-month-body[hidden] {
+  display: none;
+}
+
+/* Inside the month's card the table trades its own card for a hairline. */
+.shell .forecast-month-body .ds-table-wrap {
+  border-radius: var(--deals-radius-item);
+  box-shadow: var(--deals-ring);
+}
+
+.forecast-month-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--ds-space-8);
+}
+
+.forecast-month-tools .forecast-note {
+  flex: 1 1 320px;
+}
+
+.forecast-month-add {
+  margin-left: auto;
+}
+
+@media (max-width: 720px) {
+  .forecast-month-toggle {
+    grid-template-columns: minmax(0, 1fr) 16px;
+    row-gap: var(--ds-space-4);
+    padding-block: var(--ds-space-8);
+  }
+
+  /* On a narrow screen the figures flow as "label value" pairs. */
+  .forecast-month-figures {
+    display: flex;
+    flex-wrap: wrap;
+    grid-column: 1;
+    grid-row: 2;
+    gap: 0 var(--ds-space-12);
+  }
+
+  .forecast-month-figure {
+    display: flex;
+    align-items: baseline;
+    gap: var(--ds-space-4);
+  }
+
+  .forecast-month-tools .forecast-note {
+    flex-basis: 160px;
+  }
+
+  .forecast-month-chevron {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .forecast-month-body {
+    padding-inline: var(--ds-space-12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forecast-month-toggle,
+  .forecast-month-chevron {
+    transition: none;
+  }
 }
 
 .forecast-row-title {
@@ -512,7 +648,7 @@
   display: block;
   height: 100%;
   border-radius: var(--ds-radius-pill);
-  background: var(--ds-color-accent);
+  background: color-mix(in srgb, var(--ds-color-accent) 62%, var(--ds-color-surface));
 }
 
 .forecast-hint {
