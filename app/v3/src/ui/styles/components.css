@@ -601,3 +601,19 @@
     line-height: 26px;
   }
 }
+
+/* The narrowest phones: one tile per row, so a whole amount fits. */
+@media (max-width: 380px) {
+  .stat-tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* On a phone a table keeps one line per row and scrolls sideways. */
+@media (max-width: 640px) {
+  .ds-table-wrap td,
+  .ds-table-wrap :is(.cell-title, .cell-break) {
+    max-width: none;
+    white-space: nowrap;
+  }
+}

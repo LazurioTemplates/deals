@@ -1,7 +1,7 @@
 import type { DraftPanelInput } from "@lazurio/repository-db";
 import type { IconName } from "design-system";
-import { Alert, Nav } from "design-system/react";
-import { createContext, type ReactNode, useContext } from "react";
+import { Alert, Icon, Nav } from "design-system/react";
+import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
 import type { Localized } from "../../i18n/locale.ts";
 import { dealsBrand } from "../../instance/brand.ts";
 import { useLocale, useT } from "../i18n.tsx";
@@ -202,9 +202,15 @@ export function Layout({
       }
     : null;
   const organization = dealsBrand.organization;
+  // On a narrow screen the navigation folds behind a button; a new page closes it.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const routeKey = href(route);
+  useEffect(() => {
+    if (routeKey) setMenuOpen(false);
+  }, [routeKey]);
   return (
     <div className="shell">
-      <aside className="sidebar">
+      <aside className={menuOpen ? "sidebar is-open" : "sidebar"}>
         <div className="sidebar-header">
           <span className="sidebar-mark" aria-hidden="true">
             {organization.trim().charAt(0).toUpperCase() || "O"}
@@ -213,8 +219,18 @@ export function Layout({
             <span className="sidebar-product">{t("Obchodní případy", "Deals")}</span>
             <span className="sidebar-context">{organization}</span>
           </span>
+          <button
+            type="button"
+            className="sidebar-menu-button"
+            aria-expanded={menuOpen}
+            aria-controls="sidebar-nav"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <Icon name={menuOpen ? "xmark" : "menu"} size="sm" />
+            <span>{menuOpen ? t("Zavřít", "Close") : t("Menu", "Menu")}</span>
+          </button>
         </div>
-        <div className="sidebar-nav">
+        <div className="sidebar-nav" id="sidebar-nav">
           {SECTIONS.map((section, index) => (
             <Nav
               key={section.title.en}

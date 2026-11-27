@@ -133,6 +133,25 @@ h3 {
   gap: var(--ds-space-16);
 }
 
+.sidebar-menu-button {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  margin-inline-start: auto;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--deals-radius-item);
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
+  color: var(--deals-ink);
+  font: inherit;
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight-strong);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
 .content-area {
   min-width: 0;
   min-height: calc(100dvh - 16px);
@@ -621,37 +640,34 @@ h3 {
 @media (max-width: 900px) {
   .shell {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
   }
 
   .sidebar {
     position: static;
     height: auto;
     min-width: 0;
-    padding: 8px 6px 4px;
+    padding: 8px 8px 6px;
   }
 
+  .sidebar-header {
+    min-height: 40px;
+  }
+
+  .sidebar-menu-button {
+    display: inline-flex;
+  }
+
+  /* The navigation folds behind the menu button and opens as a list. */
   .sidebar-nav {
-    display: flex;
-    gap: var(--ds-space-4);
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-  }
-
-  .sidebar-nav > .ds-nav {
-    flex: none;
-  }
-
-  .sidebar-nav .ds-nav__title {
     display: none;
+    padding: 8px 0 6px;
   }
 
-  .sidebar .ds-nav__list {
-    display: flex;
-    gap: var(--ds-space-4);
-  }
-
-  .sidebar .ds-nav__link {
-    white-space: nowrap;
+  .sidebar.is-open .sidebar-nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+    gap: 12px 16px;
   }
 
   .content-area {

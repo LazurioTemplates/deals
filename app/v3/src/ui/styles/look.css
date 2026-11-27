@@ -681,3 +681,10 @@ body {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* The name in a table's first column opens the record: ink, no underline. */
+.shell .ds-table tbody td:first-child > a {
+  color: var(--deals-ink);
+  font-weight: var(--deals-weight-strong);
+  text-decoration: none;
+}
