@@ -18,143 +18,250 @@
   white-space: nowrap;
 }
 
-/* Months */
-.forecast-months {
+/* Months: one column per month, its parts stacked, the quarters under them. */
+.forecast-chart {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: var(--ds-space-8);
-  margin: 0 0 var(--ds-space-12);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.forecast-chart-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.shell .forecast-chart-title {
+  margin: 0;
+  color: var(--deals-ink-text);
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight);
+}
+
+.forecast-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
+  list-style: none;
+}
+
+.forecast-chart-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.forecast-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* The colours of the parts, in the swatches and the columns. */
+.forecast-swatch.is-paid,
+.forecast-column-part.is-paid {
+  background: color-mix(in srgb, var(--ds-color-success) 62%, var(--ds-color-surface));
+}
+
+.forecast-swatch.is-invoiced,
+.forecast-column-part.is-invoiced {
+  background: color-mix(in srgb, var(--ds-color-info) 50%, var(--ds-color-surface));
+}
+
+.forecast-swatch.is-overdue,
+.forecast-column-part.is-overdue {
+  background: color-mix(in srgb, var(--ds-color-danger) 62%, var(--ds-color-surface));
+}
+
+.forecast-swatch.is-planned,
+.forecast-column-part.is-planned {
+  background: color-mix(in srgb, var(--ds-color-ink) 13%, var(--ds-color-surface));
+}
+
+.forecast-chart-plot {
+  position: relative;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  height: 220px;
+}
+
+.forecast-chart-ticks {
+  position: absolute;
+  inset: 22px 0 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.forecast-chart-ticks li {
+  position: absolute;
+  right: 0;
+  left: 52px;
+  border-bottom: 0.5px solid var(--deals-line);
+}
+
+.forecast-chart-ticks li:last-child {
+  border-bottom-color: var(--deals-line-strong);
+}
+
+.forecast-chart-ticks span {
+  position: absolute;
+  bottom: -8px;
+  left: -52px;
+  width: 44px;
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-tiny);
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.forecast-chart-columns {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 4px;
+  height: 100%;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.forecast-month-tile {
+.forecast-chart-columns > li {
+  min-width: 0;
+}
+
+.forecast-column {
+  position: relative;
   display: grid;
-  gap: var(--ds-space-4);
+  grid-template-rows: minmax(0, 1fr) 28px;
   width: 100%;
-  min-height: 100px;
-  padding: 12px 14px;
+  height: 100%;
+  padding: 22px 0 0;
   border: 0;
-  border-radius: var(--deals-radius-card);
-  background: var(--deals-card);
-  box-shadow: var(--deals-shadow-card);
+  border-radius: var(--deals-radius-item);
+  background: none;
   color: inherit;
   font: inherit;
-  text-align: start;
   cursor: pointer;
   touch-action: manipulation;
-  transition: box-shadow 160ms ease;
+  transition: background-color var(--deals-fade) ease;
 }
 
-.forecast-month-tile.is-empty {
-  background: var(--deals-frame);
-  box-shadow: none;
-}
-
-.forecast-month-tile.is-current {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--ds-color-accent) 55%, transparent),
-    0 1px 2px 0 color-mix(in srgb, var(--ds-color-ink) 5%, transparent);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .forecast-month-tile:not(.is-current):hover {
-    box-shadow: var(--deals-shadow-card-hover);
-  }
-}
-
-.forecast-month-tile.is-empty .forecast-tile-amount {
-  color: var(--deals-ink-faint);
-}
-
-.forecast-month-tile.is-over {
-  background: color-mix(in srgb, var(--ds-color-accent) 7%, var(--deals-card));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ds-color-accent) 55%, transparent);
-}
-
-.forecast-tile-head {
+.forecast-column-track {
+  position: relative;
   display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 0;
+}
+
+.forecast-column-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: min(28px, 64%);
+  min-height: 2px;
+  overflow: visible;
+}
+
+.forecast-column-part {
+  min-height: 2px;
+  flex-basis: 0;
+}
+
+.forecast-column-part:first-of-type {
+  border-radius: 4px 4px 0 0;
+}
+
+.forecast-column-value {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  color: var(--deals-ink-text);
+  font-size: var(--deals-tiny);
+  font-weight: var(--deals-weight-strong);
+  line-height: 14px;
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.forecast-column-month {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--ds-space-4);
+  justify-content: center;
+  gap: 2px;
   color: var(--deals-ink-muted);
   font-size: var(--deals-small);
 }
 
-.forecast-tile-month {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.forecast-column-month-narrow {
+  display: none;
 }
 
-.forecast-tile-note {
-  display: inline-flex;
-  color: var(--deals-ink-muted);
+.forecast-column-note {
+  width: 12px;
+  height: 12px;
 }
 
-.forecast-tile-amount {
-  overflow: hidden;
-  color: var(--deals-ink-strong);
-  font-size: var(--deals-heading);
+.forecast-column.is-current .forecast-column-month {
+  color: var(--deals-ink);
   font-weight: var(--deals-weight-strong);
-  text-align: start;
-  text-overflow: ellipsis;
 }
 
-.forecast-tile-progress {
-  display: flex;
-  gap: 2px;
-  height: 4px;
-  overflow: hidden;
-  border-radius: 2px;
-  background: var(--deals-chip);
+.forecast-column.is-current {
+  background: var(--deals-frame);
 }
 
-.forecast-tile-progress > span {
-  height: 100%;
+.forecast-column.is-over {
+  background: color-mix(in srgb, var(--ds-color-accent) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ds-color-accent) 45%, transparent);
 }
 
-.forecast-tile-progress .is-paid {
-  background: color-mix(in srgb, var(--ds-color-success) 70%, var(--ds-color-surface));
+.forecast-column:focus-visible {
+  outline: 2px solid var(--ds-color-focus);
+  outline-offset: -2px;
 }
 
-.forecast-tile-progress .is-invoiced {
-  background: color-mix(in srgb, var(--ds-color-info) 60%, var(--ds-color-surface));
+@media (hover: hover) and (pointer: fine) {
+  .forecast-column:hover {
+    background: var(--deals-hover);
+  }
+
+  .forecast-column:hover .forecast-column-month {
+    color: var(--deals-ink);
+  }
 }
 
-.forecast-tile-progress .is-overdue {
-  background: color-mix(in srgb, var(--ds-color-danger) 70%, var(--ds-color-surface));
-}
-
-.forecast-tile-meta {
-  display: grid;
-  color: var(--deals-ink-muted);
-}
-
-.forecast-tile-meta > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Quarters */
-.forecast-quarters {
+.forecast-chart-quarters {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--ds-space-8);
-  margin: 0 0 var(--ds-space-20);
-  padding: 0;
+  gap: 4px;
+  margin: 0 0 0 52px;
+  padding: 10px 0 0;
+  border-top: 0.5px solid var(--deals-line);
   list-style: none;
 }
 
-.forecast-quarter {
+.forecast-chart-quarters li {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: baseline;
-  gap: 0 var(--ds-space-8);
-  padding: 10px 14px;
-  border-radius: var(--deals-radius-card);
-  background: var(--deals-frame);
+  gap: 0 8px;
+  padding: 0 8px;
+}
+
+.forecast-chart-quarters li + li {
+  border-left: 0.5px solid var(--deals-line);
 }
 
 .forecast-quarter-name {
@@ -163,12 +270,59 @@
 }
 
 .forecast-quarter-amount {
+  color: var(--deals-ink);
   font-weight: var(--deals-weight-strong);
 }
 
-.forecast-quarter .small {
+.forecast-chart-quarters .small {
   grid-column: 1 / -1;
   text-align: right;
+}
+
+@media (max-width: 720px) {
+  .forecast-chart-plot {
+    grid-template-columns: 40px minmax(0, 1fr);
+    height: 180px;
+  }
+
+  .forecast-chart-ticks li {
+    left: 40px;
+  }
+
+  .forecast-chart-ticks span {
+    left: -40px;
+    width: 34px;
+  }
+
+  .forecast-column-value,
+  .forecast-column-note,
+  .forecast-column-month-wide {
+    display: none;
+  }
+
+  .forecast-column-month-narrow {
+    display: inline;
+  }
+
+  .forecast-chart-columns {
+    gap: 1px;
+  }
+
+  .forecast-chart-quarters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 8px;
+    margin-left: 0;
+  }
+
+  .forecast-chart-quarters li:nth-child(3) {
+    border-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forecast-column {
+    transition: none;
+  }
 }
 
 /* Unassigned */
@@ -512,31 +666,7 @@
   flex-shrink: 0;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .forecast-month-tile:hover {
-    border-color: var(--ds-color-line-strong);
-  }
-
-  .forecast-month-tile.is-current:hover {
-    border-color: var(--ds-color-accent);
-  }
-}
-
-@media (max-width: 1100px) {
-  .forecast-months {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 720px) {
-  .forecast-months {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .forecast-quarters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .plan-editor-row {
     grid-template-columns: 24px minmax(0, 1fr) minmax(0, 1fr) 40px;
   }
@@ -569,10 +699,6 @@
 }
 
 @media (max-width: 480px) {
-  .forecast-months {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .forecast-filter {
     flex: 1 1 100%;
   }
@@ -591,17 +717,10 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .forecast-month-tile {
-    transition: none;
-  }
-}
-
 /* Figures in tiles read from the left, under their labels. */
 .forecast-page .stat-tile-value,
 .stats-page .stat-tile-value,
-.overview-page .stat-tile-value,
-.forecast-month-tile .forecast-tile-amount {
+.overview-page .stat-tile-value {
   text-align: start;
 }
 
@@ -609,7 +728,7 @@
   .forecast-page .stat-tile-value,
   .stats-page .stat-tile-value,
   .overview-page .stat-tile-value {
-    font-size: var(--ds-type-body-size);
+    font-size: 18px;
   }
 
   .plan-editor-month {

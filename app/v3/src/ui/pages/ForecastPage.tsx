@@ -13,7 +13,6 @@ import { splitValue } from "../../domain/payment-plan.ts";
 import { type AppData, dataSetOf } from "../App.tsx";
 import { api } from "../api.ts";
 import { StatTile } from "../components/Board.tsx";
-import { monthName, withoutZeroCents } from "../components/charts/format.ts";
 import { ErrorNotice, PageHeader } from "../components/common.tsx";
 import { FilterSelect } from "../components/forecast/FilterSelect.tsx";
 import {
@@ -23,8 +22,9 @@ import {
   RemoveDialog,
 } from "../components/forecast/ForecastDialogs.tsx";
 import { ForecastSummary } from "../components/forecast/ForecastSummary.tsx";
+import { MonthChart } from "../components/forecast/MonthChart.tsx";
 import { MonthPanel, type RowActions } from "../components/forecast/MonthPanel.tsx";
-import { DEALS, useFormat, useLocale, useT } from "../i18n.tsx";
+import { DEALS, useFormat, useT } from "../i18n.tsx";
 import { readLocal, useLookups, writeLocal } from "../lookups.ts";
 import { href } from "../routes.ts";
 import { useCanWrite } from "../write.tsx";
@@ -53,7 +53,6 @@ export function ForecastPage({
   today?: string;
 }) {
   const t = useT();
-  const locale = useLocale();
   const canWrite = useCanWrite();
   const settings = data.settings.value;
   const f = useFormat(settings.currency);
@@ -313,89 +312,21 @@ export function ForecastPage({
         />
       </div>
 
-      <h2 className="ds-visually-hidden">{t("Měsíce", "Months")}</h2>
-      <ol className="forecast-months">
-        {outlook.months.map((entry) => {
-          const note = notes.get(entry.month);
-          const current = entry.month === thisMonth;
-          const width = (part: number) =>
-            entry.forecast > 0 ? `${Math.min(100, (part / entry.forecast) * 100)}%` : "0%";
-          return (
-            <li key={entry.month}>
-              <button
-                type="button"
-                className={cx(
-                  "forecast-month-tile",
-                  current && "is-current",
-                  entry.count === 0 && "is-empty",
-                  over === entry.month && "is-over",
-                )}
-                onClick={() => openMonth(entry.month)}
-                onDragOver={(event) => {
-                  if (!dragged) return;
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = "move";
-                  setOver(entry.month);
-                }}
-                onDragLeave={() => setOver((now) => (now === entry.month ? null : now))}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  setOver(null);
-                  if (dragged) planInMonth(dragged, entry.month);
-                  setDragged(null);
-                }}
-              >
-                <span className="forecast-tile-head">
-                  <span className="forecast-tile-month">{monthName(entry.month, locale)}</span>
-                  {note ? (
-                    <span className="forecast-tile-note" title={note.value.text}>
-                      <Icon name="page" size="sm" />
-                      <span className="ds-visually-hidden">{t("Poznámka", "Note")}</span>
-                    </span>
-                  ) : null}
-                </span>
-                <span className="forecast-tile-amount num">
-                  {entry.count === 0 ? "–" : withoutZeroCents(f.money(entry.forecast))}
-                </span>
-                <span className="forecast-tile-progress" aria-hidden="true">
-                  <span className="is-paid" style={{ width: width(entry.paid) }} />
-                  <span
-                    className="is-invoiced"
-                    style={{ width: width(entry.onTheWay - entry.overdue) }}
-                  />
-                  <span className="is-overdue" style={{ width: width(entry.overdue) }} />
-                </span>
-                <span className="forecast-tile-meta small">
-                  {entry.paid > 0 ? (
-                    <span>
-                      {t("Zapl.", "Paid")} {withoutZeroCents(f.money(entry.paid))}
-                    </span>
-                  ) : null}
-                  {entry.overdue > 0 ? (
-                    <span className="danger">
-                      {t("Po spl.", "Overdue")} {withoutZeroCents(f.money(entry.overdue))}
-                    </span>
-                  ) : null}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-
-      <ul className="forecast-quarters">
-        {outlook.quarters.map((quarter) => (
-          <li key={quarter.quarter} className="forecast-quarter">
-            <span className="forecast-quarter-name">Q{quarter.quarter}</span>
-            <span className="num forecast-quarter-amount">
-              {withoutZeroCents(f.money(quarter.forecast))}
-            </span>
-            <span className="small muted num">
-              {t("zaplaceno", "paid")} {withoutZeroCents(f.money(quarter.paid))}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <MonthChart
+        months={outlook.months}
+        quarters={outlook.quarters}
+        thisMonth={thisMonth}
+        notes={new Map([...notes].map(([month, entry]) => [month, entry.value.text]))}
+        over={over}
+        dropping={dragged !== null}
+        money={f.money}
+        onOpen={openMonth}
+        onOver={setOver}
+        onDrop={(month) => {
+          if (dragged) planInMonth(dragged, month);
+          setDragged(null);
+        }}
+      />
 
       {outlook.unassigned.length > 0 ? (
         <section
