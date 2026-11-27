@@ -31,7 +31,11 @@ export function ContactListPage({ data }: { data: AppData }) {
         title={t("Kontakty", "Contacts")}
         actions={
           canWrite ? (
-            <Button variant="primary" href={href({ page: "new-contact", company: null })}>
+            <Button
+              variant="primary"
+              icon="plus"
+              href={href({ page: "new-contact", company: null })}
+            >
               {t("Nový kontakt", "New contact")}
             </Button>
           ) : null

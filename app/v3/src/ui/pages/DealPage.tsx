@@ -250,13 +250,13 @@ export function DealPage({
           stored && canWrite ? (
             <>
               {won && stage?.kind !== "won" ? (
-                <Button variant="primary" onClick={() => setClosing("won")}>
-                  {t("Vyhráno", "Won")}
+                <Button variant="primary" icon="check" onClick={() => setClosing("won")}>
+                  {t("Označit jako vyhraný", "Mark as won")}
                 </Button>
               ) : null}
               {lost && stage?.kind !== "lost" ? (
                 <Button variant="secondary" onClick={() => setClosing("lost")}>
-                  {t("Ztraceno", "Lost")}
+                  {t("Označit jako ztracený", "Mark as lost")}
                 </Button>
               ) : null}
               {!isOpen && stage ? (

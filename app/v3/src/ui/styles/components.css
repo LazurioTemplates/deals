@@ -55,22 +55,23 @@
   white-space: nowrap;
 }
 
+/* The arrow shows on the sorted column, and on another one under the
+ * pointer or focus; at rest it takes no room from the label. */
 .data-table-sort-icon {
+  display: none;
   flex: none;
   width: 14px;
   height: 14px;
   color: var(--deals-ink-muted);
-  opacity: 0;
-  transition: opacity var(--deals-fade) ease;
 }
 
 .data-table-sort.is-sorted .data-table-sort-icon {
+  display: block;
   color: var(--ds-color-accent);
-  opacity: 1;
 }
 
 .data-table-sort:focus-visible .data-table-sort-icon {
-  opacity: 1;
+  display: block;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -80,13 +81,7 @@
   }
 
   .data-table-sort:hover .data-table-sort-icon {
-    opacity: 1;
-  }
-}
-
-@media (hover: none) {
-  .data-table-sort-icon {
-    opacity: 0.6;
+    display: block;
   }
 }
 

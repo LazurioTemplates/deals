@@ -228,8 +228,8 @@ describe("pages in Czech", () => {
     expect(html.lost).toContain("Konkurence");
     expect(html.lost).not.toContain("Vybavení prodejny");
     expect(html.deal).toContain("Chladicí vozy do flotily");
-    expect(html.deal).toContain("Vyhráno");
-    expect(html.deal).toContain("Ztraceno");
+    expect(html.deal).toContain("Označit jako vyhraný");
+    expect(html.deal).toContain("Označit jako ztracený");
     expect(html.deal).toContain("Aktivity");
     expect(html.deal).toContain("Poslat upravené podmínky");
     expect(html.wonDeal).toContain("Upravit uzavření");

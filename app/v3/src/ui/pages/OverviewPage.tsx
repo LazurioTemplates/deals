@@ -74,7 +74,11 @@ export function OverviewPage({
         )}
         actions={
           canWrite ? (
-            <Button variant="primary" href={href({ page: "new-deal", company: null, stage: null })}>
+            <Button
+              variant="primary"
+              icon="plus"
+              href={href({ page: "new-deal", company: null, stage: null })}
+            >
               {t("Nový případ", "New deal")}
             </Button>
           ) : null

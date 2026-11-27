@@ -225,12 +225,13 @@ export function StatTile({
     <>
       <span className="stat-tile-label">{label}</span>
       <span className="stat-tile-value num">{value}</span>
-      {change ? (
+      {/* Nothing before to compare with: the note says so, no chip. */}
+      {change && change.basisPoints !== null ? (
         <span
           className={cx(
             "stat-tile-change",
-            change.basisPoints !== null && change.basisPoints > 0 && "is-up",
-            change.basisPoints !== null && change.basisPoints < 0 && "is-down",
+            change.basisPoints > 0 && "is-up",
+            change.basisPoints < 0 && "is-down",
           )}
         >
           {change.text}

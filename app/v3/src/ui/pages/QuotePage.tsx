@@ -169,7 +169,7 @@ export function QuotePage({
           </Button>
         ) : null}
         <Button variant="quiet" disabled={busy !== null} onClick={() => setCancelling(true)}>
-          {t("Zrušit", "Cancel")}
+          {t("Zrušit nabídku", "Cancel the quote")}
         </Button>
       </>
     ) : null;
