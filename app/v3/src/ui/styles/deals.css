@@ -1,4 +1,4 @@
-/* The deals pages' layout; colours, type and spacing come from the design system's --ds-* tokens. */
+/* The deals pages' layout; colours come from the design system's --ds-* tokens, sizes from styles/look.css. */
 
 .deal-list,
 .deal-page {
@@ -11,22 +11,25 @@
   position: relative;
 }
 
-.deal-search .ds-input {
+.shell .deal-search .ds-input {
   width: 100%;
-  padding-inline-start: calc(var(--ds-space-12) + 20px);
+  padding-inline-start: 32px;
 }
 
 .deal-search-icon {
   position: absolute;
   top: 50%;
-  left: var(--ds-space-12);
-  color: var(--ds-color-ink-faint);
+  left: 10px;
+  z-index: 1;
+  width: 15px;
+  height: 15px;
+  color: var(--deals-ink-muted);
   transform: translateY(-50%);
   pointer-events: none;
 }
 
 .deal-list .filter-bar .ds-select-wrap {
-  flex: 0 1 220px;
+  flex: 0 1 200px;
   min-width: 0;
 }
 
@@ -53,8 +56,8 @@
 .deal-quote-dot {
   display: inline-block;
   flex: none;
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   margin-inline-start: var(--ds-space-4);
   border-radius: var(--ds-radius-pill);
   background: var(--ds-color-accent);
@@ -65,12 +68,6 @@
   margin-inline-start: 0;
 }
 
-.deal-stage-select .ds-select {
-  width: 100%;
-  min-height: var(--ds-size-control-sm, 32px);
-  padding-block: 0;
-  font-size: var(--ds-type-meta-size);
-}
 
 .deal-quote-link {
   display: inline-flex;
@@ -103,7 +100,7 @@
   display: flex;
   align-items: center;
   min-height: var(--ds-size-control-md, 40px);
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
   font-variant-numeric: tabular-nums;
 }
 
@@ -132,7 +129,7 @@
   gap: var(--ds-space-8);
   min-width: 0;
   padding-top: var(--ds-space-12);
-  border-top: var(--ds-size-border) solid var(--ds-color-line);
+  border-top: 0.5px solid var(--deals-line-strong);
 }
 
 .deal-quote:first-child,
@@ -152,7 +149,7 @@
 
 .deal-quote-number,
 .deal-payment-month {
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
 }
 
 .deal-quote-figures {
@@ -169,8 +166,8 @@
 }
 
 .deal-quote-figures dt {
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
 }
 
 .deal-quote-figures dd {
@@ -221,21 +218,21 @@
   justify-content: space-between;
   gap: var(--ds-space-8);
   min-width: 0;
-  font-size: var(--ds-type-meta-size);
+  font-size: var(--deals-small);
 }
 
 .activity-strip dt {
-  color: var(--ds-color-ink-muted);
+  color: var(--deals-ink-muted);
 }
 
 .activity-strip dd {
   margin: 0;
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
   font-variant-numeric: tabular-nums;
 }
 
 .activity-strip .is-empty dd {
-  color: var(--ds-color-ink-faint);
+  color: var(--deals-ink-faint);
   font-weight: inherit;
 }
 

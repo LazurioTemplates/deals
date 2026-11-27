@@ -34,8 +34,8 @@
   width: 100%;
   min-height: 108px;
   padding: var(--ds-space-12);
-  border: var(--ds-size-border) solid var(--ds-color-line);
-  border-radius: var(--ds-radius-md);
+  border: 0.5px solid var(--deals-line-strong);
+  border-radius: var(--deals-radius-card);
   background: var(--ds-color-surface);
   color: inherit;
   font: inherit;
@@ -51,7 +51,7 @@
 }
 
 .forecast-month-tile.is-empty .forecast-tile-amount {
-  color: var(--ds-color-ink-faint);
+  color: var(--deals-ink-faint);
 }
 
 .forecast-month-tile.is-over {
@@ -64,8 +64,8 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--ds-space-4);
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
 }
 
 .forecast-tile-month {
@@ -76,12 +76,12 @@
 
 .forecast-tile-note {
   display: inline-flex;
-  color: var(--ds-color-ink-muted);
+  color: var(--deals-ink-muted);
 }
 
 .forecast-tile-amount {
   overflow: hidden;
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
   text-align: start;
   text-overflow: ellipsis;
 }
@@ -113,7 +113,7 @@
 
 .forecast-tile-meta {
   display: grid;
-  color: var(--ds-color-ink-muted);
+  color: var(--deals-ink-muted);
 }
 
 .forecast-tile-meta > span {
@@ -138,17 +138,17 @@
   align-items: baseline;
   gap: 0 var(--ds-space-8);
   padding: var(--ds-space-8) var(--ds-space-12);
-  border-radius: var(--ds-radius-md);
+  border-radius: var(--deals-radius-card);
   background: var(--ds-color-surface-muted);
 }
 
 .forecast-quarter-name {
-  color: var(--ds-color-ink-muted);
-  font-weight: var(--ds-type-label-weight);
+  color: var(--deals-ink-muted);
+  font-weight: var(--deals-weight-strong);
 }
 
 .forecast-quarter-amount {
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
 }
 
 .forecast-quarter .small {
@@ -179,7 +179,7 @@
   align-items: center;
   gap: var(--ds-space-12);
   padding: var(--ds-space-8) var(--ds-space-12);
-  border: var(--ds-size-border) solid var(--ds-color-line);
+  border: 0.5px solid var(--deals-line-strong);
   border-radius: var(--ds-radius-sm);
   background: var(--ds-color-surface);
 }
@@ -204,7 +204,7 @@
 }
 
 .forecast-unassigned-value {
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
 }
 
 /* Month panels */
@@ -227,7 +227,7 @@
   align-items: center;
   gap: var(--ds-space-8) var(--ds-space-20);
   padding-bottom: var(--ds-space-8);
-  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+  border-bottom: 0.5px solid var(--deals-line-strong);
 }
 
 .forecast-month.is-current .forecast-month-head {
@@ -261,13 +261,13 @@
 }
 
 .forecast-month-figures dt {
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
 }
 
 .forecast-month-figures dd {
   margin: 0;
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
   text-align: start;
 }
 
@@ -436,13 +436,13 @@
 }
 
 .plan-editor-summary dt {
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
 }
 
 .plan-editor-summary dd {
   margin: 0;
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
   text-align: start;
 }
 
@@ -477,7 +477,7 @@
   justify-content: space-between;
   gap: var(--ds-space-12);
   padding-bottom: var(--ds-space-8);
-  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+  border-bottom: 0.5px solid var(--deals-line-strong);
 }
 
 .overview-list li:last-child {
@@ -554,7 +554,7 @@
 
   .plan-editor-row {
     padding-bottom: var(--ds-space-8);
-    border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+    border-bottom: 0.5px solid var(--deals-line-strong);
   }
 }
 

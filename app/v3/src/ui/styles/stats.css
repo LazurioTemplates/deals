@@ -1,5 +1,5 @@
-/* The statistics page and the App's charts. Layout only; colours, type and
-   spacing are the design system's --ds-* tokens. */
+/* The statistics page and the App's charts. Colours are the design system's
+   --ds-* tokens, sizes the App's look (styles/look.css). */
 
 .stats-filters {
   align-items: flex-start;
@@ -51,10 +51,10 @@
   gap: var(--ds-space-8);
   min-width: 0;
   margin: 0;
-  padding: var(--ds-space-16);
-  border: var(--ds-size-border) solid var(--ds-color-line);
-  border-radius: var(--ds-radius-md);
-  background: var(--ds-color-surface);
+  padding: 14px 16px 16px;
+  border-radius: var(--deals-radius-card);
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
 }
 
 .chart-head {
@@ -67,6 +67,9 @@
 
 .chart-title {
   margin: 0;
+  color: var(--deals-ink-text);
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight);
 }
 
 .chart-tools {
@@ -82,8 +85,8 @@
   gap: var(--ds-space-4) var(--ds-space-16);
   margin: 0;
   padding: 0;
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
   list-style: none;
 }
 
@@ -95,9 +98,9 @@
 
 .chart-swatch {
   display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
 }
 
 .chart-box {
@@ -113,42 +116,47 @@
 }
 
 .chart-svg text {
-  font-family: var(--ds-type-meta-font);
-  font-size: 12px;
+  font-family: inherit;
+  font-size: var(--deals-tiny);
 }
 
 .chart-tick {
-  fill: var(--ds-color-ink-muted);
+  fill: var(--deals-ink-muted);
   font-variant-numeric: tabular-nums;
 }
 
+.chart-svg .chart-label,
+.chart-svg .chart-value {
+  font-size: var(--deals-text);
+}
+
 .chart-label {
-  fill: var(--ds-color-ink);
+  fill: var(--deals-ink-muted);
 }
 
 .chart-value {
-  fill: var(--ds-color-ink);
-  font-weight: var(--ds-type-label-weight);
+  fill: var(--deals-ink);
+  font-weight: var(--deals-weight-strong);
   font-variant-numeric: tabular-nums;
 }
 
 .chart-grid {
-  stroke: var(--ds-color-line);
-  stroke-width: 1;
+  stroke: var(--deals-line);
+  stroke-width: 0.5;
 }
 
 .chart-axis {
-  stroke: var(--ds-color-line-strong);
+  stroke: var(--deals-line-strong);
   stroke-width: 1;
 }
 
 .chart-track {
-  fill: var(--ds-color-surface-muted);
+  fill: var(--deals-chip);
 }
 
 .chart-line {
   fill: none;
-  stroke-width: 2;
+  stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -178,11 +186,12 @@
   gap: var(--ds-space-2);
   min-width: 160px;
   padding: var(--ds-space-8) var(--ds-space-12);
-  border: var(--ds-size-border) solid var(--ds-color-line);
-  border-radius: var(--ds-radius-sm);
-  background: var(--ds-color-surface-raised);
-  box-shadow: var(--ds-shadow-float);
-  font-size: var(--ds-type-meta-size);
+  border-radius: 10px;
+  background: var(--deals-card);
+  box-shadow:
+    0 0 0 0.5px var(--deals-line-strong),
+    0 12px 32px -8px color-mix(in srgb, var(--ds-color-ink) 16%, transparent);
+  font-size: var(--deals-small);
   pointer-events: none;
   transform: translateX(12px);
   white-space: nowrap;
@@ -196,11 +205,13 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--ds-color-action);
+  color: var(--deals-ink);
   font: inherit;
   text-align: inherit;
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration-color: var(--deals-line-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
   cursor: pointer;
 }
 

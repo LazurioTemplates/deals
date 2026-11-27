@@ -281,7 +281,7 @@ export function DataTable<R>({
                     {column.sortValue ? (
                       <button
                         type="button"
-                        className="data-table-sort"
+                        className={cx("data-table-sort", sortedHere && "is-sorted")}
                         onClick={() => sortBy(column)}
                       >
                         <span>{column.label}</span>
@@ -294,6 +294,7 @@ export function DataTable<R>({
                               : "sort"
                           }
                           size="sm"
+                          className="data-table-sort-icon"
                         />
                       </button>
                     ) : (

@@ -179,9 +179,9 @@ export function QuotePage({
       <PageHeader
         eyebrow={
           deal ? (
-            <a href={href({ page: "deal", id: deal.id })}>← {deal.title}</a>
+            <a href={href({ page: "deal", id: deal.id })}>{deal.title}</a>
           ) : (
-            <a href={href({ page: "quotes" })}>← {t("Cenové nabídky", "Quotes")}</a>
+            <a href={href({ page: "quotes" })}>{t("Cenové nabídky", "Quotes")}</a>
           )
         }
         title={form.title || quote.title}

@@ -29,7 +29,7 @@
 }
 
 .quote-card-title {
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
   overflow-wrap: anywhere;
 }
 
@@ -57,7 +57,7 @@
   width: 100%;
   min-height: 48px;
   padding: var(--ds-space-8) var(--ds-space-12);
-  border: var(--ds-size-border) solid var(--ds-color-line);
+  border: 0.5px solid var(--deals-line-strong);
   border-radius: var(--ds-radius-sm);
   background: var(--ds-color-surface);
   color: inherit;
@@ -84,7 +84,7 @@
 }
 
 .picker-option-name {
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
   overflow-wrap: anywhere;
 }
 
@@ -130,7 +130,7 @@
   display: grid;
   gap: var(--ds-space-8);
   padding-block: var(--ds-space-16);
-  border-top: var(--ds-size-border) solid var(--ds-color-line);
+  border-top: 0.5px solid var(--deals-line-strong);
 }
 
 .quote-section-head {
@@ -143,12 +143,12 @@
   flex: 1 1 auto;
   min-width: 0;
   max-width: 360px;
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
 }
 
 .quote-section-total {
   margin-left: auto;
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
 }
 
 .quote-section-empty {
@@ -170,7 +170,7 @@
 
 .quote-add-section {
   padding-top: var(--ds-space-16);
-  border-top: var(--ds-size-border) solid var(--ds-color-line);
+  border-top: 0.5px solid var(--deals-line-strong);
 }
 
 .quote-add-section-select {
@@ -202,7 +202,7 @@
   align-items: start;
   gap: var(--ds-space-8);
   padding-bottom: var(--ds-space-12);
-  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+  border-bottom: 0.5px solid var(--deals-line-strong);
 }
 
 .quote-line-labels {
@@ -259,8 +259,8 @@
 }
 
 .quote-line-label {
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
 }
 
 @container (min-width: 560px) {
@@ -297,8 +297,8 @@
 
   .quote-line-labels {
     display: grid;
-    color: var(--ds-color-ink-muted);
-    font-size: var(--ds-type-meta-size);
+    color: var(--deals-ink-muted);
+    font-size: var(--deals-small);
   }
 
   .quote-line-labels .quote-line-qty,
@@ -341,7 +341,7 @@
   max-height: 320px;
   overflow-y: auto;
   padding: var(--ds-space-4);
-  border: var(--ds-size-border) solid var(--ds-color-line);
+  border: 0.5px solid var(--deals-line-strong);
   border-radius: var(--ds-radius-sm);
   background: var(--ds-color-surface-raised);
   box-shadow: var(--ds-shadow-float);
@@ -379,7 +379,7 @@
 }
 
 .quote-totals dt {
-  color: var(--ds-color-ink-muted);
+  color: var(--deals-ink-muted);
 }
 
 .quote-totals dd {
@@ -392,8 +392,8 @@
 
 .quote-totals-strong {
   padding-top: var(--ds-space-4);
-  border-top: var(--ds-size-border) solid var(--ds-color-line);
-  font-weight: var(--ds-type-label-weight);
+  border-top: 0.5px solid var(--deals-line-strong);
+  font-weight: var(--deals-weight-strong);
 }
 
 .quote-totals-strong dt {
@@ -447,8 +447,8 @@
 
 .quote-terms-preview-label {
   display: block;
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
 }
 
 .terms-preview,
@@ -459,8 +459,8 @@
 .terms-preview h4,
 .quote-sheet-terms-text h4 {
   margin: var(--ds-space-8) 0 var(--ds-space-4);
-  font-size: var(--ds-type-label-size);
-  font-weight: var(--ds-type-label-weight);
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight-strong);
 }
 
 .terms-preview p,
@@ -489,7 +489,7 @@
   background: none;
   color: inherit;
   font: inherit;
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
   text-align: start;
   cursor: pointer;
 }
@@ -526,7 +526,7 @@
   min-height: 297mm;
   margin: 0 auto;
   padding: 18mm 16mm;
-  border: var(--ds-size-border) solid var(--ds-color-line);
+  border: 0.5px solid var(--deals-line-strong);
   border-radius: var(--ds-radius-xs);
   background: var(--ds-color-surface);
   box-shadow: var(--ds-shadow-float);
@@ -553,20 +553,20 @@
 
 .quote-sheet-label {
   margin-bottom: var(--ds-space-4);
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-status-size);
-  font-weight: var(--ds-type-status-weight);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
+  font-weight: var(--deals-weight-strong);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .quote-sheet-name {
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
 }
 
 .quote-sheet-title h1 {
   margin: 0;
-  font-family: var(--ds-type-display-font);
+  font-family: inherit;
   font-size: var(--ds-type-display-size);
   font-weight: var(--ds-type-display-weight);
   line-height: var(--ds-type-display-leading);
@@ -586,13 +586,13 @@
 }
 
 .quote-sheet-meta dt {
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
 }
 
 .quote-sheet-meta dd {
   margin: 0;
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
 }
 
 .quote-sheet-block {
@@ -613,7 +613,7 @@
 .quote-sheet-table th,
 .quote-sheet-table td {
   padding: var(--ds-space-4) var(--ds-space-8);
-  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+  border-bottom: 0.5px solid var(--deals-line-strong);
   text-align: start;
   vertical-align: top;
 }
@@ -624,14 +624,14 @@
 }
 
 .quote-sheet-table thead th {
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
-  font-weight: var(--ds-type-label-weight);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
+  font-weight: var(--deals-weight-strong);
 }
 
 .quote-sheet-section th {
   padding-top: var(--ds-space-12);
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
 }
 
 .quote-sheet-line-name {
@@ -641,8 +641,8 @@
 
 .quote-sheet-line-description {
   display: block;
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
   overflow-wrap: anywhere;
 }
 
@@ -673,11 +673,11 @@
   padding-top: var(--ds-space-4);
   border-top: var(--ds-size-border) solid var(--ds-color-line-strong);
   font-size: var(--ds-type-lead-size);
-  font-weight: var(--ds-type-title-weight);
+  font-weight: var(--deals-weight-strong);
 }
 
 .quote-sheet-note {
-  color: var(--ds-color-ink-muted);
+  color: var(--deals-ink-muted);
   text-align: end;
 }
 
@@ -686,9 +686,9 @@
   gap: var(--ds-space-2);
   margin-top: var(--ds-space-24);
   padding-top: var(--ds-space-8);
-  border-top: var(--ds-size-border) solid var(--ds-color-line);
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  border-top: 0.5px solid var(--deals-line-strong);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
   overflow-wrap: anywhere;
 }
 
@@ -724,7 +724,7 @@
 
   .quote-sheet-lines {
     min-width: 520px;
-    font-size: var(--ds-type-meta-size);
+    font-size: var(--deals-small);
   }
 
   /* A wide table of lines scrolls inside its block, never the page. */

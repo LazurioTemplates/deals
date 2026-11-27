@@ -12,7 +12,7 @@ import { type Column, DataTable } from "../components/DataTable.tsx";
 import { NewQuoteDialog } from "../components/quotes/NewQuoteDialog.tsx";
 import { matches } from "../components/quotes/search.ts";
 import { useFormat, useT } from "../i18n.tsx";
-import { QUOTE_STATUS_LABELS, QuoteStatusBadge } from "../labels.tsx";
+import { QUOTE_STATUS_LABELS, QUOTE_STATUS_TONES, QuoteStatusBadge } from "../labels.tsx";
 import { readLocal, useLookups, writeLocal } from "../lookups.ts";
 import { href, navigate } from "../routes.ts";
 import { useCanWrite } from "../write.tsx";
@@ -191,7 +191,9 @@ export function QuoteListPage({
       interactive: true,
       render: (entry) =>
         canWrite ? (
-          <div className="ds-select-wrap quote-status-select">
+          <div
+            className={`ds-select-wrap quote-status-select stage-pill stage-pill--${QUOTE_STATUS_TONES[entry.value.status]}`}
+          >
             <select
               className="ds-select"
               value={entry.value.status}

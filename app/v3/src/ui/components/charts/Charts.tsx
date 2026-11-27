@@ -17,23 +17,30 @@ import {
  * The App's own charts in inline SVG: columns (side by side or stacked), a
  * list of bars and lines. Each is an image with a label for screen readers
  * and a table of its values beside it, hidden until the person asks for it.
- * Colours are the design system's tokens: the current period in the accent,
- * the previous one muted; open, won and lost in the colours of their stages.
+ * Colours are the design system's tokens, softened toward the surface so a
+ * chart stays calm: the current period in the accent, the previous one a
+ * light gray; open, won and lost in the colours of their stages.
  */
 export type ChartTone = "accent" | "previous" | "open" | "won" | "lost";
 
+const soft = (token: string, share: number) =>
+  `color-mix(in srgb, var(${token}) ${share}%, var(--ds-color-surface))`;
+
 const FILL: Record<ChartTone, string> = {
-  accent: "var(--ds-color-accent)",
-  previous: "var(--ds-color-line-strong)",
-  open: "var(--ds-color-info)",
-  won: "var(--ds-color-success)",
-  lost: "var(--ds-color-danger)",
+  accent: soft("--ds-color-accent", 62),
+  previous: "color-mix(in srgb, var(--ds-color-ink) 12%, transparent)",
+  open: soft("--ds-color-info", 55),
+  won: soft("--ds-color-success", 62),
+  lost: soft("--ds-color-danger", 62),
 };
 
-/** The stroke of a line: the previous period needs more ink than a muted bar. */
+/** The stroke of a line: full colour, and the previous period a darker gray than a bar. */
 const STROKE: Record<ChartTone, string> = {
-  ...FILL,
-  previous: "var(--ds-color-ink-faint)",
+  accent: soft("--ds-color-accent", 80),
+  previous: "color-mix(in srgb, var(--ds-color-ink) 30%, transparent)",
+  open: soft("--ds-color-info", 75),
+  won: soft("--ds-color-success", 80),
+  lost: soft("--ds-color-danger", 80),
 };
 
 export interface LegendItem {
@@ -347,13 +354,13 @@ export function BarListChart({
               <text className="chart-value" x={width} y={top + 14} textAnchor="end">
                 {row.valueText}
               </text>
-              <rect className="chart-track" x={0} y={top + 22} width={width} height={10} rx={4} />
+              <rect className="chart-track" x={0} y={top + 24} width={width} height={6} rx={3} />
               <path
-                d={barPath(0, top + 22, scale(row.values[0]), 10)}
+                d={barPath(0, top + 24, scale(row.values[0]), 6, 3)}
                 style={{ fill: FILL.accent }}
               />
               <path
-                d={barPath(0, top + 34, scale(row.values[1]), 5, 2)}
+                d={barPath(0, top + 34, scale(row.values[1]), 3, 1.5)}
                 style={{ fill: FILL.previous }}
               />
               {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer shortcut; the table of the chart opens the same by keyboard */}

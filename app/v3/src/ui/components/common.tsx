@@ -1,21 +1,30 @@
 import { cx, fieldIds, type Tone } from "design-system";
 import { Alert, Badge, Icon } from "design-system/react";
 import { cloneElement, isValidElement, type ReactElement, type ReactNode, useId } from "react";
-import type { Stage, StageKind } from "../../domain/settings.ts";
+import type { Stage } from "../../domain/settings.ts";
 import { ApiError } from "../api.ts";
 import { useLocale, useT } from "../i18n.tsx";
+import { usePagePlace } from "./Layout.tsx";
 
-const KIND_TONES: Record<StageKind, Tone> = {
-  open: "info",
-  won: "success",
-  lost: "danger",
-};
+/**
+ * The colour of a stage: an open stage warms up as a deal comes closer to a
+ * decision (gray, blue, accent, amber by its probability), a won one is
+ * green and a lost one red.
+ */
+export function stageTone(stage: Pick<Stage, "kind" | "probability">): Tone {
+  if (stage.kind === "won") return "success";
+  if (stage.kind === "lost") return "danger";
+  if (stage.probability < 20) return "neutral";
+  if (stage.probability < 40) return "info";
+  if (stage.probability < 65) return "accent";
+  return "warning";
+}
 
-/** The stage of a deal as a chip: its label, coloured by whether it is open, won or lost. */
+/** The stage of a deal as a chip: its label, coloured by where it stands. */
 export function StageChip({ stage }: { stage: Stage | undefined }) {
   const t = useT();
   if (!stage) return <Badge tone="warning">{t("neznámá fáze", "unknown stage")}</Badge>;
-  return <Badge tone={KIND_TONES[stage.kind]}>{stage.label}</Badge>;
+  return <Badge tone={stageTone(stage)}>{stage.label}</Badge>;
 }
 
 const CONTROL_CLASS: Record<string, string> = {
@@ -128,6 +137,12 @@ export function fieldErrors(error: unknown): Record<string, string> {
   return errors;
 }
 
+/**
+ * The top of a page. One quiet row: where the page sits (the section, then the
+ * page) and its actions on the right. A list or a dashboard is named by that
+ * row alone; a record's page (one with an `eyebrow`, e.g. "Deal D-0004") adds
+ * its name as a large title under it.
+ */
 export function PageHeader({
   eyebrow,
   title,
@@ -139,15 +154,31 @@ export function PageHeader({
   subtitle?: ReactNode;
   actions?: ReactNode;
 }) {
+  const place = usePagePlace();
+  const record = eyebrow !== undefined && eyebrow !== null && eyebrow !== false;
   return (
-    <header className="page-header">
-      <div className="title-row">
-        <div>
-          {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
-          <h1 className="page-title">{title}</h1>
+    <header className={cx("page-header", record && "page-header--record")}>
+      <div className="page-bar">
+        <div className="page-path">
+          {place ? (
+            <>
+              <a className="page-path-parent" href={place.sectionHref}>
+                {place.section}
+              </a>
+              <span className="page-path-separator" aria-hidden="true">
+                /
+              </span>
+            </>
+          ) : null}
+          {record ? (
+            <span className="page-path-current">{eyebrow}</span>
+          ) : (
+            <h1 className="page-path-current page-title">{title}</h1>
+          )}
         </div>
         {actions ? <div className="actions">{actions}</div> : null}
       </div>
+      {record ? <h1 className="page-title page-title--record">{title}</h1> : null}
       {subtitle ? <p className="page-subtitle">{subtitle}</p> : null}
     </header>
   );
