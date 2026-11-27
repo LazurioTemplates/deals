@@ -249,12 +249,13 @@ export function DealPage({
         actions={
           stored && canWrite ? (
             <>
-              {won && stage?.kind !== "won" ? (
+              {/* An open deal closes here; a closed one changes its closing in the dialog. */}
+              {isOpen && won ? (
                 <Button variant="primary" icon="check" onClick={() => setClosing("won")}>
                   {t("Označit jako vyhraný", "Mark as won")}
                 </Button>
               ) : null}
-              {lost && stage?.kind !== "lost" ? (
+              {isOpen && lost ? (
                 <Button variant="secondary" onClick={() => setClosing("lost")}>
                   {t("Označit jako ztracený", "Mark as lost")}
                 </Button>
@@ -280,6 +281,21 @@ export function DealPage({
           onClose={() => setClosing(null)}
           onDone={onChanged}
           today={today}
+          switchTo={
+            isOpen
+              ? undefined
+              : closing === "won" && lost
+                ? {
+                    label: t("Byl nakonec ztracený", "It was lost after all"),
+                    run: () => setClosing("lost"),
+                  }
+                : closing === "lost" && won
+                  ? {
+                      label: t("Byl nakonec vyhraný", "It was won after all"),
+                      run: () => setClosing("won"),
+                    }
+                  : undefined
+          }
         />
       ) : null}
       {stored?.value.lossNote ? <p className="loss-note">{stored.value.lossNote}</p> : null}
@@ -498,7 +514,12 @@ export function DealPage({
               </div>
             </article>
             {canWrite ? (
-              <div className="form-actions">
+              <div className={edit.touched ? "form-actions form-actions--pending" : "form-actions"}>
+                {edit.touched ? (
+                  <span className="form-actions-note">
+                    {t("Neuložené změny", "Unsaved changes")}
+                  </span>
+                ) : null}
                 <Button
                   variant="primary"
                   type="submit"

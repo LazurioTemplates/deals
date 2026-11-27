@@ -93,10 +93,6 @@ export function SalespeopleListPage({ data }: { data: AppData }) {
     <section>
       <PageHeader
         title={t("Obchodníci", "Salespeople")}
-        subtitle={t(
-          "Kdo v týmu prodává a co má v pipeline. Kartu otevřete pro podrobnosti a úpravy.",
-          "Who sells in the team and what they have in the pipeline. Open a card for the details and to edit.",
-        )}
         actions={
           canWrite ? (
             <Button variant="primary" icon="plus" href={href({ page: "new-salesperson" })}>

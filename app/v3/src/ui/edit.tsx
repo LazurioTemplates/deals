@@ -121,6 +121,8 @@ export function useRecordForm<T, F>(
     drift,
     /** The record changed under touched values and the person has not chosen to go on. */
     changed: change !== null && change !== state.dismissed,
+    /** The values differ from the record the form opened on: something is not saved yet. */
+    touched: isTouched(state, formOf),
     update: (patch: Partial<F>) =>
       setHeld((before) => ({ ...before, form: { ...before.form, ...patch } })),
     setForm: (form: F) => setHeld((before) => ({ ...before, form })),

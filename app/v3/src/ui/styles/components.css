@@ -612,3 +612,35 @@
     white-space: nowrap;
   }
 }
+
+/* A second row of tiles for the figures that support the main ones. */
+.stat-tiles--small {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  margin-top: -6px;
+}
+
+.stat-tiles--small .stat-tile {
+  padding: 10px 14px 12px;
+  background: var(--deals-frame);
+  box-shadow: none;
+}
+
+.stat-tiles--small .stat-tile-label {
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
+  line-height: var(--deals-small-leading);
+}
+
+.stat-tiles--small .stat-tile-value {
+  font-size: var(--deals-heading);
+  line-height: 22px;
+  letter-spacing: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .stat-tiles--small .stat-tile--button:hover {
+    background: var(--deals-card);
+    box-shadow: var(--deals-shadow-card);
+  }
+}

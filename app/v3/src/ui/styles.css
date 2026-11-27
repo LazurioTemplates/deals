@@ -1044,3 +1044,28 @@ select,
     display: none;
   }
 }
+
+/* A record with unsaved changes: its save stays in reach at the bottom of the screen. */
+.form-actions--pending {
+  position: sticky;
+  bottom: 12px;
+  z-index: 2;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 8px 8px 16px;
+  border-radius: var(--deals-radius-card);
+  background: var(--deals-card);
+  box-shadow:
+    0 0 0 0.5px var(--deals-line-strong),
+    0 12px 32px -8px color-mix(in srgb, var(--ds-color-ink) 16%, transparent);
+}
+
+.form-actions-note {
+  margin-inline-end: auto;
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-text);
+}
+
+.close-deal-switch {
+  margin-inline-end: auto;
+}

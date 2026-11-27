@@ -1009,10 +1009,7 @@ export function SettingsPage({
     <section>
       <PageHeader
         title={t("Nastavení", "Settings")}
-        subtitle={t(
-          "Fáze pipeline, důvody ztráty, typy zakázek, fakturační firmy, výchozí hodnoty nabídky a splatnost. Změna se uloží jako koncept.",
-          "The stages of the pipeline, the loss reasons, the deal types, the billing entities, the quote defaults and the due days. A change is saved as a draft.",
-        )}
+        subtitle={t("Změna se uloží jako koncept.", "A change is saved as a draft.")}
       />
       <form className="form form-wide" onSubmit={save}>
         <fieldset className="form-fieldset" disabled={!canWrite}>

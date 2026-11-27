@@ -248,8 +248,8 @@ export function ImportPage({ data, onChanged }: { data: AppData; onChanged: () =
       <PageHeader
         title={t("Import", "Import")}
         subtitle={t(
-          "Firmy, kontakty nebo obchodní případy z CSV: z tabulky, z jiného CRM (třeba exportu z HubSpotu). Nové záznamy se uloží jako koncept; existující se nemění.",
-          "Companies, contacts or deals from CSV: from a spreadsheet or another CRM (such as a HubSpot export). The new records are saved as a draft; existing ones do not change.",
+          "CSV z tabulky nebo jiného CRM. Nové záznamy se uloží jako koncept.",
+          "CSV from a spreadsheet or another CRM. New records are saved as a draft.",
         )}
       />
       <div className="import-steps">

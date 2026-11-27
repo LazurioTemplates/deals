@@ -9,7 +9,6 @@ import { openStages } from "../../domain/settings.ts";
 import { changeBasisPoints, stats } from "../../domain/stats.ts";
 import { type AppData, dataSetOf } from "../App.tsx";
 import { StatTile } from "../components/Board.tsx";
-import { MoveDeal } from "../components/CloseDeal.tsx";
 import { changeText, monthName } from "../components/charts/format.ts";
 import { PageHeader } from "../components/common.tsx";
 import { DAYS, DEALS, useFormat, useLocale, useT } from "../i18n.tsx";
@@ -28,11 +27,11 @@ const SOONEST = 8;
  */
 export function OverviewPage({
   data,
-  onChanged,
   today = localToday(),
 }: {
   data: AppData;
-  onChanged: () => Promise<void>;
+  /** Kept for the App's page contract; the overview itself changes nothing. */
+  onChanged?: () => Promise<void>;
   today?: string;
 }) {
   const t = useT();
@@ -68,10 +67,6 @@ export function OverviewPage({
     <section className="overview-page">
       <PageHeader
         title={t("Přehled obchodu", "Sales overview")}
-        subtitle={t(
-          "Otevřené případy podle fáze, forecast tohoto měsíce a výsledky posledních 90 dní.",
-          "Open deals by stage, this month's forecast and the results of the last 90 days.",
-        )}
         actions={
           canWrite ? (
             <Button
@@ -160,7 +155,6 @@ export function OverviewPage({
                           )}
                         </span>
                       </span>
-                      <MoveDeal deal={entry} settings={settings} onChanged={onChanged} />
                     </li>
                   );
                 })}

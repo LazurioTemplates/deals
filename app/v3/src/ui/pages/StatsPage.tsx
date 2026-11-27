@@ -182,6 +182,31 @@ export function StatsPage({ data, today = localToday() }: { data: AppData; today
           onOpen={() => openDeals(t("Vyhrané případy", "Won deals"), current.won)}
         />
         <StatTile
+          label={t("Konverze", "Conversion")}
+          value={f.rate(current.conversionBasisPoints)}
+          change={
+            conversionDelta === null
+              ? undefined
+              : {
+                  basisPoints: conversionDelta,
+                  text: `${conversionDelta > 0 ? "▲" : conversionDelta < 0 ? "▼" : "="} ${pointsText(Math.abs(conversionDelta), locale)}`,
+                }
+          }
+          note={t(
+            `${current.won.count} vyhraných z ${decided.count} uzavřených`,
+            `${current.won.count} won of ${decided.count} closed`,
+          )}
+          onOpen={() => openDeals(t("Uzavřené případy", "Closed deals"), decided)}
+        />
+        <StatTile
+          label={t("Aktivní pipeline", "Active pipeline")}
+          value={f.money(s.pipeline.value)}
+          note={t(`${s.pipeline.count} otevřených · dnes`, `${s.pipeline.count} open · today`)}
+          onOpen={() => openDeals(t("Otevřené případy", "Open deals"), s.pipeline)}
+        />
+      </div>
+      <div className="stat-tiles stat-tiles--small stats-tiles">
+        <StatTile
           label={t("Průměrný vyhraný případ", "Average won deal")}
           value={current.averageWonValue === null ? "–" : f.money(current.averageWonValue)}
           change={
@@ -211,23 +236,6 @@ export function StatsPage({ data, today = localToday() }: { data: AppData; today
           }
         />
         <StatTile
-          label={t("Konverze", "Conversion")}
-          value={f.rate(current.conversionBasisPoints)}
-          change={
-            conversionDelta === null
-              ? undefined
-              : {
-                  basisPoints: conversionDelta,
-                  text: `${conversionDelta > 0 ? "▲" : conversionDelta < 0 ? "▼" : "="} ${pointsText(Math.abs(conversionDelta), locale)}`,
-                }
-          }
-          note={t(
-            `${current.won.count} vyhraných z ${decided.count} uzavřených`,
-            `${current.won.count} won of ${decided.count} closed`,
-          )}
-          onOpen={() => openDeals(t("Uzavřené případy", "Closed deals"), decided)}
-        />
-        <StatTile
           label={t("Průměrná délka obchodu", "Average sales cycle")}
           value={current.averageCycleDays === null ? "–" : t.count(current.averageCycleDays, DAYS)}
           change={
@@ -241,12 +249,6 @@ export function StatsPage({ data, today = localToday() }: { data: AppData; today
               : was(t.count(previous.averageCycleDays, DAYS))
           }
           onOpen={() => openDeals(t("Vyhrané případy", "Won deals"), current.won)}
-        />
-        <StatTile
-          label={t("Aktivní pipeline", "Active pipeline")}
-          value={f.money(s.pipeline.value)}
-          note={t(`${s.pipeline.count} otevřených · dnes`, `${s.pipeline.count} open · today`)}
-          onOpen={() => openDeals(t("Otevřené případy", "Open deals"), s.pipeline)}
         />
       </div>
 

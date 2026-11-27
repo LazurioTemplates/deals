@@ -373,7 +373,6 @@ function useDealColumns({
           <a className="data-table-link" href={href({ page: "deal", id: entry.value.id })}>
             {entry.value.title}
           </a>
-          {lookups.quotesOf(entry.value.id).length > 0 ? <QuoteDot /> : null}
         </span>
       ),
     },
