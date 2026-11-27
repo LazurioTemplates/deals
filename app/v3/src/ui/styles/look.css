@@ -87,6 +87,17 @@
   --deals-fade: 140ms;
 }
 
+/* In the dark the page is the darkest layer and the panel a step lighter. */
+[data-theme="dark"] {
+  --deals-page: var(--ds-color-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --deals-page: var(--ds-color-bg);
+  }
+}
+
 /* ---------- The page ---------- */
 
 body {
@@ -595,7 +606,64 @@ body {
 }
 
 .shell .ds-empty {
+  gap: 0;
   font-size: var(--deals-text);
+}
+
+.shell .ds-empty__icon {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 16px;
+  border-radius: 11px;
+  background: var(--deals-chip);
+  color: var(--deals-ink-muted);
+}
+
+.shell .ds-empty__title {
+  margin: 0;
+  color: var(--deals-ink-strong);
+  font-family: inherit;
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight-strong);
+  line-height: var(--deals-text-leading);
+  letter-spacing: 0;
+}
+
+.shell .ds-empty__body {
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-text);
+  line-height: var(--deals-text-leading);
+  text-wrap: balance;
+}
+
+.shell .ds-empty__actions {
+  margin-top: 18px;
+}
+
+/* Code-like ids in running text. */
+.shell code {
+  font-family: var(--ds-type-mono-font);
+  font-size: var(--deals-small);
+}
+
+/* The browser's file button as a secondary button. */
+.shell input[type="file"] {
+  padding: 3px;
+  color: var(--deals-ink-muted);
+}
+
+.shell input[type="file"]::file-selector-button {
+  min-height: 24px;
+  margin-inline-end: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--deals-radius-button);
+  background: var(--deals-chip);
+  color: var(--deals-ink);
+  font: inherit;
+  font-size: var(--deals-small);
+  font-weight: var(--deals-weight-strong);
+  cursor: pointer;
 }
 
 /* ---------- Focus ---------- */

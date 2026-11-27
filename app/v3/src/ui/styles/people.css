@@ -1,6 +1,6 @@
 /* The people pages' layout: the salespeople, the settings, the import, the
-   companies and the contacts. Colours, type and spacing come from the design
-   system's --ds-* tokens; this file is layout only. */
+   companies and the contacts. Colours come from the design system's --ds-*
+   tokens, sizes from the App's look (styles/look.css). */
 
 /* Salespeople: a grid of cards */
 .person-grid {
@@ -164,10 +164,9 @@
   display: grid;
   gap: var(--ds-space-12);
   min-width: 0;
-  padding: var(--ds-space-16);
-  border: 0.5px solid var(--deals-line-strong);
-  border-radius: var(--deals-radius-card);
-  background: var(--ds-color-surface-muted);
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--deals-frame);
   overflow-wrap: anywhere;
 }
 

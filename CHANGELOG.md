@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### For whoever uses it
+
+- **A quieter, denser look.** The pages, flows and data stay as they were;
+  how they look changes. Small type and two weights, grays in steps of the
+  ink, hairlines instead of borders, dense table rows, tinted pills for
+  stages and quote statuses (also where they are chosen in a row), the
+  navigation with icons and counts on a gray frame and the page on a white
+  panel set into it. A page starts with one quiet row: where it sits and
+  its actions; a record's page adds its name as a large title. The board,
+  the overview's pipeline, the tiles, the forecast months and the charts
+  follow the same language, in the light and the dark theme.
+
+### For whoever changes it
+
+- **The look layer** `app/v3/src/ui/styles/look.css` (see
+  [`docs/extending.md`](docs/extending.md), "The look of the App"): sizes and
+  density on top of the design system; colours stay its `--ds-*` tokens.
+
 ## 0.2.0 — 2026-11-26
 
 0.2.0 brings Deals to the structure of a mature sales pipeline: salespeople

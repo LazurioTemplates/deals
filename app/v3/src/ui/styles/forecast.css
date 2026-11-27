@@ -1,6 +1,6 @@
 /* The forecast page, the payment plan editor and the overview's panels.
-   Layout only; colours, type, spacing and motion are the design system's
-   --ds-* tokens. */
+   Colours are the design system's --ds-* tokens, sizes the App's look
+   (styles/look.css). */
 
 /* Filters and the year */
 .forecast-filters .ds-select-wrap,
@@ -32,22 +32,35 @@
   display: grid;
   gap: var(--ds-space-4);
   width: 100%;
-  min-height: 108px;
-  padding: var(--ds-space-12);
-  border: 0.5px solid var(--deals-line-strong);
+  min-height: 100px;
+  padding: 12px 14px;
+  border: 0;
   border-radius: var(--deals-radius-card);
-  background: var(--ds-color-surface);
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
   color: inherit;
   font: inherit;
   text-align: start;
   cursor: pointer;
   touch-action: manipulation;
-  transition: border-color var(--ds-duration-fast) var(--ds-ease-out);
+  transition: box-shadow 160ms ease;
+}
+
+.forecast-month-tile.is-empty {
+  background: var(--deals-frame);
+  box-shadow: none;
 }
 
 .forecast-month-tile.is-current {
-  border-color: var(--ds-color-accent);
-  box-shadow: inset 0 3px 0 var(--ds-color-accent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--ds-color-accent) 55%, transparent),
+    0 1px 2px 0 color-mix(in srgb, var(--ds-color-ink) 5%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .forecast-month-tile:not(.is-current):hover {
+    box-shadow: var(--deals-shadow-card-hover);
+  }
 }
 
 .forecast-month-tile.is-empty .forecast-tile-amount {
@@ -55,8 +68,8 @@
 }
 
 .forecast-month-tile.is-over {
-  border-color: var(--ds-color-accent);
-  background: var(--ds-color-accent-soft);
+  background: color-mix(in srgb, var(--ds-color-accent) 7%, var(--deals-card));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ds-color-accent) 55%, transparent);
 }
 
 .forecast-tile-head {
@@ -81,6 +94,8 @@
 
 .forecast-tile-amount {
   overflow: hidden;
+  color: var(--deals-ink-strong);
+  font-size: var(--deals-heading);
   font-weight: var(--deals-weight-strong);
   text-align: start;
   text-overflow: ellipsis;
@@ -91,8 +106,8 @@
   gap: 2px;
   height: 4px;
   overflow: hidden;
-  border-radius: var(--ds-radius-pill);
-  background: var(--ds-color-surface-muted);
+  border-radius: 2px;
+  background: var(--deals-chip);
 }
 
 .forecast-tile-progress > span {
@@ -100,15 +115,15 @@
 }
 
 .forecast-tile-progress .is-paid {
-  background: var(--ds-color-success);
+  background: color-mix(in srgb, var(--ds-color-success) 70%, var(--ds-color-surface));
 }
 
 .forecast-tile-progress .is-invoiced {
-  background: var(--ds-color-info);
+  background: color-mix(in srgb, var(--ds-color-info) 60%, var(--ds-color-surface));
 }
 
 .forecast-tile-progress .is-overdue {
-  background: var(--ds-color-danger);
+  background: color-mix(in srgb, var(--ds-color-danger) 70%, var(--ds-color-surface));
 }
 
 .forecast-tile-meta {
@@ -137,9 +152,9 @@
   grid-template-columns: auto 1fr;
   align-items: baseline;
   gap: 0 var(--ds-space-8);
-  padding: var(--ds-space-8) var(--ds-space-12);
+  padding: 10px 14px;
   border-radius: var(--deals-radius-card);
-  background: var(--ds-color-surface-muted);
+  background: var(--deals-frame);
 }
 
 .forecast-quarter-name {
@@ -178,10 +193,10 @@
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--ds-space-12);
-  padding: var(--ds-space-8) var(--ds-space-12);
-  border: 0.5px solid var(--deals-line-strong);
-  border-radius: var(--ds-radius-sm);
-  background: var(--ds-color-surface);
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
 }
 
 .forecast-unassigned-item[draggable="true"] {
@@ -227,11 +242,6 @@
   align-items: center;
   gap: var(--ds-space-8) var(--ds-space-20);
   padding-bottom: var(--ds-space-8);
-  border-bottom: 0.5px solid var(--deals-line-strong);
-}
-
-.forecast-month.is-current .forecast-month-head {
-  border-bottom-color: var(--ds-color-accent);
 }
 
 .forecast-month-name {
@@ -283,7 +293,7 @@
 }
 
 .forecast-row--overdue td {
-  background: var(--ds-color-danger-soft);
+  background: color-mix(in srgb, var(--ds-color-danger) 4%, transparent);
 }
 
 .forecast-row-actions {

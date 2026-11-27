@@ -1,4 +1,4 @@
-/* The quotes pages' layout; colours, type and spacing come from the design system's --ds-* tokens. */
+/* The quotes pages' layout; colours come from the design system's --ds-* tokens, sizes from styles/look.css. */
 
 /* List of quotes */
 .quotes-filters {
@@ -439,16 +439,17 @@
 }
 
 .quote-terms-preview {
+  display: grid;
+  align-content: start;
+  gap: 6px;
   min-width: 0;
-  padding: var(--ds-space-12);
-  border: var(--ds-size-border) dashed var(--ds-color-line);
-  border-radius: var(--ds-radius-sm);
 }
 
 .quote-terms-preview-label {
   display: block;
   color: var(--deals-ink-muted);
-  font-size: var(--deals-small);
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight-strong);
 }
 
 .terms-preview,

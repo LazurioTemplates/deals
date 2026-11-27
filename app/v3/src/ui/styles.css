@@ -477,17 +477,18 @@ h3 {
 
 .rdb-draft-card {
   overflow: hidden;
-  border: 0.5px solid var(--deals-line-strong);
   border-radius: var(--deals-radius-card);
-  background: var(--ds-color-surface);
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
 }
 
 .rdb-draft-pill {
   display: flex;
   align-items: center;
   gap: var(--ds-space-8);
-  padding: var(--ds-space-12) var(--ds-space-16);
-  background: var(--ds-color-surface-muted);
+  padding: 10px 16px;
+  border-bottom: 0.5px solid var(--deals-line);
+  background: var(--deals-frame);
   font-weight: var(--deals-weight-strong);
 }
 
