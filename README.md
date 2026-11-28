@@ -152,7 +152,8 @@ creates a private Module with its data repository by `lazurio module create
 in the person's language and opens pull requests. Nothing is merged, published
 or sent without the person's instruction. An Organization on 0.1.x takes
 0.2.0 with the migration of its data ([`docs/adoption.md`](docs/adoption.md),
-"Taking 0.2.0").
+"Taking 0.2.0"); 0.3.0 changes only the look and the pages, not the data, and
+is taken as a merge.
 
 ## Screens
 
