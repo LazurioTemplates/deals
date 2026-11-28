@@ -272,3 +272,22 @@
 .settings-panel .ds-card > .ds-button {
   justify-self: start;
 }
+
+/* The person's language, above the Organization's settings. */
+.settings-language {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  max-width: 1040px;
+  margin-bottom: 16px;
+}
+
+.settings-language h2 {
+  margin: 0;
+}
+
+.settings-language p {
+  margin: 0;
+}

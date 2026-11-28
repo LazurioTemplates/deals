@@ -359,7 +359,7 @@ function Page({
         />
       );
     case "contacts":
-      return <ContactListPage data={data} />;
+      return <ContactListPage data={data} onChanged={onChanged} />;
     case "new-contact":
       return (
         <ContactPage

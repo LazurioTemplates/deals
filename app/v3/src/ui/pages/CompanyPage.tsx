@@ -6,6 +6,7 @@ import type { Localized } from "../../i18n/locale.ts";
 import type { AppData } from "../App.tsx";
 import { ApiError, api, type Stored } from "../api.ts";
 import { Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
+import { NewContactDialog } from "../components/NewContactDialog.tsx";
 import { EditNotices, formLocked, isRecordChanged, useRecordForm } from "../edit.tsx";
 import { DAYS, useFormat, useLocale, useT } from "../i18n.tsx";
 import { useLookups } from "../lookups.ts";
@@ -112,6 +113,7 @@ export function CompanyPage({
   const stored = current ?? edit.base;
   const [busy, setBusy] = useState(false);
   const [looking, setLooking] = useState(false);
+  const [addingContact, setAddingContact] = useState(false);
   const [aresNote, setAresNote] = useState<{ tone: "success" | "warning"; text: string } | null>(
     null,
   );
@@ -200,13 +202,16 @@ export function CompanyPage({
             <>
               <Button
                 variant="primary"
+                icon="plus"
                 href={href({ page: "new-deal", company: stored.value.id, stage: null })}
               >
                 {t("Nový případ", "New deal")}
               </Button>
               <Button
                 variant="secondary"
-                href={href({ page: "new-contact", company: stored.value.id })}
+                icon="plus"
+                aria-haspopup="dialog"
+                onClick={() => setAddingContact(true)}
               >
                 {t("Nový kontakt", "New contact")}
               </Button>
@@ -214,6 +219,15 @@ export function CompanyPage({
           ) : null
         }
       />
+      {stored && canWrite ? (
+        <NewContactDialog
+          data={data}
+          company={stored.value.id}
+          open={addingContact}
+          onClose={() => setAddingContact(false)}
+          onCreated={onChanged}
+        />
+      ) : null}
       <div className="detail-grid">
         <form className="form" onSubmit={save}>
           <fieldset
