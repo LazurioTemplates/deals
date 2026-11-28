@@ -148,7 +148,11 @@ export function QuoteLines({
         const lines = form.lines.filter((line) => line.sectionId === section.id);
         const subtotal = sumAmounts(lines.map((line) => lineFormAmount(line, locale) ?? 0));
         return (
-          <section key={section.id} className="quote-section" aria-label={section.label}>
+          <section
+            key={section.id}
+            className={cx("quote-section", locked && "quote-section--locked")}
+            aria-label={section.label}
+          >
             <header className="quote-section-head">
               <input
                 className="ds-input quote-section-label"
@@ -177,17 +181,25 @@ export function QuoteLines({
                 {t("Sekce zatím nemá položky.", "The section has no items yet.")}
               </p>
             ) : (
-              <ul className={cx("quote-lines", discounts && "quote-lines--discounts")}>
+              <ul
+                className={cx(
+                  "quote-lines",
+                  discounts && "quote-lines--discounts",
+                  locked && "quote-lines--locked",
+                )}
+              >
                 <li className="quote-line quote-line-labels" aria-hidden="true">
                   <span className="quote-line-name">{t("Položka", "Item")}</span>
-                  <span className="quote-line-qty">{t("Počet", "Qty")}</span>
-                  <span className="quote-line-unit">{t("MJ", "Unit")}</span>
-                  <span className="quote-line-price">{t("Cena MJ", "Unit price")}</span>
-                  {discounts ? (
-                    <span className="quote-line-discount">{t("Sleva %", "Discount %")}</span>
-                  ) : null}
-                  <span className="quote-line-total">{t("Celkem", "Total")}</span>
-                  <span className="quote-line-actions" />
+                  <span className="quote-line-numbers">
+                    <span className="quote-line-qty">{t("Počet", "Qty")}</span>
+                    <span className="quote-line-unit">{t("MJ", "Unit")}</span>
+                    <span className="quote-line-price">{t("Cena MJ", "Unit price")}</span>
+                    {discounts ? (
+                      <span className="quote-line-discount">{t("Sleva %", "Discount %")}</span>
+                    ) : null}
+                    <span className="quote-line-total">{t("Celkem", "Total")}</span>
+                  </span>
+                  {!locked ? <span className="quote-line-actions" /> : null}
                 </li>
                 {lines.map((line, index) => (
                   <QuoteLineRow
@@ -353,96 +365,115 @@ function QuoteLineRow({
           onChange={(value) => onChange({ name: value })}
           onPick={onPick}
         />
-        <input
-          className="ds-input quote-line-description"
-          value={line.description}
-          aria-label={t(`Popis: ${name}`, `Description: ${name}`)}
-          placeholder={t("Popis (nepovinný)", "Description (optional)")}
-          disabled={locked}
-          onChange={(event) => onChange({ description: event.target.value })}
-        />
-        {line.pricebookItemId ? (
-          <span className="muted small">
-            {t("Z ceníku", "From the price list")} {line.pricebookItemId}
-          </span>
-        ) : null}
-      </div>
-      <label className="quote-line-qty">
-        <span className="quote-line-label">{t("Počet", "Qty")}</span>
-        <input
-          className="ds-input num"
-          value={line.quantity}
-          inputMode="decimal"
-          autoComplete="off"
-          aria-invalid={invalid(problems.quantity)}
-          title={
-            problems.quantity
-              ? t(
-                  "Kladné číslo, nejvýš 3 desetinná místa.",
-                  "A positive number, at most 3 decimals.",
-                )
-              : undefined
-          }
-          disabled={locked}
-          onChange={(event) => onChange({ quantity: event.target.value })}
-        />
-      </label>
-      <label className="quote-line-unit">
-        <span className="quote-line-label">{t("MJ", "Unit")}</span>
-        <span className="ds-select-wrap">
-          <select
-            className="ds-select"
-            value={line.unit}
-            aria-invalid={invalid(problems.unit)}
+        <div className="quote-line-detail">
+          <input
+            className="ds-input quote-line-description"
+            value={line.description}
+            aria-label={t(`Popis: ${name}`, `Description: ${name}`)}
+            placeholder={t("Popis (nepovinný)", "Description (optional)")}
             disabled={locked}
-            onChange={(event) => onChange({ unit: event.target.value })}
-          >
-            {!line.unit ? <option value="">–</option> : null}
-            {unitOptions.map((unit) => (
-              <option key={unit} value={unit}>
-                {unit}
-              </option>
-            ))}
-          </select>
-        </span>
-      </label>
-      <label className="quote-line-price">
-        <span className="quote-line-label">{t("Cena MJ", "Unit price")}</span>
-        <input
-          className="ds-input num"
-          value={line.unitPrice}
-          inputMode="decimal"
-          autoComplete="off"
-          aria-invalid={invalid(problems.unitPrice)}
-          title={
-            problems.unitPrice
-              ? t("Částka, třeba 1290 nebo 47,50.", "An amount, e.g. 1290 or 47.50.")
-              : undefined
-          }
-          disabled={locked}
-          onChange={(event) => onChange({ unitPrice: event.target.value })}
-        />
-      </label>
-      {discounts ? (
-        <label className="quote-line-discount">
-          <span className="quote-line-label">{t("Sleva %", "Discount %")}</span>
+            onChange={(event) => onChange({ description: event.target.value })}
+          />
+          {line.pricebookItemId ? (
+            <span className="quote-line-code">
+              <span className="ds-visually-hidden">{t("Z ceníku", "From the price list")} </span>
+              {line.pricebookItemId}
+            </span>
+          ) : null}
+        </div>
+      </div>
+      <div className="quote-line-numbers">
+        <label className="quote-line-qty">
+          <span className="quote-line-label" aria-hidden="true">
+            {t("Počet", "Qty")}
+          </span>
           <input
             className="ds-input num"
-            value={line.discount}
+            value={line.quantity}
             inputMode="decimal"
             autoComplete="off"
-            placeholder="0"
-            aria-invalid={invalid(problems.discount)}
-            title={problems.discount ? t("0 až 100 %.", "0 to 100%.") : undefined}
+            aria-label={t(`Počet: ${name}`, `Qty: ${name}`)}
+            aria-invalid={invalid(problems.quantity)}
+            title={
+              problems.quantity
+                ? t(
+                    "Kladné číslo, nejvýš 3 desetinná místa.",
+                    "A positive number, at most 3 decimals.",
+                  )
+                : undefined
+            }
             disabled={locked}
-            onChange={(event) => onChange({ discount: event.target.value })}
+            onChange={(event) => onChange({ quantity: event.target.value })}
           />
         </label>
-      ) : null}
-      <span className="quote-line-total num">
-        <span className="quote-line-label">{t("Celkem", "Total")}</span>
-        {amount === null ? <span className="danger">–</span> : f.money(amount)}
-      </span>
+        <label className="quote-line-unit">
+          <span className="quote-line-label" aria-hidden="true">
+            {t("MJ", "Unit")}
+          </span>
+          <span className="ds-select-wrap">
+            <select
+              className="ds-select"
+              value={line.unit}
+              aria-label={t(`MJ: ${name}`, `Unit: ${name}`)}
+              aria-invalid={invalid(problems.unit)}
+              disabled={locked}
+              onChange={(event) => onChange({ unit: event.target.value })}
+            >
+              {!line.unit ? <option value="">–</option> : null}
+              {unitOptions.map((unit) => (
+                <option key={unit} value={unit}>
+                  {unit}
+                </option>
+              ))}
+            </select>
+          </span>
+        </label>
+        <label className="quote-line-price">
+          <span className="quote-line-label" aria-hidden="true">
+            {t("Cena MJ", "Unit price")}
+          </span>
+          <input
+            className="ds-input num"
+            value={line.unitPrice}
+            inputMode="decimal"
+            autoComplete="off"
+            aria-label={t(`Cena MJ: ${name}`, `Unit price: ${name}`)}
+            aria-invalid={invalid(problems.unitPrice)}
+            title={
+              problems.unitPrice
+                ? t("Částka, třeba 1290 nebo 47,50.", "An amount, e.g. 1290 or 47.50.")
+                : undefined
+            }
+            disabled={locked}
+            onChange={(event) => onChange({ unitPrice: event.target.value })}
+          />
+        </label>
+        {discounts ? (
+          <label className="quote-line-discount">
+            <span className="quote-line-label" aria-hidden="true">
+              {t("Sleva %", "Discount %")}
+            </span>
+            <input
+              className="ds-input num"
+              value={line.discount}
+              inputMode="decimal"
+              autoComplete="off"
+              placeholder="0"
+              aria-label={t(`Sleva %: ${name}`, `Discount %: ${name}`)}
+              aria-invalid={invalid(problems.discount)}
+              title={problems.discount ? t("0 až 100 %.", "0 to 100%.") : undefined}
+              disabled={locked}
+              onChange={(event) => onChange({ discount: event.target.value })}
+            />
+          </label>
+        ) : null}
+        <span className="quote-line-total">
+          <span className="quote-line-label">{t("Celkem", "Total")}</span>
+          <span className="num">
+            {amount === null ? <span className="danger">–</span> : f.money(amount)}
+          </span>
+        </span>
+      </div>
       {!locked ? (
         <span className="quote-line-actions">
           <Button

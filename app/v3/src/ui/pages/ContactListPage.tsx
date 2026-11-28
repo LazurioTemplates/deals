@@ -2,14 +2,22 @@ import { Button, EmptyState, Table } from "design-system/react";
 import { useState } from "react";
 import type { AppData } from "../App.tsx";
 import { PageHeader } from "../components/common.tsx";
+import { NewContactDialog } from "../components/NewContactDialog.tsx";
 import { useT } from "../i18n.tsx";
 import { href } from "../routes.ts";
 import { useCanWrite } from "../write.tsx";
 
-export function ContactListPage({ data }: { data: AppData }) {
+export function ContactListPage({
+  data,
+  onChanged = async () => {},
+}: {
+  data: AppData;
+  onChanged?: () => Promise<void>;
+}) {
   const t = useT();
   const canWrite = useCanWrite();
   const [search, setSearch] = useState("");
+  const [adding, setAdding] = useState(false);
   const query = search.trim().toLowerCase();
   const companies = new Map(data.companies.map((entry) => [entry.value.id, entry.value.name]));
   const contacts = data.contacts
@@ -31,12 +39,26 @@ export function ContactListPage({ data }: { data: AppData }) {
         title={t("Kontakty", "Contacts")}
         actions={
           canWrite ? (
-            <Button variant="primary" href={href({ page: "new-contact", company: null })}>
+            <Button
+              variant="primary"
+              icon="plus"
+              aria-haspopup="dialog"
+              onClick={() => setAdding(true)}
+            >
               {t("Nový kontakt", "New contact")}
             </Button>
           ) : null
         }
       />
+      {canWrite ? (
+        <NewContactDialog
+          data={data}
+          company={null}
+          open={adding}
+          onClose={() => setAdding(false)}
+          onCreated={onChanged}
+        />
+      ) : null}
       <div className="toolbar-row">
         <input
           className="ds-input"

@@ -1,6 +1,6 @@
 /* Shared components of the pages: the data table, the board, the chips, the
-   tiles. Colours, type, spacing and motion come from the design system's
-   --ds-* tokens; this file is layout only. */
+   tiles. Colours come from the design system's --ds-* tokens, sizes from the
+   App's look (styles/look.css). */
 
 /* Data table */
 .data-table {
@@ -26,26 +26,63 @@
 .data-table-grid td {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .data-table-sort {
   display: inline-flex;
   align-items: center;
-  gap: var(--ds-space-4);
+  gap: 6px;
   max-width: 100%;
-  padding: 0;
+  min-height: var(--deals-control);
+  margin-inline: -6px;
+  padding: 0 6px;
   border: 0;
+  border-radius: var(--deals-radius-button);
   background: none;
   color: inherit;
   font: inherit;
   cursor: pointer;
   text-align: inherit;
+  transition:
+    background-color var(--deals-fade) ease,
+    color var(--deals-fade) ease;
 }
 
 .data-table-sort span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* The arrow shows on the sorted column, and on another one under the
+ * pointer or focus; at rest it takes no room from the label. */
+.data-table-sort-icon {
+  display: none;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--deals-ink-muted);
+}
+
+.data-table-sort.is-sorted .data-table-sort-icon {
+  display: block;
+  color: var(--ds-color-accent);
+}
+
+.data-table-sort:focus-visible .data-table-sort-icon {
+  display: block;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .data-table-sort:hover {
+    background: var(--deals-hover);
+    color: var(--deals-ink);
+  }
+
+  .data-table-sort:hover .data-table-sort-icon {
+    display: block;
+  }
 }
 
 .data-table-resize {
@@ -60,21 +97,21 @@
 }
 
 .data-table-dragging {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .data-table-select {
-  width: 44px;
+  width: 40px;
 }
 
 .data-table-link {
-  color: inherit;
-  font-weight: var(--ds-type-label-weight);
+  color: var(--deals-ink);
+  font-weight: var(--deals-weight-strong);
   text-decoration: none;
 }
 
 .data-table-link:focus-visible {
-  outline: var(--ds-size-focus, 2px) solid var(--ds-color-focus);
+  outline: 2px solid var(--ds-color-focus);
   outline-offset: 2px;
 }
 
@@ -84,208 +121,319 @@
   gap: var(--ds-space-12);
 }
 
-/* Board */
+/* Board: barely gray columns on the white page, white cards on them. */
 .board {
   display: grid;
-  grid-auto-columns: minmax(240px, 1fr);
+  grid-auto-columns: minmax(248px, 1fr);
   grid-auto-flow: column;
-  gap: var(--ds-space-12);
+  gap: 10px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
-  padding-bottom: var(--ds-space-8);
+  padding: 2px 2px var(--ds-space-8);
 }
 
 .board-column {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  border: var(--ds-size-border) solid var(--ds-color-line);
-  border-radius: var(--ds-radius-md);
-  background: var(--ds-color-surface-muted);
-  transition: border-color var(--ds-duration-fast) var(--ds-ease-out);
+  padding: 4px;
+  border-radius: var(--deals-radius-column);
+  background: var(--deals-frame);
+  transition: background-color var(--deals-fade) ease;
 }
 
 .board-column--over {
-  border-color: var(--ds-color-accent);
-  background: var(--ds-color-accent-soft);
+  background: color-mix(in srgb, var(--ds-color-accent) 7%, transparent);
 }
 
 .board-column-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) 26px;
   align-items: center;
-  gap: var(--ds-space-8);
-  min-height: 44px;
-  padding: var(--ds-space-8) var(--ds-space-12);
-  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 4px;
 }
 
-.board-column--won .board-column-header {
-  box-shadow: inset 0 3px 0 var(--ds-color-success);
+.board-column-header::before {
+  content: "";
+  justify-self: center;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--deals-ink-faint);
 }
 
-.board-column--lost .board-column-header {
-  box-shadow: inset 0 3px 0 var(--ds-color-danger);
+.board-column--won .board-column-header::before {
+  background: var(--ds-color-success);
+}
+
+.board-column--lost .board-column-header::before {
+  background: var(--ds-color-danger);
 }
 
 .board-column-title {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-weight: var(--ds-type-label-weight);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-tiny);
+  font-weight: var(--deals-weight-strong);
+  letter-spacing: 0.08em;
+  text-align: center;
   text-overflow: ellipsis;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
 .board-column-count {
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  justify-self: center;
+  min-width: 20px;
+  padding: 0 5px;
+  border-radius: var(--deals-radius-button);
+  background: var(--deals-chip);
+  color: var(--deals-ink-muted);
+  font-size: 11.5px;
+  line-height: 18px;
   font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.board-column-header .ds-button {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: center;
+  min-height: 22px;
+  padding: 0 3px;
+  opacity: 0;
+  transition: opacity var(--deals-fade) ease;
+}
+
+.board-column:hover .board-column-header .ds-button,
+.board-column-header .ds-button:focus-visible {
+  opacity: 1;
+}
+
+.board-column:hover .board-column-header:has(.ds-button) .board-column-count {
+  visibility: hidden;
+}
+
+@media (hover: none) {
+  .board-column-header .ds-button {
+    opacity: 1;
+  }
+
+  .board-column-header:has(.ds-button) {
+    grid-template-columns: 26px minmax(0, 1fr) 26px 26px;
+  }
+
+  .board-column-header .ds-button {
+    grid-column: 4;
+  }
+
+  .board-column:hover .board-column-header:has(.ds-button) .board-column-count {
+    visibility: visible;
+  }
 }
 
 .board-column-body {
   display: grid;
   align-content: start;
-  gap: var(--ds-space-8);
+  gap: 6px;
   flex: 1;
   min-height: 96px;
   margin: 0;
-  padding: var(--ds-space-8);
+  padding: 2px;
   list-style: none;
 }
 
 .board-empty {
   padding: var(--ds-space-8);
+  color: var(--deals-ink-faint);
+  text-align: center;
 }
 
 .board-card {
-  border: var(--ds-size-border) solid var(--ds-color-line);
-  border-radius: var(--ds-radius-sm);
-  background: var(--ds-color-surface);
+  border-radius: 10px;
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
   cursor: grab;
+  transition: box-shadow 160ms ease;
 }
 
 .board-card--dragging {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .board-card-link {
   display: grid;
-  gap: var(--ds-space-4);
-  padding: var(--ds-space-12);
+  gap: 4px;
+  padding: 12px 14px 10px;
   color: inherit;
   text-decoration: none;
 }
 
 .board-card-link:focus-visible {
-  outline: var(--ds-size-focus, 2px) solid var(--ds-color-focus);
-  outline-offset: 2px;
+  border-radius: 10px;
+  outline: 2px solid var(--ds-color-focus);
+  outline-offset: -2px;
 }
 
 .board-column-footer {
   display: flex;
   justify-content: space-between;
-  padding: var(--ds-space-8) var(--ds-space-12);
-  border-top: var(--ds-size-border) solid var(--ds-color-line);
+  padding: 8px 10px 6px;
+  color: var(--deals-ink);
+  font-size: var(--deals-small);
+  font-weight: var(--deals-weight-strong);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .board-card:hover {
-    border-color: var(--ds-color-line-strong);
+    box-shadow: var(--deals-shadow-card-hover);
   }
 }
 
-/* View toggle and chips */
+/* View toggle: a segmented control, the chosen segment a raised white chip. */
 .view-toggle {
   display: inline-flex;
+  gap: 2px;
   margin: 0;
-  padding: 2px;
-  border: var(--ds-size-border) solid var(--ds-color-line);
-  border-radius: var(--ds-radius-sm);
-  background: var(--ds-color-surface);
+  padding: 3px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--deals-chip);
 }
 
-.view-toggle-button,
-.chip {
+.view-toggle-button {
   display: inline-flex;
   align-items: center;
-  gap: var(--ds-space-4);
-  min-height: 36px;
-  padding: 0 var(--ds-space-12);
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 10px;
   border: 0;
-  border-radius: var(--ds-radius-xs);
+  border-radius: var(--deals-radius-field);
   background: none;
-  color: var(--ds-color-ink-muted);
+  color: var(--deals-ink-muted);
   font: inherit;
-  font-size: var(--ds-type-meta-size);
+  font-size: var(--deals-text);
   cursor: pointer;
   touch-action: manipulation;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
 }
 
-.view-toggle-button.is-active,
-.chip.is-active {
-  background: var(--ds-color-surface-selected);
-  color: var(--ds-color-ink);
-  font-weight: var(--ds-type-label-weight);
+.view-toggle-button .ds-icon {
+  width: 14px;
+  height: 14px;
 }
 
+.view-toggle-button.is-active {
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
+  color: var(--deals-ink);
+  font-weight: var(--deals-weight-strong);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .view-toggle-button:not(.is-active):hover {
+    color: var(--deals-ink);
+  }
+}
+
+/* Chips: one choice of a row (periods, groupings), the chosen one filled. */
 .chip-choice {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ds-space-4);
+  gap: 4px;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
 .chip {
-  border: var(--ds-size-border) solid var(--ds-color-line);
-  border-radius: var(--ds-radius-pill);
-  background: var(--ds-color-surface);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--deals-control);
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--deals-radius-item);
+  background: none;
+  box-shadow: inset 0 0 0 0.5px var(--deals-line-strong);
+  color: var(--deals-ink-muted);
+  font: inherit;
+  font-size: var(--deals-text);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color var(--deals-fade) ease,
+    color var(--deals-fade) ease;
+}
+
+.chip.is-active {
+  background: var(--deals-chip);
+  box-shadow: none;
+  color: var(--deals-ink);
+  font-weight: var(--deals-weight-strong);
 }
 
 .chip-count {
-  color: var(--ds-color-ink-faint);
+  color: var(--deals-ink-faint);
+  font-size: var(--deals-small);
+  font-weight: var(--deals-weight);
   font-variant-numeric: tabular-nums;
 }
 
-/* Filter bar above a list */
+@media (hover: hover) and (pointer: fine) {
+  .chip:not(.is-active):hover {
+    background: var(--deals-hover);
+    color: var(--deals-ink);
+  }
+}
+
+/* Filter bar above a list: compact tools in one row. */
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--ds-space-8) var(--ds-space-12);
-  margin-bottom: var(--ds-space-16);
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .filter-bar .ds-input,
 .filter-bar .ds-select {
-  min-height: 40px;
+  min-height: var(--deals-field);
 }
 
 .filter-bar-search {
-  flex: 1 1 240px;
+  flex: 0 1 280px;
   min-width: 0;
 }
 
-/* Tiles */
+/* Tiles: a label, a large number and how it moved. */
 .stat-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: var(--ds-space-12);
-  margin-bottom: var(--ds-space-20);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .stat-tile {
   display: grid;
   align-content: start;
-  gap: var(--ds-space-4);
-  padding: var(--ds-space-16);
-  border: var(--ds-size-border) solid var(--ds-color-line);
-  border-radius: var(--ds-radius-md);
-  background: var(--ds-color-surface);
+  justify-items: start;
+  gap: 2px;
+  padding: 14px 16px 16px;
+  border: 0;
+  border-radius: var(--deals-radius-card);
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
   color: inherit;
   font: inherit;
   text-align: start;
+  transition: box-shadow 160ms ease;
 }
 
 .stat-tile--button {
@@ -293,39 +441,206 @@
 }
 
 .stat-tile-label {
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  color: var(--deals-ink-text);
+  font-size: var(--deals-text);
+  line-height: var(--deals-text-leading);
 }
 
 .stat-tile-value {
-  font-family: var(--ds-type-title-font);
-  font-size: var(--ds-type-title-size);
-  font-weight: var(--ds-type-title-weight);
+  color: var(--deals-ink-strong);
+  font-family: inherit;
+  font-size: var(--deals-title);
+  font-weight: var(--deals-weight-strong);
+  line-height: var(--deals-title-leading);
+  letter-spacing: var(--deals-tracking-title);
   font-variant-numeric: tabular-nums;
   text-align: start;
+  overflow-wrap: anywhere;
 }
 
 .stat-tile-change {
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  margin-top: 4px;
+  padding: 0 6px;
+  border-radius: var(--deals-radius-pill);
+  background: var(--deals-chip);
+  color: var(--deals-ink-text);
+  font-size: var(--deals-small);
+  font-weight: var(--deals-weight-strong);
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-tile-change.is-up {
+  background: color-mix(in srgb, var(--ds-color-success) 10%, transparent);
   color: var(--ds-color-success);
 }
 
 .stat-tile-change.is-down {
+  background: color-mix(in srgb, var(--ds-color-danger) 9%, transparent);
   color: var(--ds-color-danger);
+}
+
+.stat-tile-note {
+  margin-top: 2px;
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
+  line-height: var(--deals-small-leading);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .stat-tile--button:hover {
-    border-color: var(--ds-color-line-strong);
+    box-shadow: var(--deals-shadow-card-hover);
+  }
+}
+
+/* A stage or a status chosen in a row: the select drawn as its tinted pill. */
+.stage-pill {
+  --_bg: color-mix(in srgb, var(--ds-color-ink) 5%, transparent);
+  --_fg: var(--deals-ink-text);
+}
+
+.stage-pill--neutral {
+  --_bg: color-mix(in srgb, var(--ds-color-ink) 5%, transparent);
+  --_fg: var(--deals-ink-text);
+}
+
+.stage-pill--info {
+  --_bg: color-mix(in srgb, var(--ds-color-info) 9%, transparent);
+  --_fg: var(--ds-color-info);
+}
+
+.stage-pill--accent {
+  --_bg: color-mix(in srgb, var(--ds-color-accent) 9%, transparent);
+  --_fg: var(--ds-color-accent);
+}
+
+.stage-pill--warning {
+  --_bg: color-mix(in srgb, var(--ds-color-warning) 12%, transparent);
+  --_fg: var(--ds-color-warning);
+}
+
+.stage-pill--success {
+  --_bg: color-mix(in srgb, var(--ds-color-success) 10%, transparent);
+  --_fg: var(--ds-color-success);
+}
+
+.stage-pill--danger {
+  --_bg: color-mix(in srgb, var(--ds-color-danger) 9%, transparent);
+  --_fg: var(--ds-color-danger);
+}
+
+.shell .stage-pill {
+  display: inline-grid;
+  max-width: 100%;
+}
+
+.shell .stage-pill .ds-select {
+  width: auto;
+  max-width: 100%;
+  min-height: 22px;
+  padding: 0 22px 0 7px;
+  border-radius: var(--deals-radius-pill);
+  background: var(--_bg);
+  box-shadow: none;
+  color: var(--_fg);
+  font-size: var(--deals-small);
+  font-weight: var(--deals-weight-strong);
+  line-height: 22px;
+  cursor: pointer;
+}
+
+.shell .stage-pill .ds-select__chevron {
+  inset-inline-end: 5px;
+  width: 12px;
+  height: 12px;
+  color: var(--_fg);
+  opacity: 0.7;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shell .stage-pill .ds-select:hover:not(:disabled) {
+    box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--_fg) 35%, transparent);
+  }
+}
+
+@media (pointer: coarse) {
+  .shell .stage-pill .ds-select {
+    min-height: 32px;
+    font-size: 16px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .board-column {
+  .board-column,
+  .board-card,
+  .stat-tile {
     transition: none;
+  }
+}
+
+/* On a phone two tiles share a row, their numbers a step smaller. */
+@media (max-width: 640px) {
+  .stat-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .stat-tile {
+    padding: 12px 12px 14px;
+  }
+
+  .stat-tile-value {
+    font-size: 18px;
+    line-height: 26px;
+  }
+}
+
+/* The narrowest phones: one tile per row, so a whole amount fits. */
+@media (max-width: 380px) {
+  .stat-tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* On a phone a table keeps one line per row and scrolls sideways. */
+@media (max-width: 640px) {
+  .ds-table-wrap td,
+  .ds-table-wrap :is(.cell-title, .cell-break) {
+    max-width: none;
+    white-space: nowrap;
+  }
+}
+
+/* A second row of tiles for the figures that support the main ones. */
+.stat-tiles--small {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  margin-top: -6px;
+}
+
+.stat-tiles--small .stat-tile {
+  padding: 10px 14px 12px;
+  background: var(--deals-frame);
+  box-shadow: none;
+}
+
+.stat-tiles--small .stat-tile-label {
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
+  line-height: var(--deals-small-leading);
+}
+
+.stat-tiles--small .stat-tile-value {
+  font-size: var(--deals-heading);
+  line-height: 22px;
+  letter-spacing: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .stat-tiles--small .stat-tile--button:hover {
+    background: var(--deals-card);
+    box-shadow: var(--deals-shadow-card);
   }
 }

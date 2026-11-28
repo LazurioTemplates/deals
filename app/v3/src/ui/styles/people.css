@@ -1,6 +1,6 @@
 /* The people pages' layout: the salespeople, the settings, the import, the
-   companies and the contacts. Colours, type and spacing come from the design
-   system's --ds-* tokens; this file is layout only. */
+   companies and the contacts. Colours come from the design system's --ds-*
+   tokens, sizes from the App's look (styles/look.css). */
 
 /* Salespeople: a grid of cards */
 .person-grid {
@@ -45,8 +45,8 @@
   border-radius: var(--ds-radius-pill);
   background: var(--ds-color-accent-soft);
   color: var(--ds-color-ink);
-  font-size: var(--ds-type-meta-size);
-  font-weight: var(--ds-type-label-weight);
+  font-size: var(--deals-small);
+  font-weight: var(--deals-weight-strong);
   letter-spacing: 0.02em;
 }
 
@@ -69,14 +69,14 @@
 }
 
 .person-figures dt {
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
 }
 
 .person-figures dd {
   margin: 0;
   text-align: start;
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
   overflow-wrap: anywhere;
 }
 
@@ -124,8 +124,8 @@
   display: grid;
   gap: var(--ds-space-12);
   padding: var(--ds-space-16);
-  border: var(--ds-size-border) solid var(--ds-color-line);
-  border-radius: var(--ds-radius-md);
+  border: 0.5px solid var(--deals-line-strong);
+  border-radius: var(--deals-radius-card);
 }
 
 .entity-head {
@@ -164,10 +164,9 @@
   display: grid;
   gap: var(--ds-space-12);
   min-width: 0;
-  padding: var(--ds-space-16);
-  border: var(--ds-size-border) solid var(--ds-color-line);
-  border-radius: var(--ds-radius-md);
-  background: var(--ds-color-surface-muted);
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--deals-frame);
   overflow-wrap: anywhere;
 }
 
@@ -200,7 +199,7 @@
 
 .import-text {
   font-family: var(--ds-type-mono-font);
-  font-size: var(--ds-type-meta-size);
+  font-size: var(--deals-small);
 }
 
 .import-mapping {
@@ -217,7 +216,7 @@
   align-items: center;
   gap: var(--ds-space-12);
   padding-block: var(--ds-space-8);
-  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+  border-bottom: 0.5px solid var(--deals-line-strong);
 }
 
 .import-mapping-source {
@@ -272,4 +271,23 @@
 /* An add button under a list keeps its own width. */
 .settings-panel .ds-card > .ds-button {
   justify-self: start;
+}
+
+/* The person's language, above the Organization's settings. */
+.settings-language {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  max-width: 1040px;
+  margin-bottom: 16px;
+}
+
+.settings-language h2 {
+  margin: 0;
+}
+
+.settings-language p {
+  margin: 0;
 }

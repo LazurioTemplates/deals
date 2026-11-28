@@ -26,8 +26,9 @@ export interface RowActions {
 export const NOTE_LIMIT = 4000;
 
 /**
- * One month of the forecast: its figures, the note, and a table of its rows
- * with their invoice and payment, which the person ticks off in place.
+ * One month of the forecast: a summary row with its figures that opens to the
+ * note and a table of its rows with their invoice and payment, which the
+ * person ticks off in place. Closed, the body stays in the page, hidden.
  */
 export function MonthPanel({
   month,
@@ -39,6 +40,8 @@ export function MonthPanel({
   canWrite,
   busy,
   current,
+  open,
+  onToggle,
   actions,
 }: {
   month: string;
@@ -51,6 +54,9 @@ export function MonthPanel({
   /** The key of the row being saved now. */
   busy: string | null;
   current: boolean;
+  /** Whether the month shows its note and rows under its summary row. */
+  open: boolean;
+  onToggle: () => void;
   actions: RowActions;
 }) {
   const t = useT();
@@ -248,63 +254,81 @@ export function MonthPanel({
     });
   }
 
+  const name = `${monthName(month, locale)} ${month.slice(0, 4)}`;
+  const body = `forecast-month-${month}-body`;
   return (
     <section
       id={`forecast-month-${month}`}
-      className={cx("forecast-month", current && "is-current")}
+      className={cx("forecast-month", current && "is-current", open && "is-open")}
       aria-labelledby={`forecast-month-${month}-title`}
     >
-      <header className="forecast-month-head">
-        <div className="forecast-month-name">
-          <h2 id={`forecast-month-${month}-title`}>
-            {monthName(month, locale)} {month.slice(0, 4)}
-          </h2>
-          {current ? (
-            <Badge tone="accent" icon={false}>
-              {t("Tento měsíc", "This month")}
-            </Badge>
+      <h2 className="forecast-month-head">
+        <button
+          type="button"
+          className="forecast-month-toggle"
+          aria-expanded={open}
+          aria-controls={body}
+          onClick={onToggle}
+        >
+          <span className="forecast-month-name">
+            <span id={`forecast-month-${month}-title`} className="forecast-month-label">
+              {name}
+            </span>
+            {current ? (
+              <Badge tone="accent" icon={false}>
+                {t("Tento měsíc", "This month")}
+              </Badge>
+            ) : null}
+          </span>
+          <span className="forecast-month-figures">
+            <span className="forecast-month-figure">
+              <span className="forecast-month-figure-label">{t("Řádků", "Rows")}</span>
+              <span className="num">{figures.count}</span>
+            </span>
+            <span className="forecast-month-figure">
+              <span className="forecast-month-figure-label">{t("Celkem", "Total")}</span>
+              <span className="num">{f.money(figures.forecast)}</span>
+            </span>
+            <span className="forecast-month-figure">
+              <span className="forecast-month-figure-label">{t("Vyfakturováno", "Invoiced")}</span>
+              <span className="num">{f.money(figures.invoiced)}</span>
+            </span>
+            {figures.overdue > 0 ? (
+              <span className="forecast-month-figure">
+                <span className="forecast-month-figure-label">{t("Po splatnosti", "Overdue")}</span>
+                <span className="num danger">{f.money(figures.overdue)}</span>
+              </span>
+            ) : null}
+          </span>
+          <Icon name="nav-arrow-down" className="forecast-month-chevron" />
+        </button>
+      </h2>
+      <div id={body} className="forecast-month-body" hidden={!open}>
+        <div className="forecast-month-tools">
+          <MonthNote month={month} note={note} canWrite={canWrite} onSave={actions.saveNote} />
+          {canWrite ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon="plus"
+              className="forecast-month-add"
+              onClick={() => actions.addRow(month)}
+            >
+              {t("Přidat řádek", "Add a row")}
+            </Button>
           ) : null}
         </div>
-        <dl className="forecast-month-figures">
-          <div>
-            <dt>{t("Řádků", "Rows")}</dt>
-            <dd className="num">{figures.count}</dd>
-          </div>
-          <div>
-            <dt>{t("Celkem", "Total")}</dt>
-            <dd className="num">{f.money(figures.forecast)}</dd>
-          </div>
-          <div>
-            <dt>{t("Vyfakturováno", "Invoiced")}</dt>
-            <dd className="num">{f.money(figures.invoiced)}</dd>
-          </div>
-          {figures.overdue > 0 ? (
-            <div>
-              <dt>{t("Po splatnosti", "Overdue")}</dt>
-              <dd className="num danger">{f.money(figures.overdue)}</dd>
-            </div>
-          ) : null}
-        </dl>
-        {canWrite ? (
-          <Button variant="secondary" size="sm" icon="plus" onClick={() => actions.addRow(month)}>
-            {t("Přidat řádek", "Add a row")}
-          </Button>
-        ) : null}
-      </header>
-      <MonthNote month={month} note={note} canWrite={canWrite} onSave={actions.saveNote} />
-      <DataTable
-        id={`forecast-${month}`}
-        caption={t(
-          `Řádky forecastu: ${monthName(month, locale)} ${month.slice(0, 4)}`,
-          `Forecast rows: ${monthName(month, locale)} ${month.slice(0, 4)}`,
-        )}
-        columns={columns}
-        rows={rows}
-        rowKey={(row) => row.key}
-        storageKey="deals.forecast.rows"
-        rowClassName={(row) => (row.state === "overdue" ? "forecast-row--overdue" : undefined)}
-        empty={t("V tomto měsíci zatím nic není.", "Nothing in this month yet.")}
-      />
+        <DataTable
+          id={`forecast-${month}`}
+          caption={t(`Řádky forecastu: ${name}`, `Forecast rows: ${name}`)}
+          columns={columns}
+          rows={rows}
+          rowKey={(row) => row.key}
+          storageKey="deals.forecast.rows"
+          rowClassName={(row) => (row.state === "overdue" ? "forecast-row--overdue" : undefined)}
+          empty={t("V tomto měsíci zatím nic není.", "Nothing in this month yet.")}
+        />
+      </div>
     </section>
   );
 }

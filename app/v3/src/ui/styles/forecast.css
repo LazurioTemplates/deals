@@ -1,6 +1,6 @@
 /* The forecast page, the payment plan editor and the overview's panels.
-   Layout only; colours, type, spacing and motion are the design system's
-   --ds-* tokens. */
+   Colours are the design system's --ds-* tokens, sizes the App's look
+   (styles/look.css). */
 
 /* Filters and the year */
 .forecast-filters .ds-select-wrap,
@@ -18,142 +18,311 @@
   white-space: nowrap;
 }
 
-/* Months */
-.forecast-months {
+/* Months: one column per month, its parts stacked, the quarters under them. */
+.forecast-chart {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: var(--ds-space-8);
-  margin: 0 0 var(--ds-space-12);
-  padding: 0;
-  list-style: none;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.forecast-month-tile {
-  display: grid;
-  gap: var(--ds-space-4);
-  width: 100%;
-  min-height: 108px;
-  padding: var(--ds-space-12);
-  border: var(--ds-size-border) solid var(--ds-color-line);
-  border-radius: var(--ds-radius-md);
-  background: var(--ds-color-surface);
-  color: inherit;
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: border-color var(--ds-duration-fast) var(--ds-ease-out);
-}
-
-.forecast-month-tile.is-current {
-  border-color: var(--ds-color-accent);
-  box-shadow: inset 0 3px 0 var(--ds-color-accent);
-}
-
-.forecast-month-tile.is-empty .forecast-tile-amount {
-  color: var(--ds-color-ink-faint);
-}
-
-.forecast-month-tile.is-over {
-  border-color: var(--ds-color-accent);
-  background: var(--ds-color-accent-soft);
-}
-
-.forecast-tile-head {
+.forecast-chart-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--ds-space-4);
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  gap: 8px 16px;
 }
 
-.forecast-tile-month {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.shell .forecast-chart-title {
+  margin: 0;
+  color: var(--deals-ink-text);
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight);
 }
 
-.forecast-tile-note {
-  display: inline-flex;
-  color: var(--ds-color-ink-muted);
-}
-
-.forecast-tile-amount {
-  overflow: hidden;
-  font-weight: var(--ds-type-label-weight);
-  text-align: start;
-  text-overflow: ellipsis;
-}
-
-.forecast-tile-progress {
+.forecast-chart-legend {
   display: flex;
-  gap: 2px;
-  height: 4px;
-  overflow: hidden;
-  border-radius: var(--ds-radius-pill);
-  background: var(--ds-color-surface-muted);
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
+  list-style: none;
 }
 
-.forecast-tile-progress > span {
+.forecast-chart-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.forecast-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* The colours of the parts, in the swatches and the columns. */
+.forecast-swatch.is-paid,
+.forecast-column-part.is-paid {
+  background: color-mix(in srgb, var(--ds-color-success) 62%, var(--ds-color-surface));
+}
+
+.forecast-swatch.is-invoiced,
+.forecast-column-part.is-invoiced {
+  background: color-mix(in srgb, var(--ds-color-info) 50%, var(--ds-color-surface));
+}
+
+.forecast-swatch.is-overdue,
+.forecast-column-part.is-overdue {
+  background: color-mix(in srgb, var(--ds-color-danger) 62%, var(--ds-color-surface));
+}
+
+.forecast-swatch.is-planned,
+.forecast-column-part.is-planned {
+  background: color-mix(in srgb, var(--ds-color-ink) 13%, var(--ds-color-surface));
+}
+
+.forecast-chart-plot {
+  position: relative;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  height: 220px;
+}
+
+.forecast-chart-ticks {
+  position: absolute;
+  inset: 22px 0 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.forecast-chart-ticks li {
+  position: absolute;
+  right: 0;
+  left: 52px;
+  border-bottom: 0.5px solid var(--deals-line);
+}
+
+.forecast-chart-ticks li:last-child {
+  border-bottom-color: var(--deals-line-strong);
+}
+
+.forecast-chart-ticks span {
+  position: absolute;
+  bottom: -8px;
+  left: -52px;
+  width: 44px;
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-tiny);
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.forecast-chart-columns {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 4px;
   height: 100%;
-}
-
-.forecast-tile-progress .is-paid {
-  background: var(--ds-color-success);
-}
-
-.forecast-tile-progress .is-invoiced {
-  background: var(--ds-color-info);
-}
-
-.forecast-tile-progress .is-overdue {
-  background: var(--ds-color-danger);
-}
-
-.forecast-tile-meta {
-  display: grid;
-  color: var(--ds-color-ink-muted);
-}
-
-.forecast-tile-meta > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Quarters */
-.forecast-quarters {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--ds-space-8);
-  margin: 0 0 var(--ds-space-20);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.forecast-quarter {
+.forecast-chart-columns > li {
+  min-width: 0;
+}
+
+.forecast-column {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 28px;
+  width: 100%;
+  height: 100%;
+  padding: 22px 0 0;
+  border: 0;
+  border-radius: var(--deals-radius-item);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color var(--deals-fade) ease;
+}
+
+.forecast-column-track {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 0;
+}
+
+.forecast-column-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: min(28px, 64%);
+  min-height: 2px;
+  overflow: visible;
+}
+
+.forecast-column-part {
+  min-height: 2px;
+  flex-basis: 0;
+}
+
+.forecast-column-part:first-of-type {
+  border-radius: 4px 4px 0 0;
+}
+
+.forecast-column-value {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  color: var(--deals-ink-text);
+  font-size: var(--deals-tiny);
+  font-weight: var(--deals-weight-strong);
+  line-height: 14px;
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.forecast-column-month {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
+}
+
+.forecast-column-month-narrow {
+  display: none;
+}
+
+.forecast-column-note {
+  width: 12px;
+  height: 12px;
+}
+
+.forecast-column.is-current .forecast-column-month {
+  color: var(--deals-ink);
+  font-weight: var(--deals-weight-strong);
+}
+
+.forecast-column.is-current {
+  background: var(--deals-frame);
+}
+
+.forecast-column.is-over {
+  background: color-mix(in srgb, var(--ds-color-accent) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ds-color-accent) 45%, transparent);
+}
+
+.forecast-column:focus-visible {
+  outline: 2px solid var(--ds-color-focus);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .forecast-column:hover {
+    background: var(--deals-hover);
+  }
+
+  .forecast-column:hover .forecast-column-month {
+    color: var(--deals-ink);
+  }
+}
+
+.forecast-chart-quarters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0 0 0 52px;
+  padding: 10px 0 0;
+  border-top: 0.5px solid var(--deals-line);
+  list-style: none;
+}
+
+.forecast-chart-quarters li {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: baseline;
-  gap: 0 var(--ds-space-8);
-  padding: var(--ds-space-8) var(--ds-space-12);
-  border-radius: var(--ds-radius-md);
-  background: var(--ds-color-surface-muted);
+  gap: 0 8px;
+  padding: 0 8px;
+}
+
+.forecast-chart-quarters li + li {
+  border-left: 0.5px solid var(--deals-line);
 }
 
 .forecast-quarter-name {
-  color: var(--ds-color-ink-muted);
-  font-weight: var(--ds-type-label-weight);
+  color: var(--deals-ink-muted);
+  font-weight: var(--deals-weight-strong);
 }
 
 .forecast-quarter-amount {
-  font-weight: var(--ds-type-label-weight);
+  color: var(--deals-ink);
+  font-weight: var(--deals-weight-strong);
 }
 
-.forecast-quarter .small {
+.forecast-chart-quarters .small {
   grid-column: 1 / -1;
   text-align: right;
+}
+
+@media (max-width: 720px) {
+  .forecast-chart-plot {
+    grid-template-columns: 40px minmax(0, 1fr);
+    height: 180px;
+  }
+
+  .forecast-chart-ticks li {
+    left: 40px;
+  }
+
+  .forecast-chart-ticks span {
+    left: -40px;
+    width: 34px;
+  }
+
+  .forecast-column-value,
+  .forecast-column-note,
+  .forecast-column-month-wide {
+    display: none;
+  }
+
+  .forecast-column-month-narrow {
+    display: inline;
+  }
+
+  .forecast-chart-columns {
+    gap: 1px;
+  }
+
+  .forecast-chart-quarters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 8px;
+    margin-left: 0;
+  }
+
+  .forecast-chart-quarters li:nth-child(3) {
+    border-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forecast-column {
+    transition: none;
+  }
 }
 
 /* Unassigned */
@@ -178,10 +347,10 @@
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--ds-space-12);
-  padding: var(--ds-space-8) var(--ds-space-12);
-  border: var(--ds-size-border) solid var(--ds-color-line);
-  border-radius: var(--ds-radius-sm);
-  background: var(--ds-color-surface);
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
 }
 
 .forecast-unassigned-item[draggable="true"] {
@@ -204,71 +373,202 @@
 }
 
 .forecast-unassigned-value {
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
 }
 
-/* Month panels */
+/* Month panels: one quiet card per month, a summary row that opens to the
+ * note and the month's rows inside the same card. */
 .forecast-panels {
   display: grid;
-  gap: var(--ds-space-24);
+  gap: var(--ds-space-8);
   margin-bottom: var(--ds-space-24);
 }
 
 .forecast-month {
-  display: grid;
-  gap: var(--ds-space-12);
   min-width: 0;
+  border-radius: var(--deals-radius-card);
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
   scroll-margin-top: var(--ds-space-16);
 }
 
-.forecast-month-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ds-space-8) var(--ds-space-20);
-  padding-bottom: var(--ds-space-8);
-  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+.forecast-month.is-open {
+  margin-block: var(--ds-space-8);
 }
 
-.forecast-month.is-current .forecast-month-head {
-  border-bottom-color: var(--ds-color-accent);
+/* The month's name is the heading; its figures read as body text. */
+.forecast-month .forecast-month-head {
+  margin: 0;
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight);
+  line-height: var(--deals-text-leading);
+}
+
+.forecast-month-toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 16px;
+  align-items: center;
+  gap: var(--ds-space-16);
+  width: 100%;
+  min-height: 46px;
+  margin: 0;
+  padding: var(--ds-space-4) var(--ds-space-16);
+  border: 0;
+  border-radius: var(--deals-radius-card);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color var(--deals-fade) var(--deals-ease);
+}
+
+.forecast-month.is-open .forecast-month-toggle {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.forecast-month-toggle:focus-visible {
+  outline: 2px solid var(--ds-color-focus);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .forecast-month-toggle:hover {
+    background: var(--deals-hover);
+  }
 }
 
 .forecast-month-name {
   display: flex;
   align-items: center;
   gap: var(--ds-space-8);
-  margin-right: auto;
+  min-width: 0;
 }
 
-.forecast-month-name h2 {
-  margin: 0;
+.forecast-month-label {
+  overflow: hidden;
+  color: var(--deals-ink-strong);
+  font-size: var(--deals-heading);
+  font-weight: var(--deals-weight-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.forecast-month-name h2::first-letter {
+.forecast-month-label::first-letter {
   text-transform: uppercase;
 }
 
 .forecast-month-figures {
+  display: grid;
+  grid-template-columns: 56px repeat(3, 128px);
+  gap: var(--ds-space-16);
+}
+
+.forecast-month-figure {
+  display: grid;
+  min-width: 0;
+}
+
+.forecast-month-figure-label {
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
+  line-height: var(--deals-small-leading);
+}
+
+.forecast-month-figure .num {
+  overflow: hidden;
+  font-weight: var(--deals-weight-strong);
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forecast-month-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--deals-ink-muted);
+  transition: transform var(--deals-fade) var(--deals-ease);
+}
+
+.forecast-month.is-open .forecast-month-chevron {
+  transform: rotate(180deg);
+}
+
+.forecast-month-body {
+  display: grid;
+  gap: var(--ds-space-12);
+  min-width: 0;
+  padding: var(--ds-space-12) var(--ds-space-16) var(--ds-space-16);
+  box-shadow: inset 0 0.5px 0 var(--deals-line);
+}
+
+.forecast-month-body[hidden] {
+  display: none;
+}
+
+/* Inside the month's card the table trades its own card for a hairline. */
+.shell .forecast-month-body .ds-table-wrap {
+  border-radius: var(--deals-radius-item);
+  box-shadow: var(--deals-ring);
+}
+
+.forecast-month-tools {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ds-space-4) var(--ds-space-16);
-  margin: 0;
+  align-items: flex-start;
+  gap: var(--ds-space-8);
 }
 
-.forecast-month-figures div {
-  display: grid;
+.forecast-month-tools .forecast-note {
+  flex: 1 1 320px;
 }
 
-.forecast-month-figures dt {
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+.forecast-month-add {
+  margin-left: auto;
 }
 
-.forecast-month-figures dd {
-  margin: 0;
-  font-weight: var(--ds-type-label-weight);
-  text-align: start;
+@media (max-width: 720px) {
+  .forecast-month-toggle {
+    grid-template-columns: minmax(0, 1fr) 16px;
+    row-gap: var(--ds-space-4);
+    padding-block: var(--ds-space-8);
+  }
+
+  /* On a narrow screen the figures flow as "label value" pairs. */
+  .forecast-month-figures {
+    display: flex;
+    flex-wrap: wrap;
+    grid-column: 1;
+    grid-row: 2;
+    gap: 0 var(--ds-space-12);
+  }
+
+  .forecast-month-figure {
+    display: flex;
+    align-items: baseline;
+    gap: var(--ds-space-4);
+  }
+
+  .forecast-month-tools .forecast-note {
+    flex-basis: 160px;
+  }
+
+  .forecast-month-chevron {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .forecast-month-body {
+    padding-inline: var(--ds-space-12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forecast-month-toggle,
+  .forecast-month-chevron {
+    transition: none;
+  }
 }
 
 .forecast-row-title {
@@ -283,7 +583,7 @@
 }
 
 .forecast-row--overdue td {
-  background: var(--ds-color-danger-soft);
+  background: color-mix(in srgb, var(--ds-color-danger) 4%, transparent);
 }
 
 .forecast-row-actions {
@@ -348,7 +648,7 @@
   display: block;
   height: 100%;
   border-radius: var(--ds-radius-pill);
-  background: var(--ds-color-accent);
+  background: color-mix(in srgb, var(--ds-color-accent) 62%, var(--ds-color-surface));
 }
 
 .forecast-hint {
@@ -436,13 +736,13 @@
 }
 
 .plan-editor-summary dt {
-  color: var(--ds-color-ink-muted);
-  font-size: var(--ds-type-meta-size);
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-small);
 }
 
 .plan-editor-summary dd {
   margin: 0;
-  font-weight: var(--ds-type-label-weight);
+  font-weight: var(--deals-weight-strong);
   text-align: start;
 }
 
@@ -477,7 +777,7 @@
   justify-content: space-between;
   gap: var(--ds-space-12);
   padding-bottom: var(--ds-space-8);
-  border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+  border-bottom: 0.5px solid var(--deals-line-strong);
 }
 
 .overview-list li:last-child {
@@ -502,31 +802,7 @@
   flex-shrink: 0;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .forecast-month-tile:hover {
-    border-color: var(--ds-color-line-strong);
-  }
-
-  .forecast-month-tile.is-current:hover {
-    border-color: var(--ds-color-accent);
-  }
-}
-
-@media (max-width: 1100px) {
-  .forecast-months {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 720px) {
-  .forecast-months {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .forecast-quarters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .plan-editor-row {
     grid-template-columns: 24px minmax(0, 1fr) minmax(0, 1fr) 40px;
   }
@@ -554,15 +830,11 @@
 
   .plan-editor-row {
     padding-bottom: var(--ds-space-8);
-    border-bottom: var(--ds-size-border) solid var(--ds-color-line);
+    border-bottom: 0.5px solid var(--deals-line-strong);
   }
 }
 
 @media (max-width: 480px) {
-  .forecast-months {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .forecast-filter {
     flex: 1 1 100%;
   }
@@ -581,17 +853,10 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .forecast-month-tile {
-    transition: none;
-  }
-}
-
 /* Figures in tiles read from the left, under their labels. */
 .forecast-page .stat-tile-value,
 .stats-page .stat-tile-value,
-.overview-page .stat-tile-value,
-.forecast-month-tile .forecast-tile-amount {
+.overview-page .stat-tile-value {
   text-align: start;
 }
 
@@ -599,7 +864,7 @@
   .forecast-page .stat-tile-value,
   .stats-page .stat-tile-value,
   .overview-page .stat-tile-value {
-    font-size: var(--ds-type-body-size);
+    font-size: 18px;
   }
 
   .plan-editor-month {

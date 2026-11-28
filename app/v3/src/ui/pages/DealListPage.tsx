@@ -13,7 +13,7 @@ import {
   ViewToggle,
 } from "../components/Board.tsx";
 import { CloseDealDialog } from "../components/CloseDeal.tsx";
-import { ErrorNotice, PageHeader, StageChip } from "../components/common.tsx";
+import { ErrorNotice, PageHeader, StageChip, stageTone } from "../components/common.tsx";
 import { type Column, DataTable } from "../components/DataTable.tsx";
 import { createQuoteFor } from "../components/deals/quoteActions.ts";
 import { DEALS, type Format, useFormat, useT } from "../i18n.tsx";
@@ -373,7 +373,6 @@ function useDealColumns({
           <a className="data-table-link" href={href({ page: "deal", id: entry.value.id })}>
             {entry.value.title}
           </a>
-          {lookups.quotesOf(entry.value.id).length > 0 ? <QuoteDot /> : null}
         </span>
       ),
     },
@@ -401,7 +400,9 @@ function useDealColumns({
         const stage = lookups.stage(entry.value.stageId);
         if (!canWrite || stage?.kind !== "open") return <StageChip stage={stage} />;
         return (
-          <div className="ds-select-wrap deal-stage-select">
+          <div
+            className={`ds-select-wrap deal-stage-select stage-pill stage-pill--${stageTone(stage)}`}
+          >
             <select
               className="ds-select"
               value={entry.value.stageId}

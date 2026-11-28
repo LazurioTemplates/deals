@@ -7,9 +7,11 @@ import type { BillingEntity, LossReason, Settings, Stage } from "../../domain/se
 import type { Locale } from "../../i18n/locale.ts";
 import type { AppData } from "../App.tsx";
 import { api, type Stored } from "../api.ts";
+import { ChipChoice } from "../components/Board.tsx";
 import { Field, fieldErrors, PageHeader, StageChip } from "../components/common.tsx";
 import { EditNotices, isRecordChanged, useRecordForm } from "../edit.tsx";
 import { type CountWords, useLocale, useT } from "../i18n.tsx";
+import { type LocaleChoice, readLocaleChoice, writeLocaleChoice } from "../locale.ts";
 import { href } from "../routes.ts";
 import { useCanWrite } from "../write.tsx";
 
@@ -1009,11 +1011,9 @@ export function SettingsPage({
     <section>
       <PageHeader
         title={t("Nastavení", "Settings")}
-        subtitle={t(
-          "Fáze pipeline, důvody ztráty, typy zakázek, fakturační firmy, výchozí hodnoty nabídky a splatnost. Změna se uloží jako koncept.",
-          "The stages of the pipeline, the loss reasons, the deal types, the billing entities, the quote defaults and the due days. A change is saved as a draft.",
-        )}
+        subtitle={t("Změna se uloží jako koncept.", "A change is saved as a draft.")}
       />
+      <LanguageChoice />
       <form className="form form-wide" onSubmit={save}>
         <fieldset className="form-fieldset" disabled={!canWrite}>
           <EditNotices edit={edit} error={error} onClear={() => setError(null)} settings />
@@ -1046,6 +1046,46 @@ export function SettingsPage({
           ) : null}
         </fieldset>
       </form>
+    </section>
+  );
+}
+
+/**
+ * The language of the App for the person in this browser: Czech, English or
+ * the language of their Lazurio profile. It is theirs alone, takes effect at
+ * once and is no part of the Organization's settings or the draft.
+ */
+function LanguageChoice() {
+  const t = useT();
+  const [choice, setChoice] = useState<LocaleChoice>(() => readLocaleChoice());
+  const choose = (next: LocaleChoice) => {
+    setChoice(next);
+    writeLocaleChoice(next);
+    // The language is chosen once, when the App starts: start it again, without
+    // a `?lang=` in the address, which would win over the choice.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("lang");
+    window.history.replaceState(window.history.state, "", url.toString());
+    window.location.reload();
+  };
+  return (
+    <section className="ds-card settings-language" aria-labelledby="settings-language-title">
+      <div className="settings-language-text">
+        <h2 id="settings-language-title">{t("Jazyk aplikace", "Language")}</h2>
+        <p className="muted small">
+          {t("Jen pro vás v tomto prohlížeči.", "Only for you, in this browser.")}
+        </p>
+      </div>
+      <ChipChoice<LocaleChoice>
+        label={t("Jazyk aplikace", "Language")}
+        value={choice}
+        options={[
+          { value: "auto", label: t("Podle Lazuria", "As in Lazurio") },
+          { value: "cs", label: t("Čeština", "Czech") },
+          { value: "en", label: "English" },
+        ]}
+        onChange={choose}
+      />
     </section>
   );
 }

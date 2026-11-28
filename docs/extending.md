@@ -96,9 +96,20 @@ Standard).
   (`design-system/react`): buttons, badges, alerts, tables, fields,
   checkboxes, switches, dialogs, the navigation and empty states. Its fonts
   come with the package; the page loads nothing from another origin.
-  `src/ui/styles.css` holds only the App's own layout and names only the
-  package's `--ds-*` tokens; `src/ui/locale.ts` takes the language by the
-  package's `resolveLocale()` and `readLazurioLocale()`.
+  `src/ui/locale.ts` takes the language by the package's `resolveLocale()`
+  and `readLazurioLocale()`.
+- **The App's look** sits between the design system and the App's layout:
+  `src/ui/styles/look.css`, imported right after `design-system/styles.css`.
+  It makes Deals a quiet, dense work tool: 13 px type and two weights, ink in
+  steps (strong, text, muted, faint), hairlines instead of borders, 40 px
+  table rows, 30 px navigation items, 28 px buttons, tinted pills, the page
+  on a white panel set into a gray frame. It adds sizes only (`--deals-*`);
+  every colour stays a `--ds-*` token, alone or mixed with transparency, so
+  the design system still sets the brand and both themes. The App's layout
+  (`src/ui/styles.css`, `src/ui/styles/*.css`) names only those two scales.
+  An Organization whose design system should keep its own proportions
+  removes the import of `look.css` in `main.tsx`; the pages stay usable,
+  with the design system's sizes.
 - **A newer release of the design system** is a new tag in the dependency:
   change `#v2.2.0`, run `bun install` and `bun run check`, read the release's
   `CHANGELOG.md`, look at the pages in both languages and both themes, and

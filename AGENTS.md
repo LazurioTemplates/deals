@@ -81,8 +81,11 @@ skill keeps:
   tag (`github:LazurioTemplates/design-system#v2.2.0`). Never copy its files
   into this repository or import it by a relative path; a newer release is a
   new tag in the dependency ([`docs/extending.md`](docs/extending.md), "The
-  look of the App"). Use its React components and its `--ds-*` tokens; the
-  App's own CSS is layout only. The page loads nothing from another origin.
+  look of the App"). Use its React components and its `--ds-*` tokens. The
+  App's own CSS is its layout plus one look layer, `app/v3/src/ui/styles/look.css`,
+  which sets sizes and density (`--deals-*`); every colour in the App's CSS is
+  a `--ds-*` token, alone or mixed with transparency (`color-mix`), never a
+  colour value of its own. The page loads nothing from another origin.
 - ARES is asked only by the server (`app/v3/src/server/ares.ts`), with an
   injected `fetch`; tests use a stub and never the network.
 

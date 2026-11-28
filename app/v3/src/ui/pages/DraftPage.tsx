@@ -50,8 +50,8 @@ export function DraftPage({ onChanged }: { onChanged: () => Promise<void> }) {
       <PageHeader
         title={t("Koncept a publikování", "Draft & publish")}
         subtitle={t(
-          "Uložené úpravy jsou koncept. Publikováním je jedním krokem odešlete do datového repozitáře Organizace, kde je uvidí kolegové i jejich agenti. Firmám ani kontaktům se tím nic neposílá.",
-          "Saved edits are a draft. Publishing sends them in one step to the Organization's data repository, where colleagues and their agents see them. Nothing goes to a company or a contact.",
+          "Publikováním uvidí uložené úpravy kolegové. Firmám ani kontaktům se nic neposílá.",
+          "Publishing shows saved edits to your colleagues. Nothing goes to a company or a contact.",
         )}
       />
       <div className="draft-panel">

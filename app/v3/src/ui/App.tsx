@@ -8,11 +8,11 @@ import type { Contact } from "../domain/contact.ts";
 import type { Deal } from "../domain/deal.ts";
 import type { ForecastEntry, ForecastNote } from "../domain/forecast-entry.ts";
 import type { PricebookItem } from "../domain/pricebook.ts";
-import type { Quote } from "../domain/quote.ts";
+import { latestRevisions, type Quote } from "../domain/quote.ts";
 import type { Salesperson } from "../domain/salesperson.ts";
 import type { Settings } from "../domain/settings.ts";
 import { ApiError, api, type Stored, subscribe } from "./api.ts";
-import { Layout } from "./components/Layout.tsx";
+import { Layout, type NavCounts } from "./components/Layout.tsx";
 import { useLocale, useT } from "./i18n.tsx";
 import { CompanyListPage } from "./pages/CompanyListPage.tsx";
 import { CompanyPage } from "./pages/CompanyPage.tsx";
@@ -76,6 +76,24 @@ export function dataSetOf(data: AppData): DataSet & { settings: Settings } {
     quotes: values(data.quotes),
     forecastEntries: values(data.forecastEntries),
     forecastNotes: values(data.forecastNotes),
+  };
+}
+
+/** The counts beside the navigation: the deals of each tab and the records of each list. */
+export function navCountsOf(data: AppData): NavCounts {
+  const kinds = new Map(data.settings.value.stages.map((stage) => [stage.id, stage.kind]));
+  const ofKind = (kind: string) =>
+    data.deals.filter((entry) => kinds.get(entry.value.stageId) === kind).length;
+  return {
+    all: data.deals.length,
+    open: ofKind("open"),
+    won: ofKind("won"),
+    lost: ofKind("lost"),
+    quotes: latestRevisions(data.quotes.map((entry) => entry.value)).length,
+    pricebook: data.pricebook.length,
+    contacts: data.contacts.length,
+    companies: data.companies.length,
+    salespeople: data.salespeople.length,
   };
 }
 
@@ -208,7 +226,7 @@ export function App() {
     (error.code === "mount_unavailable" || error.code === "settings_missing");
   return (
     <WriteContext.Provider value={canWrite}>
-      <Layout route={route} draft={draft}>
+      <Layout route={route} draft={draft} counts={data ? navCountsOf(data) : {}}>
         {error ? (
           <Alert
             tone={quiet ? "info" : "danger"}
@@ -341,7 +359,7 @@ function Page({
         />
       );
     case "contacts":
-      return <ContactListPage data={data} />;
+      return <ContactListPage data={data} onChanged={onChanged} />;
     case "new-contact":
       return (
         <ContactPage

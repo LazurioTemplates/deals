@@ -33,7 +33,7 @@ export function CompanyListPage({ data }: { data: AppData }) {
         title={t("Firmy", "Companies")}
         actions={
           canWrite ? (
-            <Button variant="primary" href={href({ page: "new-company" })}>
+            <Button variant="primary" icon="plus" href={href({ page: "new-company" })}>
               {t("Nová firma", "New company")}
             </Button>
           ) : null

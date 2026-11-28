@@ -177,7 +177,12 @@ export function ContactPage({
               </div>
             </article>
             {canWrite ? (
-              <div className="form-actions">
+              <div className={edit.touched ? "form-actions form-actions--pending" : "form-actions"}>
+                {edit.touched ? (
+                  <span className="form-actions-note">
+                    {t("Neuložené změny", "Unsaved changes")}
+                  </span>
+                ) : null}
                 <Button variant="primary" type="submit" busy={busy} disabled={!form.name.trim()}>
                   {stored
                     ? t("Uložit do konceptu", "Save to the draft")

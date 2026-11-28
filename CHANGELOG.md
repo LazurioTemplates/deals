@@ -2,6 +2,57 @@
 
 ## Unreleased
 
+## 0.3.0 — 2026-11-28
+
+0.3.0 gives Deals a quieter, denser look and a round of UX fixes. The data
+does not change: an Organization on 0.2.0 takes the release as a merge,
+without a migration. An Organization on its own design system keeps its
+brand: every colour still comes from the design system's tokens.
+
+### For whoever uses it
+
+- **A quieter, denser look.** Small type and two weights, grays in steps of
+  the ink, hairlines instead of borders, dense table rows, tinted pills for
+  stages and quote statuses (also where they are chosen in a row), the
+  navigation with icons and counts on a gray frame and the page on a white
+  panel set into it. A page starts with one quiet row: where it sits and its
+  actions; a record's page adds its name as a large title. The board, the
+  overview's pipeline, the tiles, the charts and the dialogs follow the same
+  language, in the light and the dark theme.
+- **The forecast by month is a column chart**: paid, invoiced, overdue and
+  still planned stacked per month, the quarters under them. A column opens
+  its month and still takes a won deal dragged onto it. The months under the
+  chart are rows that open; the current month is open.
+- **Quote lines as a compact table**: one row per line (item with its
+  description and price-list code, quantity, unit, unit price, discount,
+  total); on a narrow screen a line wraps to the item, then the numbers.
+- **A new contact in a dialog**, from the contacts and from a company.
+- **The language in the settings**: Czech, English or as in Lazurio, for the
+  person in this browser only.
+- **Statistics**: four main tiles (won, value won, conversion, pipeline) and
+  the supporting four in a smaller row.
+- **Unsaved changes** keep the save at the bottom of the screen on a deal, a
+  company, a contact and a salesperson.
+- **A closed deal** shows one button, „Upravit uzavření“; turning a won deal
+  into a lost one, or back, is inside that dialog. The closing buttons say
+  what they do („Označit jako vyhraný“, „Označit jako ztracený“).
+- **Quieter pages**: the overview's pipeline cards carry no stage select, the
+  deals table no quote dot, page subtitles are one short line or none.
+- **Phones**: the navigation folds behind a Menu button, tables keep one line
+  per row and scroll sideways, tiles fit at 320 px, dialogs open as a sheet
+  from the bottom.
+
+### For whoever changes it
+
+- **The look layer** `app/v3/src/ui/styles/look.css` (see
+  [`docs/extending.md`](docs/extending.md), "The look of the App"): sizes and
+  density on top of the design system (`--deals-*`); colours stay its
+  `--ds-*` tokens. The App's CSS is its layout plus this layer (`AGENTS.md`).
+- **The language** comes from `?lang`, then the person's choice
+  (`readLocaleChoice` in `src/ui/locale.ts`, kept in the browser), then the
+  Lazurio profile, then Czech.
+- `useRecordForm` tells whether a form has unsaved values (`touched`).
+
 ## 0.2.0 — 2026-11-26
 
 0.2.0 brings Deals to the structure of a mature sales pipeline: salespeople

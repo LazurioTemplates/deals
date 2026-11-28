@@ -21,6 +21,13 @@ describe("the language of the App", () => {
     expect(await resolveLocale("?lang=cs", lazurio)).toBe("cs");
   });
 
+  test("the person's choice in the settings comes before Lazurio, the address before it", async () => {
+    const lazurio = () => json({ schema: "lazurio.shell.v1", locale: "en" });
+    expect(await resolveLocale("", lazurio, "cs")).toBe("cs");
+    expect(await resolveLocale("", lazurio, "auto")).toBe("en");
+    expect(await resolveLocale("?lang=en", lazurio, "cs")).toBe("en");
+  });
+
   test("is Czech outside Lazurio, unless the address asks for English", async () => {
     const page = () =>
       Promise.resolve(

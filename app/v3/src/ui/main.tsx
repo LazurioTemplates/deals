@@ -1,8 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 // The design system first: tokens, fonts, base styles and its components;
-// then the App's own layout, then the Organization's overlay.
+// then the App's look on top of them (sizes and density, colours still the
+// design system's), the App's own layout, then the Organization's overlay.
 import "design-system/styles.css";
+import "./styles/look.css";
 import "./styles.css";
 import "./styles/components.css";
 import "./styles/deals.css";

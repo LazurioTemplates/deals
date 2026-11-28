@@ -126,8 +126,8 @@ export function PricebookPage({
       <PageHeader
         title={t("Ceník", "Price list")}
         subtitle={t(
-          "Položka nabídky z ceníku si zkopíruje název, jednotku a cenu; pozdější změna ceníku napsanou nabídku nezmění.",
-          "A quote line from the price list copies the name, the unit and the price; a later change of the price list never changes a quote already written.",
+          "Změna ceníku nemění už napsané nabídky.",
+          "A change of the price list never changes a quote already written.",
         )}
         actions={
           canWrite ? (

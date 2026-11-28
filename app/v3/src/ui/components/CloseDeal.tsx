@@ -29,6 +29,7 @@ export function CloseDealDialog({
   onClose,
   onDone,
   today = localToday(),
+  switchTo,
 }: {
   deal: Stored<Deal>;
   stage: Stage;
@@ -37,6 +38,8 @@ export function CloseDealDialog({
   onClose: () => void;
   onDone: () => Promise<void>;
   today?: string;
+  /** On a closed deal: the button that turns it to the other closing. */
+  switchTo?: CloseSwitch | undefined;
 }) {
   const won = stage.kind === "won";
   return won ? (
@@ -48,6 +51,7 @@ export function CloseDealDialog({
       onClose={onClose}
       onDone={onDone}
       today={today}
+      switchTo={switchTo}
     />
   ) : (
     <LostDialog
@@ -58,8 +62,15 @@ export function CloseDealDialog({
       onClose={onClose}
       onDone={onDone}
       today={today}
+      switchTo={switchTo}
     />
   );
+}
+
+/** A way out of the dialog to the other closing: a won deal that was lost after all. */
+export interface CloseSwitch {
+  label: string;
+  run: () => void;
 }
 
 interface DialogProps {
@@ -70,6 +81,17 @@ interface DialogProps {
   onClose: () => void;
   onDone: () => Promise<void>;
   today: string;
+  switchTo?: CloseSwitch | undefined;
+}
+
+/** The quiet button that switches to the other closing, at the start of the footer. */
+function SwitchButton({ switchTo }: { switchTo: CloseSwitch | undefined }) {
+  if (!switchTo) return null;
+  return (
+    <Button variant="quiet" className="close-deal-switch" onClick={switchTo.run}>
+      {switchTo.label}
+    </Button>
+  );
 }
 
 /**
@@ -77,7 +99,7 @@ interface DialogProps {
  * saves a complete plan; „Zařadit později“ leaves the plan unassigned, so the
  * forecast lists the deal among those still to plan.
  */
-function WonDialog({ deal, stage, settings, open, onClose, onDone, today }: DialogProps) {
+function WonDialog({ deal, stage, settings, open, onClose, onDone, today, switchTo }: DialogProps) {
   const t = useT();
   const locale = useLocale();
   const f = useFormat(settings.currency);
@@ -150,6 +172,7 @@ function WonDialog({ deal, stage, settings, open, onClose, onDone, today }: Dial
       locale={locale}
       footer={
         <>
+          <SwitchButton switchTo={switchTo} />
           <Button variant="secondary" onClick={onClose}>
             {t("Zrušit", "Cancel")}
           </Button>
@@ -231,7 +254,16 @@ function WonDialog({ deal, stage, settings, open, onClose, onDone, today }: Dial
 }
 
 /** Lost: the reason from the settings, a note and the day. */
-function LostDialog({ deal, stage, settings, open, onClose, onDone, today }: DialogProps) {
+function LostDialog({
+  deal,
+  stage,
+  settings,
+  open,
+  onClose,
+  onDone,
+  today,
+  switchTo,
+}: DialogProps) {
   const t = useT();
   const locale = useLocale();
   const formId = useId();
@@ -275,6 +307,7 @@ function LostDialog({ deal, stage, settings, open, onClose, onDone, today }: Dia
       locale={locale}
       footer={
         <>
+          <SwitchButton switchTo={switchTo} />
           <Button variant="secondary" onClick={onClose}>
             {t("Zrušit", "Cancel")}
           </Button>

@@ -1,0 +1,779 @@
+/*
+ * The look of Deals on top of the design system: a quiet, dense work tool.
+ * Small type (13 px), two weights, grays as steps of the ink, hairlines
+ * instead of borders, layered whites on a light gray page, dense rows and
+ * tinted, borderless pills.
+ *
+ * Every colour here is a design-system token (`--ds-color-*`), alone or mixed
+ * with transparency (`color-mix`), so an Organization's own design system
+ * still sets the brand, the light and the dark theme. What this file adds are
+ * sizes: the `--deals-*` scale below and the density of the design system's
+ * components inside the App. An Organization that wants its design system's
+ * own proportions back removes this file's import in `main.tsx`.
+ */
+
+:root {
+  /* Type */
+  --deals-text: 13px;
+  --deals-text-leading: 20px;
+  --deals-small: 12px;
+  --deals-small-leading: 16px;
+  --deals-tiny: 11px;
+  --deals-title: 24px;
+  --deals-title-leading: 32px;
+  --deals-heading: 15px;
+  --deals-weight: 400;
+  --deals-weight-strong: 500;
+  --deals-tracking-title: -0.01em;
+
+  /* Ink in steps: strong, ink, text, muted, faint. */
+  --deals-ink-strong: var(--ds-color-ink);
+  --deals-ink: color-mix(in srgb, var(--ds-color-ink) 88%, transparent);
+  --deals-ink-text: color-mix(in srgb, var(--ds-color-ink) 64%, transparent);
+  --deals-ink-muted: color-mix(in srgb, var(--ds-color-ink) 47%, transparent);
+  --deals-ink-faint: color-mix(in srgb, var(--ds-color-ink) 30%, transparent);
+
+  /* Surfaces and washes */
+  --deals-page: var(--ds-color-surface-muted);
+  --deals-panel: var(--ds-color-surface);
+  --deals-card: var(--ds-color-surface-raised);
+  --deals-frame: color-mix(in srgb, var(--ds-color-ink) 2.5%, transparent);
+  --deals-chip: color-mix(in srgb, var(--ds-color-ink) 4.5%, transparent);
+  --deals-hover: color-mix(in srgb, var(--ds-color-ink) 3%, transparent);
+  --deals-select: color-mix(in srgb, var(--ds-color-ink) 6%, transparent);
+  --deals-row-hover: color-mix(in srgb, var(--ds-color-ink) 2%, transparent);
+  --deals-row-selected: color-mix(in srgb, var(--ds-color-accent) 6%, transparent);
+
+  /* Lines: hairlines are 0.5 px rings drawn as shadows. */
+  --deals-line: color-mix(in srgb, var(--ds-color-ink) 7%, transparent);
+  --deals-line-soft: color-mix(in srgb, var(--ds-color-ink) 5%, transparent);
+  --deals-line-strong: color-mix(in srgb, var(--ds-color-ink) 12%, transparent);
+  --deals-ring: 0 0 0 0.5px var(--deals-line);
+  --deals-shadow-card:
+    0 0 0 0.5px var(--deals-line), 0 1px 1px -1px color-mix(in srgb, var(--ds-color-ink) 10%, transparent),
+    0 1px 2px 0 color-mix(in srgb, var(--ds-color-ink) 5%, transparent);
+  --deals-shadow-card-hover:
+    0 0 0 0.5px var(--deals-line-strong),
+    0 2px 6px -1px color-mix(in srgb, var(--ds-color-ink) 8%, transparent),
+    0 1px 2px 0 color-mix(in srgb, var(--ds-color-ink) 5%, transparent);
+  --deals-shadow-field:
+    0 0 0 0.5px color-mix(in srgb, var(--ds-color-ink) 10%, transparent),
+    0 1px 1px -1px color-mix(in srgb, var(--ds-color-ink) 10%, transparent),
+    0 1px 2px 0 color-mix(in srgb, var(--ds-color-ink) 5%, transparent);
+  --deals-shadow-field-hover: 0 0 0 0.5px color-mix(in srgb, var(--ds-color-ink) 16%, transparent),
+    0 1px 2px 0 color-mix(in srgb, var(--ds-color-ink) 5%, transparent);
+  --deals-shadow-field-focus: 0 0 0 1px color-mix(in srgb, var(--ds-color-ink) 32%, transparent),
+    0 1px 2px 0 color-mix(in srgb, var(--ds-color-ink) 6%, transparent);
+
+  /* Radii */
+  --deals-radius-pill: 5px;
+  --deals-radius-button: 6px;
+  --deals-radius-field: 7px;
+  --deals-radius-item: 8px;
+  --deals-radius-card: 12px;
+  --deals-radius-column: 14px;
+
+  /* Heights */
+  --deals-nav-item: 30px;
+  --deals-control-sm: 24px;
+  --deals-control: 28px;
+  --deals-field: 32px;
+  --deals-row: 40px;
+  --deals-row-head: 36px;
+  --deals-bar: 48px;
+
+  /* Motion: one curve, short fades. */
+  --deals-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --deals-fade: 140ms;
+}
+
+/* In the dark the page is the darkest layer and the panel a step lighter. */
+[data-theme="dark"] {
+  --deals-page: var(--ds-color-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --deals-page: var(--ds-color-bg);
+  }
+}
+
+/* ---------- The page ---------- */
+
+body {
+  background: var(--deals-page);
+  color: var(--deals-ink);
+  font-size: var(--deals-text);
+  line-height: var(--deals-text-leading);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.shell :where(h1, h2, h3, h4, strong, b, th) {
+  font-weight: var(--deals-weight-strong);
+}
+
+.shell :where(h2) {
+  font-size: var(--deals-heading);
+  line-height: 22px;
+}
+
+.shell :where(h3, h4) {
+  font-size: var(--deals-text);
+  line-height: var(--deals-text-leading);
+}
+
+/* Links in a page: the text's own colour with a light underline that
+ * darkens on hover. A link with a class of its own keeps its look. */
+:where(.content-area) a {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-color: var(--deals-line-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--deals-fade) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(.content-area) a:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+/* ---------- Navigation ---------- */
+
+.sidebar .ds-nav__title {
+  margin: 0 0 var(--ds-space-4);
+  padding: 0 6px;
+  color: var(--deals-ink-faint);
+  font-size: 12.5px;
+  font-weight: var(--deals-weight);
+  line-height: var(--deals-small-leading);
+}
+
+.sidebar .ds-nav__list {
+  gap: 1px;
+}
+
+.sidebar .ds-nav__link {
+  min-height: var(--deals-nav-item);
+  padding: 0 6px;
+  gap: 8px;
+  border-radius: var(--deals-radius-item);
+  color: var(--deals-ink-text);
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight);
+  line-height: var(--deals-text-leading);
+  letter-spacing: 0;
+  transition:
+    background-color var(--deals-fade) ease,
+    color var(--deals-fade) ease;
+}
+
+.sidebar .ds-nav__link .ds-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--deals-ink-muted);
+  stroke-width: 1.8;
+}
+
+.sidebar .ds-nav__link[aria-current="page"] {
+  background: var(--deals-select);
+  color: var(--deals-ink);
+  font-weight: var(--deals-weight-strong);
+}
+
+.sidebar .ds-nav__link[aria-current="page"] .ds-icon {
+  color: var(--deals-ink);
+}
+
+.sidebar .ds-nav__badge {
+  min-width: 0;
+  padding: 0;
+  background: none;
+  color: var(--deals-ink-faint);
+  font-size: var(--deals-small);
+  font-weight: var(--deals-weight);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sidebar .ds-nav__link:hover {
+    background: var(--deals-hover);
+    color: var(--deals-ink);
+  }
+
+  .sidebar .ds-nav__link[aria-current="page"]:hover {
+    background: var(--deals-select);
+  }
+}
+
+/* ---------- Buttons ---------- */
+
+.shell .ds-button {
+  min-height: var(--deals-control);
+  padding: 0 10px;
+  gap: 6px;
+  border: 0;
+  border-radius: var(--deals-radius-button);
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight-strong);
+  line-height: var(--deals-text-leading);
+  letter-spacing: 0;
+  transition:
+    background-color var(--deals-fade) ease,
+    box-shadow var(--deals-fade) ease,
+    color var(--deals-fade) ease,
+    transform 160ms var(--deals-ease);
+}
+
+.shell .ds-button .ds-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.shell .ds-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.shell .ds-button--sm {
+  min-height: var(--deals-control-sm);
+  padding: 0 8px;
+  gap: 4px;
+  font-size: var(--deals-small);
+  line-height: var(--deals-small-leading);
+}
+
+.shell .ds-button--sm .ds-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.shell .ds-button--lg {
+  min-height: var(--deals-field);
+  padding: 0 12px;
+}
+
+.shell .ds-button--primary {
+  background: var(--deals-ink);
+  color: var(--ds-color-on-action);
+}
+
+.shell .ds-button--secondary {
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
+  color: var(--deals-ink);
+}
+
+.shell .ds-button--secondary .ds-icon {
+  color: var(--deals-ink-muted);
+}
+
+.shell .ds-button--soft {
+  background: var(--deals-chip);
+  color: var(--deals-ink);
+}
+
+.shell .ds-button--quiet {
+  background: transparent;
+  color: var(--deals-ink-text);
+}
+
+.shell .ds-button--danger {
+  background: color-mix(in srgb, var(--ds-color-danger) 9%, transparent);
+  box-shadow: none;
+  color: var(--ds-color-danger);
+}
+
+.shell .ds-button:disabled,
+.shell .ds-button[aria-disabled="true"] {
+  opacity: 0.4;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shell .ds-button--primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--deals-ink) 90%, var(--ds-color-surface));
+  }
+
+  .shell .ds-button--secondary:hover:not(:disabled) {
+    background: var(--deals-card);
+    box-shadow: var(--deals-shadow-card-hover);
+  }
+
+  .shell .ds-button--soft:hover:not(:disabled) {
+    background: var(--deals-select);
+  }
+
+  .shell .ds-button--quiet:hover:not(:disabled) {
+    background: var(--deals-hover);
+    color: var(--deals-ink);
+  }
+
+  .shell .ds-button--danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--ds-color-danger) 13%, transparent);
+  }
+}
+
+@media (pointer: coarse) {
+  .shell .ds-button {
+    min-height: 34px;
+  }
+
+  .shell .ds-button--sm {
+    min-height: 32px;
+  }
+}
+
+/* ---------- Fields ---------- */
+
+.shell .ds-field {
+  gap: 6px;
+}
+
+.shell .ds-field__label {
+  color: var(--deals-ink);
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight-strong);
+  line-height: var(--deals-text-leading);
+}
+
+.shell .ds-field__hint,
+.shell .ds-field__error {
+  font-size: var(--deals-small);
+  line-height: var(--deals-small-leading);
+}
+
+.shell .ds-field__hint {
+  color: var(--deals-ink-muted);
+}
+
+.shell :is(.ds-input, .ds-select, .ds-textarea) {
+  min-height: var(--deals-field);
+  padding-block: 0;
+  padding-inline: 10px;
+  border: 0;
+  border-radius: var(--deals-radius-field);
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-field);
+  color: var(--deals-ink);
+  font-size: var(--deals-text);
+  line-height: var(--deals-text-leading);
+  transition: box-shadow var(--deals-fade) ease;
+}
+
+.shell .ds-select {
+  padding-inline-end: 30px;
+}
+
+.shell .ds-textarea {
+  padding-block: 6px;
+}
+
+.shell :is(.ds-input, .ds-textarea)::placeholder {
+  color: var(--deals-ink-faint);
+}
+
+.shell :is(.ds-input, .ds-select, .ds-textarea):focus,
+.shell :is(.ds-input, .ds-select, .ds-textarea):focus-visible {
+  outline: none;
+  box-shadow: var(--deals-shadow-field-focus);
+}
+
+.shell :is(.ds-input, .ds-select, .ds-textarea)[aria-invalid="true"] {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ds-color-danger) 55%, transparent);
+}
+
+.shell :is(.ds-input, .ds-select, .ds-textarea):disabled {
+  background: var(--deals-frame);
+  box-shadow: var(--deals-ring);
+  opacity: 0.7;
+}
+
+.shell .ds-select__chevron {
+  inset-inline-end: 10px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  color: var(--deals-ink-muted);
+  transform: translateY(-50%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shell :is(.ds-input, .ds-select, .ds-textarea):hover:not(:focus):not(:disabled) {
+    box-shadow: var(--deals-shadow-field-hover);
+  }
+}
+
+/* Phones zoom into a field under 16 px: the text grows there, the box stays. */
+@media (pointer: coarse) {
+  .shell :is(.ds-input, .ds-select, .ds-textarea) {
+    min-height: 36px;
+    font-size: 16px;
+  }
+}
+
+.shell .ds-check__input {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.shell :is(.ds-check__label, .ds-switch__label) {
+  font-size: var(--deals-text);
+  line-height: var(--deals-text-leading);
+}
+
+/* ---------- Cards ---------- */
+
+.shell .ds-card {
+  padding: 18px 20px 20px;
+  border: 0;
+  border-radius: var(--deals-radius-card);
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
+}
+
+.shell .ds-card :where(.ds-card__title, h2) {
+  font-size: var(--deals-heading);
+  font-weight: var(--deals-weight-strong);
+  line-height: 22px;
+}
+
+/* ---------- Tables ---------- */
+
+.shell .ds-table-wrap {
+  border: 0;
+  border-radius: var(--deals-radius-card);
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
+}
+
+.shell .ds-table {
+  color: var(--deals-ink-text);
+  font-size: var(--deals-text);
+  line-height: var(--deals-text-leading);
+  letter-spacing: 0;
+}
+
+.shell .ds-table th,
+.shell .ds-table td {
+  height: var(--deals-row);
+  padding: 0 12px;
+  border-block-end: 0;
+  border-block-start: 0.5px solid var(--deals-line);
+}
+
+.shell .ds-table thead th {
+  height: var(--deals-row-head);
+  border-block-start: 0;
+  background: transparent;
+  color: var(--deals-ink-text);
+  font-size: var(--deals-small);
+  font-weight: var(--deals-weight-strong);
+  line-height: var(--deals-small-leading);
+}
+
+.shell .ds-table.ds-table--compact th,
+.shell .ds-table.ds-table--compact td {
+  padding: 0 12px;
+}
+
+.shell .ds-table tbody :where(th) {
+  color: var(--deals-ink);
+}
+
+.shell .ds-table .ds-table__row--selected > * {
+  background: var(--deals-row-selected);
+}
+
+.shell .ds-table tfoot :is(th, td) {
+  color: var(--deals-ink);
+  font-weight: var(--deals-weight-strong);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shell .ds-table--interactive tbody tr:hover > *,
+  .shell .ds-table tbody tr:hover > * {
+    background: var(--deals-row-hover);
+  }
+}
+
+/* ---------- Badges: tinted, borderless pills ---------- */
+
+.shell .ds-badge {
+  --_bg: color-mix(in srgb, var(--ds-color-ink) 5%, transparent);
+  --_fg: var(--deals-ink-text);
+  min-height: 20px;
+  padding: 0 6px;
+  gap: 4px;
+  border-radius: var(--deals-radius-pill);
+  font-size: var(--deals-small);
+  font-weight: var(--deals-weight-strong);
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+/* The word names the state; the tint is enough beside it, no icon. */
+.shell .ds-badge .ds-icon {
+  display: none;
+}
+
+.shell .ds-badge--info {
+  --_bg: color-mix(in srgb, var(--ds-color-info) 9%, transparent);
+  --_fg: var(--ds-color-info);
+}
+
+.shell .ds-badge--accent {
+  --_bg: color-mix(in srgb, var(--ds-color-accent) 9%, transparent);
+  --_fg: var(--ds-color-accent);
+}
+
+.shell .ds-badge--success {
+  --_bg: color-mix(in srgb, var(--ds-color-success) 10%, transparent);
+  --_fg: var(--ds-color-success);
+}
+
+.shell .ds-badge--warning {
+  --_bg: color-mix(in srgb, var(--ds-color-warning) 12%, transparent);
+  --_fg: var(--ds-color-warning);
+}
+
+.shell .ds-badge--danger {
+  --_bg: color-mix(in srgb, var(--ds-color-danger) 9%, transparent);
+  --_fg: var(--ds-color-danger);
+}
+
+.shell .ds-tag {
+  min-height: 20px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--deals-radius-pill);
+  background: color-mix(in srgb, var(--ds-color-ink) 5%, transparent);
+  color: var(--deals-ink-text);
+  font-size: var(--deals-small);
+  line-height: 20px;
+}
+
+/* ---------- Alerts, tabs, dialogs, empty states ---------- */
+
+.shell .ds-alert {
+  border: 0;
+  border-radius: 10px;
+  font-size: var(--deals-text);
+  line-height: var(--deals-text-leading);
+}
+
+.shell .ds-tabs__list {
+  gap: var(--ds-space-4);
+  border-block-end: 0;
+}
+
+.shell .ds-tabs__tab {
+  min-height: var(--deals-control);
+  padding: 0 10px;
+  border-radius: var(--deals-radius-button);
+  box-shadow: inset 0 0 0 0.5px var(--deals-line-strong);
+  color: var(--deals-ink-text);
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight);
+}
+
+.shell .ds-tabs__tab[aria-selected="true"] {
+  background: var(--deals-select);
+  box-shadow: none;
+  color: var(--deals-ink);
+  font-weight: var(--deals-weight-strong);
+}
+
+.shell .ds-tabs__tab[aria-selected="true"]::after {
+  display: none;
+}
+
+dialog.ds-dialog {
+  border: 0;
+  border-radius: var(--deals-radius-column);
+  box-shadow:
+    0 0 0 0.5px var(--deals-line-strong),
+    0 24px 48px -12px color-mix(in srgb, var(--ds-color-ink) 22%, transparent),
+    0 4px 12px -4px color-mix(in srgb, var(--ds-color-ink) 6%, transparent);
+  font-size: var(--deals-text);
+  line-height: var(--deals-text-leading);
+}
+
+dialog.ds-dialog::backdrop {
+  background: color-mix(in srgb, var(--ds-color-ink) 16%, transparent);
+}
+
+dialog.ds-dialog .ds-dialog__header {
+  gap: 12px;
+  padding: 16px 12px 0 20px;
+}
+
+dialog.ds-dialog :is(h2, .ds-dialog__title) {
+  padding: 3px 0 0;
+  color: var(--deals-ink-strong);
+  font-family: inherit;
+  font-size: var(--deals-heading);
+  font-weight: var(--deals-weight-strong);
+  line-height: 22px;
+  letter-spacing: -0.005em;
+}
+
+dialog.ds-dialog .ds-dialog__description {
+  margin: 2px 20px 0;
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-text);
+  line-height: var(--deals-text-leading);
+}
+
+dialog.ds-dialog .ds-dialog__header .ds-button {
+  min-height: 28px;
+  padding: 0 6px;
+  color: var(--deals-ink-muted);
+}
+
+dialog.ds-dialog .ds-dialog__body {
+  padding: 16px 20px 20px;
+}
+
+dialog.ds-dialog .ds-dialog__footer {
+  gap: 8px;
+  padding: 0 16px 16px;
+  border-block-start: 0;
+}
+
+dialog.ds-dialog .ds-button {
+  min-height: var(--deals-control);
+  padding: 0 10px;
+  border-radius: var(--deals-radius-button);
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight-strong);
+}
+
+dialog.ds-dialog .ds-button--primary {
+  background: var(--deals-ink);
+  color: var(--ds-color-on-action);
+}
+
+dialog.ds-dialog .ds-button--secondary {
+  border: 0;
+  background: var(--deals-card);
+  box-shadow: var(--deals-shadow-card);
+  color: var(--deals-ink);
+}
+
+dialog.ds-dialog .ds-button--quiet {
+  border: 0;
+  background: transparent;
+  color: var(--deals-ink-text);
+}
+
+/* A form in a dialog: two columns, a wide field across both. */
+.dialog-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 12px;
+}
+
+.dialog-form .field-wide {
+  grid-column: 1 / -1;
+}
+
+/* On a phone a dialog is a sheet from the bottom. */
+@media (max-width: 640px) {
+  dialog.ds-dialog {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: calc(100dvh - 24px);
+    margin: auto 0 0;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .dialog-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.shell .ds-empty {
+  gap: 0;
+  font-size: var(--deals-text);
+}
+
+.shell .ds-empty__icon {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 16px;
+  border-radius: 11px;
+  background: var(--deals-chip);
+  color: var(--deals-ink-muted);
+}
+
+.shell .ds-empty__title {
+  margin: 0;
+  color: var(--deals-ink-strong);
+  font-family: inherit;
+  font-size: var(--deals-text);
+  font-weight: var(--deals-weight-strong);
+  line-height: var(--deals-text-leading);
+  letter-spacing: 0;
+}
+
+.shell .ds-empty__body {
+  color: var(--deals-ink-muted);
+  font-size: var(--deals-text);
+  line-height: var(--deals-text-leading);
+  text-wrap: balance;
+}
+
+.shell .ds-empty__actions {
+  margin-top: 18px;
+}
+
+/* Code-like ids in running text. */
+.shell code {
+  font-family: var(--ds-type-mono-font);
+  font-size: var(--deals-small);
+}
+
+/* The browser's file button as a secondary button. */
+.shell input[type="file"] {
+  padding: 3px;
+  color: var(--deals-ink-muted);
+}
+
+.shell input[type="file"]::file-selector-button {
+  min-height: 24px;
+  margin-inline-end: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--deals-radius-button);
+  background: var(--deals-chip);
+  color: var(--deals-ink);
+  font: inherit;
+  font-size: var(--deals-small);
+  font-weight: var(--deals-weight-strong);
+  cursor: pointer;
+}
+
+/* ---------- Focus ---------- */
+
+.shell :focus-visible {
+  outline-color: color-mix(in srgb, var(--ds-color-accent) 70%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell *,
+  .shell *::before,
+  .shell *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* The name in a table's first column opens the record: ink, no underline. */
+.shell .ds-table tbody td:first-child > a {
+  color: var(--deals-ink);
+  font-weight: var(--deals-weight-strong);
+  text-decoration: none;
+}
